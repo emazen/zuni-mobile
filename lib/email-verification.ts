@@ -1,0 +1,249 @@
+import { randomUUID } from 'crypto'
+import { prisma } from './prisma'
+import { Resend } from 'resend'
+import { getVerificationEmailTemplate } from './emailTemplate'
+
+/**
+ * Generate a double RFC UUID token for email verification
+ * This creates a more secure token by combining two UUIDs
+ */
+export function generateDoubleUUIDToken(): string {
+  const uuid1 = randomUUID()
+  const uuid2 = randomUUID()
+  return `${uuid1}-${uuid2}`
+}
+
+/**
+ * Create an email verification token for a user
+ */
+export async function createEmailVerificationToken(userId: string): Promise<string> {
+  // Delete any existing verification tokens for this user
+  await prisma.emailVerificationToken.deleteMany({
+    where: { userId }
+  })
+
+  // Generate new token
+  const token = generateDoubleUUIDToken()
+  
+  // Set expiration to 24 hours from now
+  const expires = new Date()
+  expires.setHours(expires.getHours() + 24)
+
+  // Create the token in database
+  await prisma.emailVerificationToken.create({
+    data: {
+      token,
+      userId,
+      expires
+    }
+  })
+
+  return token
+}
+
+/**
+ * Verify an email verification token
+ */
+export async function verifyEmailToken(token: string): Promise<{ success: boolean; userId?: string; error?: string }> {
+  try {
+    const verificationToken = await prisma.emailVerificationToken.findUnique({
+      where: { token },
+      include: { user: true }
+    })
+
+    if (!verificationToken) {
+      // Token doesn't exist - could be invalid or already used
+      // Return a more helpful message that suggests the user might already be verified
+      return { success: false, error: 'This verification link has already been used or is invalid. If you already verified your email, please try signing in.' }
+    }
+
+    // Check if user is already verified (handles case where link is clicked twice)
+    if (verificationToken.user.emailVerified) {
+      // User already verified, clean up token and return success
+      await prisma.emailVerificationToken.deleteMany({
+        where: { token }
+      })
+      return { success: true, userId: verificationToken.userId }
+    }
+
+    if (verificationToken.expires < new Date()) {
+      // Clean up expired token
+      await prisma.emailVerificationToken.deleteMany({
+        where: { token }
+      })
+      return { success: false, error: 'Verification token has expired' }
+    }
+
+    // Store userId before updating
+    const userId = verificationToken.userId
+
+    // Mark user's email as verified
+    await prisma.user.update({
+      where: { id: userId },
+      data: { emailVerified: new Date() }
+    })
+
+    // Clean up the used token (use deleteMany for safety - handles race conditions)
+    // Don't throw error if delete fails - verification already succeeded
+    try {
+      await prisma.emailVerificationToken.deleteMany({
+        where: { token }
+      })
+    } catch (deleteError) {
+      // If delete fails, it's okay - the user is already verified
+      // This handles race conditions where token is deleted between operations
+      console.log('Token cleanup failed (likely already deleted) - verification succeeded')
+    }
+
+    return { success: true, userId }
+  } catch (error) {
+    console.error('Error verifying email token:', error)
+    
+    // If it's a "record not found" error (P2025), check if user was actually verified
+    // This handles the case where verification succeeded but token delete failed
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
+      // The error might be from user update, but more likely token was already deleted
+      // In this case, we need to check if the verification actually succeeded
+      // by looking for the user by the token (but token doesn't exist)
+      // The safest approach: if we can't verify, return error but suggest checking email status
+      console.log('Record not found error - checking if verification may have succeeded')
+      return { success: false, error: 'Verification may have already completed. Please try signing in.' }
+    }
+    
+    return { success: false, error: 'An error occurred during verification' }
+  }
+}
+
+/**
+ * Send verification email using Resend
+ */
+export async function sendVerificationEmail(email: string, token: string, username: string): Promise<void> {
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000'
+  const verificationUrl = `${baseUrl}/auth/verify-email?token=${token}`
+  
+  try {
+    // Initialize Resend client
+    const resend = new Resend(process.env.RESEND_API_KEY)
+
+    // Get email template
+    const emailTemplate = getVerificationEmailTemplate(verificationUrl, username)
+
+    // Send email using Resend
+    const data = await resend.emails.send({
+      from: process.env.FROM_EMAIL || 'Zuni <onboarding@resend.dev>',
+      to: email,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+      text: emailTemplate.text,
+    })
+
+    console.log('✅ Verification email sent successfully:', data.id)
+    
+    // Also log to console for development
+    console.log('\n' + '='.repeat(80))
+    console.log('📧 EMAIL VERIFICATION SENT')
+    console.log('='.repeat(80))
+    console.log(`To: ${email}`)
+    console.log(`Message ID: ${data.id}`)
+    console.log(`Verification URL: ${verificationUrl}`)
+    console.log('='.repeat(80) + '\n')
+
+  } catch (error) {
+    console.error('❌ Failed to send verification email:', error)
+    
+    // Fallback: log to console for development
+    console.log('================================================================================')
+    console.log('📧 EMAIL VERIFICATION (FALLBACK)')
+    console.log('================================================================================')
+    console.log(`To: ${email}`)
+    console.log(`Subject: Verify your Zuni account`)
+    console.log(`Hello ${username},`)
+    console.log(`Welcome to Zuni! Please verify your email address by clicking the link below:`)
+    console.log(`🔗 ${verificationUrl}`)
+    console.log(`This link will expire in 24 hours.`)
+    console.log(`If you did not create an account with Zuni, please ignore this email.`)
+    console.log(`Best regards,`)
+    console.log(`The Zuni Team`)
+    console.log('================================================================================')
+    console.log('\n' + '='.repeat(80))
+    console.log('📧 EMAIL VERIFICATION (FALLBACK)')
+    console.log('='.repeat(80))
+    console.log(`To: ${email}`)
+    console.log(`Subject: Verify your Zuni account`)
+    console.log('')
+    console.log(`Hello ${username},`)
+    console.log('')
+    console.log('Welcome to Zuni! Please verify your email address by clicking the link below:')
+    console.log('')
+    console.log(`🔗 ${verificationUrl}`)
+    console.log('')
+    console.log('This link will expire in 24 hours.')
+    console.log('')
+    console.log('If you did not create an account with Zuni, please ignore this email.')
+    console.log('')
+    console.log('Best regards,')
+    console.log('The Zuni Team')
+    console.log('='.repeat(80) + '\n')
+    
+    // Don't throw error to prevent signup from failing
+    // The user can still use the fallback link from console
+  }
+}
+
+/**
+ * Generate HTML content for verification email
+ */
+export function generateVerificationEmailHTML(verificationUrl: string, username: string): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Verify your Zuni Hub account</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #fbbf24; padding: 20px; text-align: center; border: 4px solid #000; }
+        .content { background: #fff; padding: 30px; border: 4px solid #000; }
+        .button { 
+          display: inline-block; 
+          background: #fbbf24; 
+          color: #000; 
+          padding: 15px 30px; 
+          text-decoration: none; 
+          font-weight: bold; 
+          border: 4px solid #000; 
+          margin: 20px 0;
+        }
+        .footer { text-align: center; margin-top: 20px; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🎓 Zuni Hub</h1>
+        </div>
+        <div class="content">
+          <h2>Welcome to Zuni Hub, ${username}!</h2>
+          <p>Thank you for joining our educational community. To complete your registration, please verify your email address by clicking the button below:</p>
+          
+          <div style="text-align: center;">
+            <a href="${verificationUrl}" class="button">Verify Email Address</a>
+          </div>
+          
+          <p>Or copy and paste this link into your browser:</p>
+          <p style="word-break: break-all; background: #f3f4f6; padding: 10px; border: 2px solid #000;">${verificationUrl}</p>
+          
+          <p><strong>Important:</strong> This verification link will expire in 24 hours.</p>
+          
+          <p>If you did not create an account with Zuni Hub, please ignore this email.</p>
+        </div>
+        <div class="footer">
+          <p>Best regards,<br>The Zuni Hub Team</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+}

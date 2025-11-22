@@ -1,0 +1,296 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Universal reset to prevent any default spacing */
+* {
+  box-sizing: border-box;
+}
+
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  /* Neo-Brutalist Color Palette - Light Mode */
+  --brutal-black: #000000;
+  --brutal-white: #FFFFFF;
+  --brutal-yellow: #FFE066;
+  --brutal-pink: #FF6B9D;
+  --brutal-blue: #4ECDC4;
+  --brutal-green: #45B7D1;
+  --brutal-orange: #FF8C42;
+  --brutal-purple: #9B59B6;
+  --brutal-red: #E74C3C;
+  --brutal-gray: #F8F9FA;
+  --brutal-dark-gray: #2C3E50;
+  
+  /* Theme Colors */
+  --bg-primary: #FFFDF5;
+  --bg-secondary: #FFFFFF;
+  --text-primary: #000000;
+  --text-secondary: #2C3E50;
+  --border-color: #000000;
+  
+  /* Shadows */
+  --brutal-shadow: 4px 4px 0px 0px var(--border-color);
+  --brutal-shadow-sm: 2px 2px 0px 0px var(--border-color);
+  --brutal-shadow-lg: 6px 6px 0px 0px var(--border-color);
+  
+  /* Borders */
+  --brutal-border: 4px solid var(--border-color);
+  --brutal-border-thick: 6px solid var(--border-color);
+}
+
+.dark {
+  /* Neo-Brutalist Color Palette - Dark Mode */
+  --brutal-black: #FFFFFF;
+  --brutal-white: #15202B;
+  --brutal-yellow: #FFE066;
+  --brutal-pink: #CC5580;
+  --brutal-blue: #3EADA3;
+  --brutal-green: #3697B1;
+  --brutal-orange: #CC7035;
+  --brutal-purple: #7B4792;
+  --brutal-red: #B73D2F;
+  --brutal-gray: #15202B;
+  --brutal-dark-gray: #8899AC;
+  
+  /* Theme Colors */
+  --bg-primary: #151515;
+  --bg-secondary: #242526;
+  --text-primary: #FFFFFF;
+  --text-secondary: #8899AC;
+  --border-color: #2d2d2d;
+  
+  /* Shadows */
+  --brutal-shadow: 4px 4px 0px 0px var(--border-color);
+  --brutal-shadow-sm: 2px 2px 0px 0px var(--border-color);
+  --brutal-shadow-lg: 6px 6px 0px 0px var(--border-color);
+}
+
+html, body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-jakarta), -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 400;
+  line-height: 1.4;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+::selection {
+  background-color: var(--brutal-pink);
+  color: black;
+}
+
+/* Prevent transitions during initial load to avoid flash */
+html:not(.theme-loaded), body:not(.theme-loaded) {
+  transition: none !important;
+}
+
+/* Set initial background to prevent flash */
+html {
+  background-color: #F3F4F6 !important; /* Default to light mode - script will override if dark */
+}
+
+html.light {
+  background-color: #F3F4F6 !important; /* Light mode */
+}
+
+html.dark {
+  background-color: #151515 !important; /* Dark mode - must match script color */
+}
+
+/* Safari-specific: Explicitly set body background to ensure it changes */
+body {
+  background-color: inherit !important;
+}
+
+html.light body,
+html.light > body {
+  background-color: #F3F4F6 !important;
+}
+
+html.dark body,
+html.dark > body {
+  background-color: #151515 !important;
+}
+
+/* Neo-Brutalist Utility Classes */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .brutal-shadow {
+    box-shadow: var(--brutal-shadow);
+  }
+  
+  .brutal-shadow-sm {
+    box-shadow: var(--brutal-shadow-sm);
+  }
+  
+  .brutal-shadow-lg {
+    box-shadow: var(--brutal-shadow-lg);
+  }
+  
+  .brutal-border {
+    border: var(--brutal-border);
+  }
+  
+  .brutal-border-thick {
+    border: var(--brutal-border-thick);
+  }
+  
+  .brutal-button {
+    @apply px-6 py-3 font-medium text-lg transition-all duration-150 ease-out;
+    border: 4px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    box-shadow: var(--brutal-shadow-sm);
+  }
+  
+  .brutal-button:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: var(--brutal-shadow);
+  }
+  
+  .brutal-button:active {
+    transform: translate(2px, 2px);
+    box-shadow: var(--brutal-shadow-sm);
+  }
+  
+  .brutal-button-primary {
+    @apply brutal-button;
+    background-color: var(--brutal-yellow);
+    color: #000;
+  }
+  
+  .brutal-button-comment {
+    @apply px-6 py-3 font-medium text-lg transition-all duration-150 ease-out;
+    border: 2px solid var(--border-color);
+    background-color: #FFFFFF;
+    color: #000;
+    box-shadow: var(--brutal-shadow-sm);
+  }
+  
+  .brutal-button-comment:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: var(--brutal-shadow);
+  }
+  
+  .brutal-button-comment:active {
+    transform: translate(2px, 2px);
+    box-shadow: var(--brutal-shadow-sm);
+  }
+  
+  .dark .brutal-button-comment {
+    background-color: var(--brutal-yellow);
+  }
+  
+  .brutal-button-secondary {
+    @apply brutal-button;
+    background-color: var(--brutal-pink);
+    color: #000;
+  }
+  
+  .brutal-button-danger {
+    @apply brutal-button;
+    background-color: var(--brutal-red);
+    color: #fff;
+  }
+  
+  .brutal-card {
+    @apply p-6;
+    background-color: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    box-shadow: var(--brutal-shadow);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+  
+  .dark .brutal-card {
+    background-color: #121212 !important;
+  }
+  
+  .brutal-input {
+    @apply px-4 py-3 font-medium focus:outline-none focus:ring-0;
+    border: 2px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    box-shadow: var(--brutal-shadow-sm);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .dark .brutal-input {
+    background-color: var(--bg-primary);
+  }
+  
+  .brutal-input:focus {
+    transform: translate(-1px, -1px);
+    box-shadow: var(--brutal-shadow);
+  }
+  
+  .brutal-header {
+    background-color: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+  
+  .dark .brutal-header {
+    background-color: #121212 !important;
+  }
+  
+  .brutal-sidebar {
+    background-color: var(--bg-secondary);
+    border-right: 2px solid var(--border-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+  
+  .dark .brutal-sidebar {
+    background-color: #121212 !important;
+  }
+  
+  /* Mobile universities menu header in dark mode */
+  .dark .mobile-menu-header {
+    background-color: #121212 !important;
+  }
+  
+  /* User menu dropdown in dark mode */
+  .dark .user-menu-dropdown {
+    background-color: #121212 !important;
+  }
+  
+  /* Override var(--bg-secondary) for buttons and other elements in dark mode */
+  .dark button[style*="--bg-secondary"],
+  .dark [style*="--bg-secondary"].bg-white {
+    background-color: #121212 !important;
+  }
+  
+  /* Ensure all elements using bg-secondary color in dark mode get #121212 */
+  .dark [style*="var(--bg-secondary)"] {
+    background-color: #121212 !important;
+  }
+
+.sidebar-transition {
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width, opacity, transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  transform: translateZ(0);
+}
+
+.no-overscroll {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+}
