@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { CheckCircle, XCircle, RefreshCw, ArrowRight, ArrowLeft } from "lucide-react"
-import { Logo } from "@/components/Logo"
+import Logo from "@/components/Logo"
 
 export default function VerifyEmail() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'expired'>('loading')
@@ -125,16 +125,16 @@ export default function VerifyEmail() {
                 </h2>
                 
                 <p className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-8 font-sans">
-                  {message}
-                </p>
+                    {message}
+                  </p>
 
-                <Link
+                  <Link
                   href="/"
                   className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-3 px-4 rounded border-2 border-black hover:-translate-y-0.5 active:translate-y-0 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,0)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] flex items-center justify-center gap-2"
-                >
+                  >
                   Hesabına Giriş Yap
                   <ArrowRight className="h-4 w-4" />
-                </Link>
+                  </Link>
               </>
             )}
 
@@ -149,35 +149,35 @@ export default function VerifyEmail() {
                 </h2>
                 
                 <p className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-8 font-sans">
-                  {message}
-                </p>
+                    {message}
+                  </p>
 
-                <div className="space-y-3">
-                  <button
-                    onClick={resendVerification}
-                    disabled={resending}
+                  <div className="space-y-3">
+                    <button
+                      onClick={resendVerification}
+                      disabled={resending}
                     className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-3 px-4 rounded border-2 border-black hover:-translate-y-0.5 active:translate-y-0 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,0)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {resending ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
+                    >
+                      {resending ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin" />
                         Gönderiliyor...
-                      </>
-                    ) : (
-                      <>
+                        </>
+                      ) : (
+                        <>
                         <RefreshCw className="h-4 w-4" />
                         Tekrar Gönder
-                      </>
-                    )}
-                  </button>
+                        </>
+                      )}
+                    </button>
                   
-                  <Link
+                    <Link
                     href="/"
                     className="w-full bg-transparent text-black dark:text-white font-bold py-3 px-4 rounded border-2 border-black hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors flex items-center justify-center gap-2"
-                  >
+                    >
                     <ArrowLeft className="h-4 w-4" />
                     Ana Sayfaya Dön
-                  </Link>
+                    </Link>
                 </div>
               </>
             )}
@@ -193,35 +193,35 @@ export default function VerifyEmail() {
                 </h2>
                 
                 <p className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-8 font-sans">
-                  {message}
-                </p>
+                    {message}
+                  </p>
 
-                <div className="space-y-3">
-                  <button
-                    onClick={resendVerification}
-                    disabled={resending}
+                  <div className="space-y-3">
+                    <button
+                      onClick={resendVerification}
+                      disabled={resending}
                     className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-3 px-4 rounded border-2 border-black hover:-translate-y-0.5 active:translate-y-0 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,0)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {resending ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
+                    >
+                      {resending ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin" />
                         Gönderiliyor...
-                      </>
-                    ) : (
-                      <>
+                        </>
+                      ) : (
+                        <>
                         <RefreshCw className="h-4 w-4" />
                         Yeni Bağlantı İste
-                      </>
-                    )}
-                  </button>
+                        </>
+                      )}
+                    </button>
                   
-                  <Link
+                    <Link
                     href="/"
                     className="w-full bg-transparent text-black dark:text-white font-bold py-3 px-4 rounded border-2 border-black hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors flex items-center justify-center gap-2"
-                  >
+                    >
                     <ArrowLeft className="h-4 w-4" />
                     Ana Sayfaya Dön
-                  </Link>
+                    </Link>
                 </div>
               </>
             )}

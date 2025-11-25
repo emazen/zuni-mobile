@@ -347,7 +347,9 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                   </button>
                   
                   <div className="px-3 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-full border border-gray-200 dark:border-gray-800">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{university.name}</span>
+                    <span className="text-xs font-bold text-gray-500 tracking-wider">
+                      {university.name.toLocaleUpperCase('tr-TR')}
+                    </span>
                   </div>
                 </div>
 

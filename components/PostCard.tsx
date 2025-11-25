@@ -135,24 +135,24 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
 
           {/* Footer Row */}
           <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
-             {/* University Tag */}
-             {showUniversityInfo && post.university ? (
-               <span className="text-sm font-bold px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300">
-                 {post.university.name}
-               </span>
-             ) : (
-               <span className="text-sm font-bold text-gray-400">Zuni Board</span>
-             )}
+            {/* University Tag */}
+            {showUniversityInfo && post.university ? (
+              <span className="text-sm font-bold px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300">
+                {post.university.name}
+              </span>
+            ) : (
+              <span aria-hidden="true" />
+            )}
 
-             {/* Comment Count */}
-             <div className={`flex items-center gap-2 text-base font-bold transition-colors ${
-               hasNewMessages(post) 
-                 ? 'text-red-500' 
-                 : 'text-gray-400 group-hover:text-black dark:group-hover:text-white'
-             }`}>
-               <MessageSquare className="w-5 h-5" fill={hasNewMessages(post) ? "currentColor" : "none"} />
-               <span className="leading-none relative -top-[2px]">{post._count?.comments || 0}</span>
-             </div>
+            {/* Comment Count */}
+            <div className={`flex items-center gap-2 text-base font-bold transition-colors ${
+              hasNewMessages(post) 
+                ? 'text-red-500' 
+                : 'text-gray-400 group-hover:text-black dark:group-hover:text-white'
+            }`}>
+              <MessageSquare className="w-5 h-5" fill={hasNewMessages(post) ? "currentColor" : "none"} />
+              <span className="leading-none relative -top-[2px]">{post._count?.comments || 0}</span>
+            </div>
           </div>
         </div>
       </Link>

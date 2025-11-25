@@ -279,7 +279,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
               {/* Comments Section */}
               <div className="space-y-6" data-comments-section>
                 <h3 className="font-display font-bold text-xl text-black dark:text-white flex items-center gap-2">
-                  Comments 
+                  Yorumlar 
                   <span className="px-2 py-0.5 bg-gray-200 dark:bg-gray-800 rounded-full text-sm">{post.comments.length}</span>
                 </h3>
 
@@ -290,7 +290,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                       <textarea
                         value={commentContent}
                         onChange={(e) => setCommentContent(e.target.value)}
-                        placeholder="Add to the discussion..."
+                        placeholder="Tartışmaya katıl..."
                         className="w-full p-3 bg-transparent border-none focus:ring-0 focus:outline-none resize-none text-lg font-sans placeholder:text-gray-400"
                         rows={2}
                         maxLength={2000}

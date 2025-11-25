@@ -711,31 +711,41 @@ export default function Home() {
   const fetchData = async () => {
     try {
       console.log('fetchData: Starting to fetch all data...')
-      
-      // Fetch user activity (includes user's posts and posts with user comments)
-      const activityResponse = await fetch("/api/user/activity")
+
+      // Fetch all main datasets in parallel to reduce total load time
+      const [activityResponse, subscribedResponse, allPostsResponse] = await Promise.all([
+        fetch("/api/user/activity"),
+        fetch("/api/user/subscribed-posts"),
+        fetch("/api/posts"),
+      ])
+
+      // User activity (includes user's posts and posts with user comments)
       if (activityResponse.ok) {
         const activityData = await activityResponse.json()
         setUserActivity(activityData)
         console.log('fetchData: User activity updated')
+      } else {
+        console.error('fetchData: Failed to load user activity', activityResponse.status)
       }
 
-      // Fetch posts from subscribed universities
-      const subscribedResponse = await fetch("/api/user/subscribed-posts")
+      // Posts from subscribed universities
       if (subscribedResponse.ok) {
         const subscribedData = await subscribedResponse.json()
         setPosts(subscribedData)
         console.log('fetchData: Subscribed posts updated')
+      } else {
+        console.error('fetchData: Failed to load subscribed posts', subscribedResponse.status)
       }
 
-      // Fetch all posts for trending section
-      const allPostsResponse = await fetch("/api/posts")
+      // All posts for trending section
       if (allPostsResponse.ok) {
         const allPostsData = await allPostsResponse.json()
         setAllPosts(allPostsData)
         console.log('fetchData: All posts updated')
+      } else {
+        console.error('fetchData: Failed to load all posts', allPostsResponse.status)
       }
-      
+
       // If we're currently viewing a university board, also fetch its posts
       if (selectedUniversity) {
         const universityResponse = await fetch(`/api/universities/${selectedUniversity.id}/posts`)
@@ -1859,14 +1869,11 @@ export default function Home() {
                     ) : (
                       <div className="text-center py-12 bg-white brutal-border brutal-shadow-sm" style={{backgroundColor: 'var(--bg-secondary)'}}>
                         <BookOpen className="h-16 w-16 mx-auto text-black mb-4" style={{color: 'var(--text-primary)'}} />
-                        <h3 className="text-2xl font-black text-black mb-3" style={{color: 'var(--text-primary)'}}>
+                        <h3 className="text-2xl font-semibold text-black mb-3" style={{color: 'var(--text-primary)'}}>
                           Henüz bir aktiviten yok
                         </h3>
-                        <p className="text-lg font-semibold text-black mb-2" style={{color: 'var(--text-secondary)'}}>
-                          Sol taraftaki üniversite panolarını keşfedin ve yıldız ikonuyla abone olun.
-                        </p>
-                        <p className="text-lg font-semibold text-black" style={{color: 'var(--text-secondary)'}}>
-                          Abone olduğunuz panolardan gönderiler burada görünecek.
+                        <p className="text-lg font-medium text-black" style={{color: 'var(--text-secondary)'}}>
+                          Henüz bir gönderi paylaşmadın veya bir gönderiye yorum yapmadın.
                         </p>
                       </div>
                     )}
@@ -1879,7 +1886,7 @@ export default function Home() {
                       <div className="text-center py-12 bg-white brutal-border brutal-shadow-sm" style={{backgroundColor: 'var(--bg-secondary)'}}>
                         <Star className="h-16 w-16 mx-auto text-black mb-4" style={{color: 'var(--text-primary)'}} />
                         <h3 className="text-2xl font-semibold text-black mb-3" style={{color: 'var(--text-primary)'}}>
-                          Abone Olduğun Üniversitelerden Gönderi Yok
+                          Abone olduğun üniversitelerden gönderi yok
                         </h3>
                         <p className="text-lg font-medium text-black" style={{color: 'var(--text-secondary)'}}>
                           Üniversite panolarına abone olarak gönderileri burada görebilirsin. Sol menüdeki yıldız ikonunu kullan!
@@ -1915,7 +1922,7 @@ export default function Home() {
                           <div className="text-center py-12 bg-white brutal-border brutal-shadow-sm" style={{backgroundColor: 'var(--bg-secondary)'}}>
                             <TrendingUp className="h-16 w-16 mx-auto text-black mb-4" style={{color: 'var(--text-primary)'}} />
                             <h3 className="text-2xl font-semibold text-black mb-3" style={{color: 'var(--text-primary)'}}>
-                              Trend Gönderi Yok
+                              Trend gönderi yok
                             </h3>
                             <p className="text-lg font-medium text-black" style={{color: 'var(--text-secondary)'}}>
                               Son 48 saatte 10+ yorum alan gönderiler burada görünecek!

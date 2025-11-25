@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Mail, RefreshCw, ArrowLeft } from "lucide-react"
-import { Logo } from "@/components/Logo"
+import Logo from "@/components/Logo"
 
 export default function CheckEmail() {
   const [resending, setResending] = useState(false)
@@ -60,17 +60,17 @@ export default function CheckEmail() {
             
             <p className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-6 font-sans">
               E-posta adresine bir doğrulama bağlantısı gönderdik.
-            </p>
+              </p>
             
-            {email && (
+              {email && (
               <div className="inline-block px-4 py-2 bg-gray-100 dark:bg-[#1a1a1a] border-2 border-black rounded font-mono text-sm font-bold mb-6 text-black dark:text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0)]">
-                {email}
+                  {email}
               </div>
-            )}
+              )}
 
             <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-8">
               Lütfen gelen kutunu kontrol et ve hesabını etkinleştirmek için doğrulama bağlantısına tıkla.
-            </p>
+              </p>
 
             {message && (
               <div className={`px-4 py-3 rounded border-2 border-black text-sm font-bold mb-6 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
