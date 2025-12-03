@@ -3,7 +3,9 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Clock, TrendingUp, Image as ImageIcon } from "lucide-react"
+import { Clock, TrendingUp, Image as ImageIcon, X } from "lucide-react"
+import { useState } from "react"
+import { createPortal } from "react-dom"
 
 interface Post {
   id: string
@@ -44,6 +46,7 @@ interface PostCardProps {
 export default function PostCard({ post, viewedPosts, postViewTimestamps, userJustCommented, showUniversityInfo = true, onPostClick }: PostCardProps) {
   const { data: session } = useSession()
   const router = useRouter()
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null)
   const titleLineClamp = 2
   const contentLineClamp = showUniversityInfo ? 2 : 3
   
@@ -104,7 +107,7 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
         <div className="relative h-[260px] bg-white dark:bg-[#151515] border-2 border-black dark:border-gray-700 rounded-xl transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] flex flex-col p-4 overflow-visible">
           
           {/* Notification Badge (Top-Right Corner) */}
-          <div className={`absolute -top-5 -right-5 min-w-[40px] h-10 px-2.5 flex items-center justify-center text-base font-black rounded-full shadow-md z-20 ${
+          <div className={`absolute -top-3 -right-3 sm:-top-5 sm:-right-5 min-w-[32px] h-8 sm:min-w-[40px] sm:h-10 px-2 flex items-center justify-center text-sm sm:text-base font-black rounded-full shadow-md z-20 ${
             isNew 
               ? 'bg-red-500 text-white' 
               : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
@@ -160,7 +163,12 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
               </p>
             </div>
             {post.image && (
-              <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 relative bg-gray-100 dark:bg-gray-900">
+              <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 relative bg-gray-100 dark:bg-gray-900 cursor-pointer hover:opacity-90 transition-opacity"
+                   onClick={(e) => {
+                     e.preventDefault()
+                     e.stopPropagation()
+                     setEnlargedImage(post.image || null)
+                   }}>
                 <img 
                   src={post.image} 
                   alt="" 
@@ -203,6 +211,39 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
           </div>
         </div>
       </Link>
+
+      {enlargedImage && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4 cursor-pointer"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setEnlargedImage(null)
+          }}
+        >
+          <div 
+            className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center"
+          >
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setEnlargedImage(null)
+              }}
+              className="hidden sm:block absolute -top-4 -right-4 bg-white dark:bg-black text-black dark:text-white rounded-full p-2 shadow-lg border border-gray-200 dark:border-gray-700 z-10 pointer-events-auto hover:scale-110 transition-transform"
+              aria-label="Close enlarged image"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <img 
+              src={enlargedImage} 
+              alt="Enlarged attachment" 
+              className="max-w-full max-h-[90vh] object-contain rounded-xl border border-gray-200 dark:border-gray-800 bg-black"
+            />
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

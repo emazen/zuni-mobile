@@ -254,7 +254,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
   const isAuthor = session?.user?.id === post?.authorId;
 
   return (
-    <div className="flex-1 overflow-y-auto overscroll-none h-full bg-gray-50 dark:bg-[#121212]" style={{backgroundColor: 'var(--bg-primary)'}}>
+    <div className="flex-1 min-h-full bg-gray-50 dark:bg-[#121212]" style={{backgroundColor: 'var(--bg-primary)'}}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col min-h-full">
         <div className="flex-1">
           {loading ? (
@@ -311,9 +311,9 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                 )}
                 
                 {/* Post Body */}
-                <div className="px-8 pt-6 pb-6">
+                <div className="px-4 sm:px-8 pt-4 sm:pt-6 pb-4 sm:pb-6">
                   <h1 
-                    className="font-display font-bold text-3xl text-black dark:text-white mb-3 leading-tight pr-16"
+                    className="font-display font-bold text-xl sm:text-3xl text-black dark:text-white mb-3 leading-tight pr-8 sm:pr-16"
                     style={{
                       overflowWrap: 'break-word',
                       wordWrap: 'break-word',
@@ -326,7 +326,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                   </h1>
                   <div className="prose max-w-none">
                     <p 
-                      className="font-sans text-lg text-gray-700 dark:text-gray-300 leading-relaxed"
+                      className="font-sans text-base sm:text-lg text-gray-700 dark:text-gray-300 leading-relaxed"
                       style={{
                         overflowWrap: 'break-word',
                         wordWrap: 'break-word',
@@ -352,7 +352,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                 </div>
                 
                 {/* Post Footer */}
-                <div className="px-8 py-4 bg-white dark:bg-[#151515] border-t-2 border-black flex items-center gap-4" style={{borderColor: 'var(--border-color)'}}>
+                <div className="px-4 sm:px-8 py-3 sm:py-4 bg-white dark:bg-[#151515] border-t-2 border-black flex items-center gap-4" style={{borderColor: 'var(--border-color)'}}>
                   <div className="flex items-center gap-2 text-xs text-gray-500 font-mono">
                     <Clock className="w-4 h-4 flex-shrink-0" />
                     <span>{new Date(post.createdAt).toLocaleDateString('tr-TR')} {new Date(post.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
@@ -539,11 +539,10 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
           >
             <div 
               className="relative max-w-4xl max-h-[90vh] w-full"
-              onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setEnlargedImage(null)}
-                className="absolute -top-4 -right-4 bg-white dark:bg-black text-black dark:text-white rounded-full p-2 shadow-lg border border-gray-200 dark:border-gray-700 z-10 translate-x-1/2 -translate-y-1/2"
+                className="hidden sm:block absolute -top-4 -right-4 bg-white dark:bg-black text-black dark:text-white rounded-full p-2 shadow-lg border border-gray-200 dark:border-gray-700 z-10 translate-x-1/2 -translate-y-1/2"
                 aria-label="Close enlarged image"
               >
                 <X className="w-4 h-4" />

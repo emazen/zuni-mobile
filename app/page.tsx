@@ -1379,13 +1379,13 @@ export default function Home() {
       </header>
 
       {/* Sidebar and Main Content */}
-      <div className="flex h-[calc(100vh-64px)] overscroll-none">
+      <div className="flex h-[calc(100vh-64px)] sm:h-[calc(100dvh-64px)] overscroll-none">
         {/* Desktop Sidebar */}
         {!isMobile && (
           <UniversitySidebar onUniversityClick={handleUniversityClick} />
         )}
         
-        <div className="flex-1 overflow-y-auto overscroll-none h-[calc(100vh-64px)]">
+        <div className="flex-1 overflow-y-auto overscroll-none h-full pb-20 sm:pb-0">
           {/* Mobile Universities Full Page - No Sliding */}
           {isMobile && isMobileMenuOpen ? (
             <div className="h-full flex flex-col" style={{backgroundColor: 'var(--bg-primary)'}}>
@@ -1526,22 +1526,22 @@ export default function Home() {
                              </div>
                            </div>
                            <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (selectedUniversity?.id) {
-                                router.push(`/university/${selectedUniversity.id}/create-post`);
-                              }
-                            }}
-                             className="brutal-button-comment"
-                             style={{
-                               backgroundColor: effectiveTheme === 'dark' ? 'var(--brutal-yellow)' : '#FFFFFF',
-                               color: '#000000'
-                             }}
-                            type="button"
-                           >
-                             + Yeni Gönderi
-                           </button>
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (selectedUniversity?.id) {
+                              router.push(`/university/${selectedUniversity.id}/create-post`);
+                            }
+                          }}
+                          className="px-6 py-3 font-semibold border-2 border-black brutal-shadow-sm hover:brutal-shadow transition-all duration-150 rounded-full bg-white text-black"
+                          style={{
+                            backgroundColor: effectiveTheme === 'dark' ? 'var(--brutal-yellow)' : '#FFFFFF',
+                            color: '#000000'
+                          }}
+                         type="button"
+                        >
+                          + Yeni Gönderi
+                        </button>
                          </div>
                        </div>
 
@@ -1667,7 +1667,7 @@ export default function Home() {
                         <div className="flex w-full max-w-6xl p-1.5 bg-gray-100 dark:bg-[#1a1a1a] rounded-full border-2 border-black dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" style={{borderColor: 'var(--border-color)'}}>
                           <button
                             onClick={() => handleTabChange('my-activity')}
-                            className={`flex-1 py-4 rounded-full text-lg font-bold transition-all duration-200 flex items-center justify-center gap-3 ${
+                            className={`flex-1 py-3 sm:py-4 rounded-full text-xs sm:text-lg font-bold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-3 ${
                               activeTab === 'my-activity' 
                                 ? 'bg-yellow-300 text-black shadow-sm border-2 border-black transform -translate-y-0.5' 
                                 : 'text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white border-2 border-transparent'
@@ -1678,13 +1678,13 @@ export default function Home() {
                               color: activeTab === 'my-activity' ? '#000' : 'var(--text-secondary)'
                             }}
                           >
-                            <BookOpen className="w-6 h-6" />
+                            <BookOpen className="w-4 h-4 sm:w-6 sm:h-6" />
                             Aktiviteler
                           </button>
                           
                           <button
                             onClick={() => handleTabChange('subscribed')}
-                            className={`flex-1 py-4 rounded-full text-lg font-bold transition-all duration-200 flex items-center justify-center gap-3 ${
+                            className={`flex-1 py-3 sm:py-4 rounded-full text-xs sm:text-lg font-bold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-3 ${
                               activeTab === 'subscribed'
                                 ? 'bg-yellow-300 text-black shadow-sm border-2 border-black transform -translate-y-0.5'
                                 : 'text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white border-2 border-transparent'
@@ -1695,13 +1695,13 @@ export default function Home() {
                               color: activeTab === 'subscribed' ? '#000' : 'var(--text-secondary)'
                             }}
                           >
-                            <Star className="w-6 h-6" />
+                            <Star className="w-4 h-4 sm:w-6 sm:h-6" />
                             Abonelikler
                           </button>
                           
                           <button
                             onClick={() => handleTabChange('trending')}
-                            className={`flex-1 py-4 rounded-full text-lg font-bold transition-all duration-200 flex items-center justify-center gap-3 ${
+                            className={`flex-1 py-3 sm:py-4 rounded-full text-xs sm:text-lg font-bold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-3 ${
                               activeTab === 'trending'
                                 ? 'bg-yellow-300 text-black shadow-sm border-2 border-black transform -translate-y-0.5'
                                 : 'text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white border-2 border-transparent'
@@ -1712,7 +1712,7 @@ export default function Home() {
                               color: activeTab === 'trending' ? '#000' : 'var(--text-secondary)'
                             }}
                           >
-                            <TrendingUp className="w-6 h-6" />
+                            <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6" />
                             Trendler
                           </button>
                         </div>

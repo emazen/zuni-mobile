@@ -155,7 +155,20 @@ export default function UniversitySidebar({ onUniversityClick, isMobile = false 
 
   const toggleSubscription = async (universityId: string, isSubscribed: boolean) => {
     if (!session) return;
+    
     setSubscribing(universityId);
+    
+    // Optimistically update UI
+    const previousUniversities = universities;
+    const updatedUniversities = universities.map(uni => 
+      uni.id === universityId 
+        ? { ...uni, isSubscribed: !isSubscribed }
+        : uni
+    );
+    setUniversities(updatedUniversities);
+    localStorage.setItem('universities_cache', JSON.stringify(updatedUniversities));
+    localStorage.setItem('universities_cache_timestamp', Date.now().toString());
+    
     try {
       const method = isSubscribed ? 'DELETE' : 'POST';
       const response = await fetch(`/api/universities/${universityId}/subscribe`, {
@@ -165,21 +178,15 @@ export default function UniversitySidebar({ onUniversityClick, isMobile = false 
         },
       });
 
-      if (response.ok) {
-        // Update the university's subscription status
-        const updatedUniversities = universities.map(uni => 
-          uni.id === universityId 
-            ? { ...uni, isSubscribed: !isSubscribed }
-            : uni
-        );
-        setUniversities(updatedUniversities);
-        
-        // Update the cache with new subscription status
-        localStorage.setItem('universities_cache', JSON.stringify(updatedUniversities));
-        localStorage.setItem('universities_cache_timestamp', Date.now().toString());
+      if (!response.ok) {
+        throw new Error('Subscription request failed');
       }
     } catch (error) {
       console.error('Error toggling subscription:', error);
+      // Revert optimistic update
+      setUniversities(previousUniversities);
+      localStorage.setItem('universities_cache', JSON.stringify(previousUniversities));
+      localStorage.setItem('universities_cache_timestamp', Date.now().toString());
     } finally {
       setSubscribing(null);
     }
