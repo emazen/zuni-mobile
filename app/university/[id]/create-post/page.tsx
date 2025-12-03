@@ -5,13 +5,14 @@ import { use } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Send, User, LogOut, Menu, X, Building2, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, Send, User, LogOut, Menu, X, Building2, Moon, Sun, Image as ImageIcon } from 'lucide-react';
 import CustomSpinner from '@/components/CustomSpinner';
 import SplashScreen from '@/components/SplashScreen';
 import UniversitySidebar from '@/components/UniversitySidebar';
 import ThemeToggle from '@/components/ThemeToggle';
 import Logo from '@/components/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
+import { supabase } from '@/lib/supabaseClient';
 
 interface University {
   id: string;
@@ -38,6 +39,9 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Fetch university immediately when component mounts or params change
   useEffect(() => {
@@ -86,6 +90,63 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
     }
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Dosya boyutu 5MB\'dan küçük olmalıdır.');
+        return;
+      }
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        alert('Lütfen geçerli bir resim dosyası yükleyin.');
+        return;
+      }
+      
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      setUploadingImage(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = `posts/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('uploads')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from('uploads')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Resim yüklenirken bir hata oluştu.');
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -97,6 +158,15 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
     setLoading(true);
 
     try {
+      let imageUrl = null;
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+        if (!imageUrl) {
+          setLoading(false);
+          return;
+        }
+      }
+
       const response = await fetch(`/api/universities/${resolvedParams.id}/posts`, {
         method: 'POST',
         headers: {
@@ -105,6 +175,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
         body: JSON.stringify({
           title: title.trim(),
           content: content.trim(),
+          image: imageUrl,
         }),
       });
 
@@ -360,82 +431,117 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                   <div className="px-8 py-6 border-b-2 border-black bg-gray-50 dark:bg-[#1a1a1a]" style={{borderColor: 'var(--border-color)'}}>
                     <h1 className="font-display font-bold text-3xl text-black dark:text-white mb-1">Yeni Gönderi</h1>
                     <p className="font-sans text-gray-500 text-sm">Düşüncelerini, sorularını veya tartışmalarını paylaş.</p>
-                  </div>
+              </div>
 
                   <div className="p-8">
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      <div>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
                         <label htmlFor="title" className="block text-sm font-bold text-black dark:text-white mb-2 uppercase tracking-wide">
-                          Başlık
-                        </label>
-                        <input
-                          type="text"
-                          id="title"
-                          value={title}
-                          onChange={(e) => setTitle(e.target.value)}
+                        Başlık
+                      </label>
+                      <input
+                        type="text"
+                        id="title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
                           placeholder="Etkileyici bir başlık yaz..."
                           className="w-full px-4 py-3 bg-white dark:bg-[#121212] border-2 border-black rounded-lg font-sans text-lg focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 placeholder:text-gray-400"
                           style={{borderColor: 'var(--border-color)'}}
-                          maxLength={200}
-                          required
+                        maxLength={200}
+                        required
                           autoFocus
-                        />
+                      />
                         <div className="flex justify-end mt-1.5">
                           <span className={`text-xs font-bold ${title.length > 180 ? 'text-red-500' : 'text-gray-400'}`}>
                             {title.length}/200
                           </span>
                         </div>
-                      </div>
+                    </div>
 
-                      <div>
+                    <div>
                         <label htmlFor="content" className="block text-sm font-bold text-black dark:text-white mb-2 uppercase tracking-wide">
-                          İçerik
-                        </label>
-                        <textarea
-                          id="content"
-                          value={content}
-                          onChange={(e) => setContent(e.target.value)}
+                        İçerik
+                      </label>
+                      <textarea
+                        id="content"
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
                           placeholder="Nelerden bahsetmek istersin?"
-                          rows={12}
+                        rows={12}
                           className="w-full px-4 py-3 bg-white dark:bg-[#121212] border-2 border-black rounded-lg font-sans text-base leading-relaxed resize-none focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 placeholder:text-gray-400"
                           style={{borderColor: 'var(--border-color)'}}
-                          maxLength={5000}
-                          required
-                        />
-                        <div className="flex justify-end mt-1.5">
+                        maxLength={5000}
+                        required
+                      />
+                        <div className="flex justify-between mt-1.5">
+                          <div>
+                            <input
+                              type="file"
+                              id="image-upload"
+                              accept="image/*"
+                              onChange={handleImageSelect}
+                              className="hidden"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => document.getElementById('image-upload')?.click()}
+                              className="text-xs font-bold text-gray-500 hover:text-black dark:hover:text-white flex items-center gap-1 transition-colors"
+                            >
+                              <ImageIcon className="w-4 h-4" />
+                              {imageFile ? 'Resim Değiştir' : 'Resim Ekle'}
+                            </button>
+                          </div>
                           <span className={`text-xs font-bold ${content.length > 4800 ? 'text-red-500' : 'text-gray-400'}`}>
                             {content.length}/5000
                           </span>
                         </div>
-                      </div>
+
+                        {imagePreview && (
+                          <div className="mt-4 relative inline-block">
+                            <img 
+                              src={imagePreview} 
+                              alt="Preview" 
+                              className="max-h-64 rounded-lg border-2 border-black"
+                              style={{borderColor: 'var(--border-color)'}}
+                            />
+                            <button
+                              type="button"
+                              onClick={removeImage}
+                              className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full border-2 border-white hover:bg-red-600 transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                    </div>
 
                       <div className="flex items-center justify-end pt-4 gap-4">
                         <button
                           type="button"
                           onClick={handleGoBack}
                           className="px-6 py-3 font-bold text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors"
-                        >
-                          İptal
+                      >
+                        İptal
                         </button>
-                        
-                        <button
-                          type="submit"
-                          disabled={loading || !title.trim() || !content.trim()}
+                      
+                      <button
+                        type="submit"
+                        disabled={loading || !title.trim() || !content.trim()}
                           className="group relative px-8 py-3 bg-black dark:bg-white text-white dark:text-black font-bold rounded-lg border-2 border-black disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
                           style={{borderColor: 'var(--border-color)'}}
-                        >
+                      >
                           <div className="absolute inset-0 w-full h-full bg-pink-500 translate-y-full group-hover:translate-y-0 transition-transform duration-200 ease-out" />
                           <div className="relative flex items-center gap-2 group-hover:text-white">
-                            {loading ? (
-                              <CustomSpinner size="sm" />
-                            ) : (
-                              <Send className="h-4 w-4" />
-                            )}
+                        {loading ? (
+                          <CustomSpinner size="sm" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
                             <span>{loading ? 'Paylaşılıyor...' : 'Paylaş'}</span>
                           </div>
-                        </button>
-                      </div>
-                    </form>
+                      </button>
+                    </div>
+                  </form>
                   </div>
                 </div>
               </div>

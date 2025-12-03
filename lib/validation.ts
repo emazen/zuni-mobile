@@ -10,6 +10,7 @@ export const createPostSchema = z.object({
     .min(1, 'Content is required')
     .max(10000, 'Content must be 10,000 characters or less')
     .trim(),
+  image: z.string().url().nullable().optional(),
 })
 
 // Comment creation schema
@@ -18,6 +19,7 @@ export const createCommentSchema = z.object({
     .min(1, 'Content is required')
     .max(2000, 'Comment must be 2,000 characters or less')
     .trim(),
+  image: z.string().url().nullable().optional(),
 })
 
 // Email verification schema

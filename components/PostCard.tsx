@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { MessageSquare, Clock, TrendingUp } from "lucide-react"
+import { Clock, TrendingUp, Image as ImageIcon } from "lucide-react"
 
 interface Post {
   id: string
@@ -29,6 +29,7 @@ interface Post {
   }>
   isTrending?: boolean
   latestCommentTimestamp?: string | null
+  image?: string | null
 }
 
 interface PostCardProps {
@@ -43,6 +44,8 @@ interface PostCardProps {
 export default function PostCard({ post, viewedPosts, postViewTimestamps, userJustCommented, showUniversityInfo = true, onPostClick }: PostCardProps) {
   const { data: session } = useSession()
   const router = useRouter()
+  const titleLineClamp = 2
+  const contentLineClamp = showUniversityInfo ? 2 : 3
   
   const handlePostClick = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -89,6 +92,8 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
     }
   }
 
+  const isNew = hasNewMessages(post)
+
   return (
     <div className="relative group h-full">
       <Link 
@@ -96,8 +101,17 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
         onClick={handlePostClick}
         className="block h-full"
       >
-        <div className="relative h-[260px] bg-white dark:bg-[#151515] border-2 border-black rounded-xl transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col p-4 overflow-hidden" style={{borderColor: 'var(--border-color)'}}>
+        <div className="relative h-[260px] bg-white dark:bg-[#151515] border-2 border-black dark:border-gray-700 rounded-xl transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] flex flex-col p-4 overflow-visible">
           
+          {/* Notification Badge (Top-Right Corner) */}
+          <div className={`absolute -top-5 -right-5 min-w-[40px] h-10 px-2.5 flex items-center justify-center text-base font-black rounded-full shadow-md z-20 ${
+            isNew 
+              ? 'bg-red-500 text-white' 
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+          }`}>
+            {post._count?.comments || 0}
+          </div>
+
           {/* Metadata Row */}
           <div className="flex justify-between items-center mb-3 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-2">
@@ -115,44 +129,77 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
                 </div>
               )}
             </div>
-
-            {/* Date */}
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" />
-              <span>{new Date(post.createdAt).toLocaleDateString('tr-TR')}</span>
-            </div>
           </div>
-
+      
           {/* Title & Content */}
-          <div className="flex-1 mb-4">
-            <h3 className="font-display font-bold text-2xl leading-tight mb-2 text-black dark:text-white group-hover:text-pink-500 transition-colors line-clamp-2">
-              {post.title}
-            </h3>
-            <p className="font-sans text-lg text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-3">
-              {post.content}
-            </p>
+          <div className="flex-1 mb-4 flex gap-4 min-h-0">
+            <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
+              <h3 
+                className="font-display font-bold text-2xl leading-tight mb-2 text-black dark:text-white group-hover:text-pink-500 transition-colors"
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: titleLineClamp,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
+                {post.title}
+              </h3>
+              <p 
+                className="font-sans text-lg text-gray-600 dark:text-gray-300 leading-relaxed break-words"
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: contentLineClamp,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
+                {post.content}
+              </p>
+            </div>
+            {post.image && (
+              <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 relative bg-gray-100 dark:bg-gray-900">
+                <img 
+                  src={post.image} 
+                  alt="" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
           </div>
 
           {/* Footer Row */}
           <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
-            {/* University Tag */}
             {showUniversityInfo && post.university ? (
-              <span className="text-sm font-bold px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300">
-                {post.university.name}
-              </span>
+              <>
+                <span className="text-sm font-bold px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300">
+                  {post.university.name}
+                </span>
+                <div className="flex items-center gap-1.5 text-gray-400 text-xs font-medium">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>{new Date(post.createdAt).toLocaleString('tr-TR', { 
+                    year: 'numeric', 
+                    month: 'numeric', 
+                    day: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}</span>
+                </div>
+              </>
             ) : (
-              <span aria-hidden="true" />
+              <div className="flex items-center gap-1.5 text-gray-400 text-xs font-medium">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{new Date(post.createdAt).toLocaleString('tr-TR', { 
+                  year: 'numeric', 
+                  month: 'numeric', 
+                  day: 'numeric', 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}</span>
+              </div>
             )}
-
-            {/* Comment Count */}
-            <div className={`flex items-center gap-2 text-base font-bold transition-colors ${
-              hasNewMessages(post) 
-                ? 'text-red-500' 
-                : 'text-gray-400 group-hover:text-black dark:group-hover:text-white'
-            }`}>
-              <MessageSquare className="w-5 h-5" fill={hasNewMessages(post) ? "currentColor" : "none"} />
-              <span className="leading-none relative -top-[2px]">{post._count?.comments || 0}</span>
-            </div>
           </div>
         </div>
       </Link>

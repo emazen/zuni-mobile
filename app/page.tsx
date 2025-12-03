@@ -1007,6 +1007,9 @@ export default function Home() {
           // Don't wait for this - navigation happens immediately above
           if (selectedUniversity?.id !== targetUniversityId) {
             setUniversityLoading(true)
+            
+            // Use the handleUniversityClick function logic directly to ensure consistent data loading
+            // but modified to not navigate again
             Promise.all([
               fetch(`/api/universities/${targetUniversityId}`),
               fetch(`/api/universities/${targetUniversityId}/posts`)
@@ -1153,7 +1156,9 @@ export default function Home() {
     // This prevents clearing URL on refresh
     const currentUrl = new URL(window.location.href)
     const currentUniParam = currentUrl.searchParams.get('university')
-    if (currentUniParam !== universityId) {
+    const hasPostParam = currentUrl.searchParams.has('post')
+    
+    if (currentUniParam !== universityId || hasPostParam) {
       router.replace(`/?university=${universityId}`)
     }
     
@@ -1896,7 +1901,7 @@ export default function Home() {
                       <div className="pt-6 pb-6">
                         <h3 className="text-2xl font-display font-bold text-black mb-4 flex items-center" style={{color: 'var(--text-primary)'}}>
                           <Star className="h-6 w-6 mr-3 text-yellow-500" />
-                          Abone Olduğun Üniversitelerden Gönderiler ({posts.length})
+                          Abone Olduğun Üniversiteler ({posts.length})
                         </h3>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           {posts.map((post) => (
@@ -1932,7 +1937,7 @@ export default function Home() {
                           <div className="pt-6 pb-6">
                             <h3 className="text-2xl font-display font-bold text-black mb-4 flex items-center" style={{color: 'var(--text-primary)'}}>
                               <TrendingUp className="h-6 w-6 mr-3 text-orange-500" />
-                              Trending Posts ({allPosts.filter(post => post.isTrending).length})
+                              Trend Gönderiler ({allPosts.filter(post => post.isTrending).length})
                             </h3>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                               {allPosts.filter(post => post.isTrending).map((post) => (

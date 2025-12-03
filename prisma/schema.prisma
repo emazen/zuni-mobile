@@ -98,6 +98,7 @@ model Post {
   author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
   PostRead     PostRead[]
+  image        String?
 }
 
 model Comment {
@@ -109,6 +110,7 @@ model Comment {
   updatedAt DateTime @updatedAt
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  image     String?
 }
 
 model UserUniversitySubscription {

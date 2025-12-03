@@ -35,7 +35,7 @@ export function middleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Tailwind
     "img-src 'self' data: https:",
     "font-src 'self' data:",
-    "connect-src 'self'",
+    "connect-src 'self' https://kapoavjqihxgvznxjnux.supabase.co", // Allow Supabase
     "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'self'",

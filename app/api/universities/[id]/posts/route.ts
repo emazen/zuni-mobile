@@ -180,7 +180,7 @@ export async function POST(
       );
     }
 
-    const { title, content } = validationResult.data;
+    const { title, content, image } = validationResult.data;
 
     // Sanitize input (Zod already trimmed, but we sanitize for XSS)
     const titleValidation = sanitizeAndValidate(title, 200, "Title")
@@ -215,6 +215,7 @@ export async function POST(
       data: {
         title: titleValidation.sanitized,
         content: contentValidation.sanitized,
+        image,
         authorId: session.user.id,
         universityId: resolvedParams.id,
       },

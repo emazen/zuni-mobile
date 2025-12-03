@@ -38,7 +38,7 @@ export async function POST(
       )
     }
 
-    const { content } = validationResult.data
+    const { content, image } = validationResult.data
 
     // Sanitize input (Zod already trimmed, but we sanitize for XSS)
     const contentValidation = sanitizeAndValidate(content, 2000, "Comment")
@@ -75,6 +75,7 @@ export async function POST(
     const comment = await prisma.comment.create({
       data: {
         content: contentValidation.sanitized,
+        image,
         authorId: session.user.id,
         postId: resolvedParams.id,
       },

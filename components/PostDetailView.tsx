@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft, MessageSquare, Trash2, Send, Clock, ChevronDown } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Trash2, Send, Clock, ChevronDown, Image as ImageIcon, X } from 'lucide-react';
 import CustomSpinner from './CustomSpinner';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabaseClient';
 
 interface Comment {
   id: string;
@@ -15,6 +16,7 @@ interface Comment {
     customColor?: string | null;
   };
   createdAt: string;
+  image?: string | null;
 }
 
 interface Post {
@@ -36,6 +38,7 @@ interface Post {
   _count: {
     comments: number;
   };
+  image?: string | null;
 }
 
 interface PostDetailViewProps {
@@ -53,6 +56,10 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
   const [submittingComment, setSubmittingComment] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const [deletingPost, setDeletingPost] = useState(false);
+  const [commentImage, setCommentImage] = useState<File | null>(null);
+  const [commentImagePreview, setCommentImagePreview] = useState<string | null>(null);
+  const [uploadingCommentImage, setUploadingCommentImage] = useState(false);
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPost();
@@ -75,12 +82,78 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
     }
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Dosya boyutu 5MB\'dan küçük olmalıdır.');
+        return;
+      }
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        alert('Lütfen geçerli bir resim dosyası yükleyin.');
+        return;
+      }
+      
+      setCommentImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCommentImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeCommentImage = () => {
+    setCommentImage(null);
+    setCommentImagePreview(null);
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      setUploadingCommentImage(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = `comments/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('uploads')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from('uploads')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Resim yüklenirken bir hata oluştu.');
+      return null;
+    } finally {
+      setUploadingCommentImage(false);
+    }
+  };
+
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentContent.trim()) return;
 
     setSubmittingComment(true);
     try {
+      let imageUrl = null;
+      if (commentImage) {
+        imageUrl = await uploadImage(commentImage);
+        if (!imageUrl) {
+          setSubmittingComment(false);
+          return;
+        }
+      }
+
       const response = await fetch(`/api/posts/${postId}/comments`, {
         method: 'POST',
         headers: {
@@ -88,12 +161,14 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
         },
         body: JSON.stringify({
           content: commentContent.trim(),
+          image: imageUrl,
         }),
       });
 
       if (response.ok) {
         const newComment = await response.json();
         setCommentContent('');
+        removeCommentImage();
         
         if (post) {
           setPost(prevPost => ({
@@ -263,12 +338,21 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                     >
                       {post.content}
                     </p>
+                    {post.image && (
+                      <div className="mt-4">
+                        <img 
+                          src={post.image} 
+                          alt="Post attachment" 
+                          className="rounded-lg max-h-[500px] w-auto object-contain border border-gray-200 dark:border-gray-800 cursor-pointer"
+                          onClick={() => setEnlargedImage(post.image || null)}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
                 
                 {/* Post Footer */}
                 <div className="px-8 py-4 bg-white dark:bg-[#151515] border-t-2 border-black flex items-center gap-4" style={{borderColor: 'var(--border-color)'}}>
-                  <div className="w-5 h-5 rounded-full flex-shrink-0" style={{ backgroundColor: getGenderColor(post.author.gender, post.author.customColor) }} />
                   <div className="flex items-center gap-2 text-xs text-gray-500 font-mono">
                     <Clock className="w-4 h-4 flex-shrink-0" />
                     <span>{new Date(post.createdAt).toLocaleDateString('tr-TR')} {new Date(post.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
@@ -285,34 +369,68 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
 
                 {/* Comment Form */}
                 <div className="bg-white dark:bg-[#151515] border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4" style={{borderColor: 'var(--border-color)'}}>
-                  <form onSubmit={handleSubmitComment} className="flex gap-4">
-                    <div className="flex-1 min-w-0">
-                      <textarea
-                        value={commentContent}
-                        onChange={(e) => setCommentContent(e.target.value)}
-                        placeholder="Tartışmaya katıl..."
-                        className="w-full p-3 bg-transparent border-none focus:ring-0 focus:outline-none resize-none text-lg font-sans placeholder:text-gray-400"
-                        rows={2}
-                        maxLength={2000}
-                        style={{ 
-                          wordBreak: 'break-all', 
-                          overflowWrap: 'break-word',
-                          hyphens: 'auto',
-                          WebkitHyphens: 'auto',
-                          overflow: 'hidden',
-                          whiteSpace: 'pre-wrap'
-                        }}
-                      />
+                  <form onSubmit={handleSubmitComment} className="flex flex-col gap-2">
+                    <div className="flex gap-4">
+                      <div className="flex-1 min-w-0">
+                        <textarea
+                          value={commentContent}
+                          onChange={(e) => setCommentContent(e.target.value)}
+                          placeholder="Tartışmaya katıl..."
+                          className="w-full p-3 bg-transparent border-none focus:ring-0 focus:outline-none resize-none text-lg font-sans placeholder:text-gray-400"
+                          rows={2}
+                          maxLength={2000}
+                          style={{ 
+                            wordBreak: 'break-all', 
+                            overflowWrap: 'break-word',
+                            hyphens: 'auto',
+                            WebkitHyphens: 'auto',
+                            overflow: 'hidden',
+                            whiteSpace: 'pre-wrap'
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-end pb-2 gap-2">
+                        <input
+                          type="file"
+                          id="comment-image-upload"
+                          accept="image/*"
+                          onChange={handleImageSelect}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById('comment-image-upload')?.click()}
+                          className="p-3 text-gray-500 hover:text-black dark:hover:text-white transition-colors"
+                          title="Resim ekle"
+                        >
+                          <ImageIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={submittingComment || !commentContent.trim()}
+                          className="p-3 bg-black dark:bg-white text-white dark:text-black rounded-lg disabled:opacity-50 hover:scale-105 transition-transform"
+                        >
+                          <Send className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-end pb-2">
-                      <button
-                        type="submit"
-                        disabled={submittingComment || !commentContent.trim()}
-                        className="p-3 bg-black dark:bg-white text-white dark:text-black rounded-lg disabled:opacity-50 hover:scale-105 transition-transform"
-                      >
-                        <Send className="w-5 h-5" />
-                      </button>
-                    </div>
+                    
+                    {commentImagePreview && (
+                      <div className="relative inline-block self-start mt-2 ml-3">
+                        <img 
+                          src={commentImagePreview} 
+                          alt="Preview" 
+                          className="h-20 rounded-lg border border-gray-200 dark:border-gray-800"
+                        />
+                        <button
+                          type="button"
+                          onClick={removeCommentImage}
+                          className="absolute -top-2 -right-2 p-0.5 bg-red-500 text-white rounded-full border border-white hover:bg-red-600 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
                   </form>
                 </div>
 
@@ -321,7 +439,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                   {post.comments.length === 0 ? (
                     <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl">
                       <MessageSquare className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-gray-500 font-medium">No comments yet. Start the conversation!</p>
+                    <p className="text-gray-500 font-medium">Henüz yorum yapılmadı. </p>
                     </div>
                   ) : (
                     post.comments.map((comment) => {
@@ -368,6 +486,16 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                           >
                             {isCommentDeleted ? 'This comment has been deleted.' : comment.content}
                           </p>
+                          {comment.image && !isCommentDeleted && (
+                            <div className="mt-3">
+                              <img 
+                                src={comment.image} 
+                                alt="Comment attachment" 
+                                className="rounded-lg max-h-48 w-auto object-contain border border-gray-200 dark:border-gray-800 cursor-pointer"
+                                onClick={() => setEnlargedImage(comment.image || null)}
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     })
@@ -402,6 +530,31 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
               </p>
             </div>
           </footer>
+        )}
+        
+        {enlargedImage && (
+          <div 
+            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 cursor-pointer"
+            onClick={() => setEnlargedImage(null)}
+          >
+            <div 
+              className="relative max-w-4xl max-h-[90vh] w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setEnlargedImage(null)}
+                className="absolute -top-4 -right-4 bg-white dark:bg-black text-black dark:text-white rounded-full p-2 shadow-lg border border-gray-200 dark:border-gray-700 z-10 translate-x-1/2 -translate-y-1/2"
+                aria-label="Close enlarged image"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <img 
+                src={enlargedImage} 
+                alt="Enlarged attachment" 
+                className="w-full max-h-[90vh] object-contain rounded-xl border border-gray-200 dark:border-gray-800 bg-black"
+              />
+            </div>
+          </div>
         )}
       </div>
     </div>
