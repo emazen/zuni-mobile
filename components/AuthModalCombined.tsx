@@ -275,22 +275,22 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
               <button
                 type="button"
                 onClick={() => setMode('signin')}
-                className="relative flex-1 py-3 px-4 font-bold text-sm uppercase tracking-wide transition-colors duration-300 z-10"
+                className="relative flex-1 py-3 px-4 font-bold text-sm transition-colors duration-300 z-10"
                 style={{
                   color: mode === 'signin' ? '#000' : 'var(--text-primary)'
                 }}
               >
-                GİRİŞ YAP
+                Giriş Yap
               </button>
               <button
                 type="button"
                 onClick={() => setMode('signup')}
-                className="relative flex-1 py-3 px-4 font-bold text-sm uppercase tracking-wide transition-colors duration-300 z-10"
+                className="relative flex-1 py-3 px-4 font-bold text-sm transition-colors duration-300 z-10"
                 style={{
                   color: mode === 'signup' ? '#000' : 'var(--text-primary)'
                 }}
               >
-                KAYIT OL
+                Kayıt Ol
               </button>
             </div>
           </div>
@@ -323,8 +323,8 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
               )}
 
               <div>
-                <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wide mb-2 text-black dark:text-white">
-                  .EDU E-postası
+                <label htmlFor="email" className="block text-xs font-bold mb-2 text-black dark:text-white">
+                  .edu E-postası
                 </label>
                 <input
                   id="email"
@@ -342,8 +342,8 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wide mb-2 text-black dark:text-white">
-                  ŞİFRE
+                <label htmlFor="password" className="block text-xs font-bold mb-2 text-black dark:text-white">
+                  Şifre
                 </label>
                 <input
                   id="password"
@@ -360,9 +360,9 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
               <button
                 type="submit"
                 disabled={signInLoading}
-                className="w-full py-3.5 bg-[#FFE066] text-black font-bold rounded border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-0 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm uppercase tracking-wider mt-2"
+                className="w-full py-3.5 bg-[#FFE066] text-black font-bold rounded border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-0 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-2"
               >
-                {signInLoading ? "GİRİŞ YAPILIYOR..." : "GİRİŞ YAP"}
+                {signInLoading ? "Giriş yapılıyor..." : "Giriş Yap"}
               </button>
               </form>
             </div>
@@ -388,8 +388,8 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
 
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label htmlFor="username" className="block text-xs font-bold uppercase tracking-wide mb-2 text-black dark:text-white">
-                    KULLANICI ADI
+                  <label htmlFor="username" className="block text-xs font-bold mb-2 text-black dark:text-white">
+                    Kullanıcı adı
                   </label>
                   <input
                     id="username"
@@ -405,8 +405,8 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
                 </div>
 
                 <div>
-                  <label htmlFor="signup-email" className="block text-xs font-bold uppercase tracking-wide mb-2 text-black dark:text-white">
-                    .EDU E-postası
+                  <label htmlFor="signup-email" className="block text-xs font-bold mb-2 text-black dark:text-white">
+                    .edu E-postası
                   </label>
                   <input
                     id="signup-email"
@@ -422,8 +422,8 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide mb-2 text-black dark:text-white">
-                  CİNSİYET KİMLİĞİ
+                <label className="block text-xs font-bold mb-2 text-black dark:text-white">
+                  Cinsiyet kimliği
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
@@ -485,7 +485,7 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
                 {/* Color Picker for Custom Gender */}
                 {gender === "custom" && showColorPicker && (
                   <div className="mt-2 p-3 border-2 border-black rounded bg-white dark:bg-[#1a1a1a] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                    <div className="grid grid-cols-6 gap-2">
+                    <div className="grid grid-cols-6 gap-2 justify-items-center">
                       {colorOptions.map((color) => (
                         <button
                           key={color.value}
@@ -508,8 +508,8 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="signup-password" className="block text-xs font-bold uppercase tracking-wide mb-2 text-black dark:text-white">
-                    ŞİFRE
+                  <label htmlFor="signup-password" className="block text-xs font-bold mb-2 text-black dark:text-white">
+                    Şifre
                   </label>
                   <input
                     id="signup-password"
@@ -524,8 +524,8 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-xs font-bold uppercase tracking-wide mb-2 text-black dark:text-white">
-                    ŞİFRE TEKRAR
+                  <label htmlFor="confirmPassword" className="block text-xs font-bold mb-2 text-black dark:text-white">
+                    Şifre tekrar
                   </label>
                   <input
                     id="confirmPassword"
@@ -543,9 +543,9 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
               <button
                 type="submit"
                 disabled={signUpLoading}
-                className="w-full py-3 bg-black text-white font-bold rounded border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] active:translate-y-0 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm uppercase tracking-wider mt-2 dark:bg-white dark:text-black"
+                className="w-full py-3 bg-black text-white font-bold rounded border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] active:translate-y-0 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-2 dark:bg-white dark:text-black"
               >
-                {signUpLoading ? "OLUŞTURULUYOR..." : "HESAP OLUŞTUR"}
+                {signUpLoading ? "Oluşturuluyor..." : "Hesap Oluştur"}
               </button>
               </form>
             </div>
