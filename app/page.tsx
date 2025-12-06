@@ -1251,7 +1251,7 @@ export default function Home() {
   return (
     <div className="h-screen overflow-hidden" style={{backgroundColor: 'var(--bg-primary)'}}>
       {/* Header */}
-      <header className="brutal-header relative">
+      <header className={`brutal-header ${isMobile ? 'fixed top-0 left-0 right-0 z-50' : 'relative'}`}>
         <div className="w-full px-2 sm:px-4">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -1379,13 +1379,13 @@ export default function Home() {
       </header>
 
       {/* Sidebar and Main Content */}
-      <div className="flex h-[calc(100vh-64px)] sm:h-[calc(100dvh-64px)] overscroll-none">
+      <div className={`flex ${isMobile ? 'absolute inset-0 top-16' : 'h-[calc(100vh-64px)] sm:h-[calc(100dvh-64px)]'} overscroll-none`}>
         {/* Desktop Sidebar */}
         {!isMobile && (
           <UniversitySidebar onUniversityClick={handleUniversityClick} />
         )}
         
-        <div className="flex-1 overflow-y-auto overscroll-none h-full pb-20 sm:pb-0">
+        <div className={`flex-1 ${isMobile ? 'overflow-y-auto overscroll-none h-full pb-0' : 'overflow-y-auto overscroll-none h-full pb-20 sm:pb-0'}`} style={{backgroundColor: 'var(--bg-primary)'}}>
           {/* Mobile Universities Full Page - No Sliding */}
           {isMobile && isMobileMenuOpen ? (
             <div className="h-full flex flex-col" style={{backgroundColor: 'var(--bg-primary)'}}>
@@ -1411,8 +1411,8 @@ export default function Home() {
           ) : (showPostDetail && (postId || selectedPostId)) ? (
             <PostDetailView postId={postId || selectedPostId || ''} onGoBack={handleGoBack} onCommentAdded={handleCommentAdded} onPostDeleted={fetchData} />
           ) : (showUniversityBoard || (session && universityParam && !postId)) ? (
-            <div className="h-full overflow-y-auto overscroll-none">
-              <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col min-h-full">
+            <div className={`${isMobile ? 'h-full' : 'h-full overflow-y-auto overscroll-none'}`}>
+              <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col ${isMobile ? 'min-h-[calc(100dvh-64px)]' : 'min-h-full'}`}>
                 <div className="flex-1">
                 {/* University Posts */}
                 {universityLoading || !selectedUniversity ? (
@@ -1658,8 +1658,8 @@ export default function Home() {
                     </footer>
                   </main>
                 ) : (
-                  <div className="flex-1 overflow-y-auto">
-                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col min-h-full">
+                  <div className={`flex-1 ${isMobile ? '' : 'overflow-y-auto'}`}>
+                    <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col ${isMobile ? 'min-h-[calc(100dvh-64px)]' : 'min-h-full'}`}>
                       <div className="flex-1">
                     <div className="mb-4 mt-2">
                       {/* Modern Pill Navigation */}

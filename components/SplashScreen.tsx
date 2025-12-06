@@ -34,10 +34,11 @@ export default function SplashScreen() {
   const theme = getTheme()
   return (
     <div 
-      className="h-screen overflow-hidden flex items-center justify-center"
+      className="fixed inset-0 z-[9999] overflow-hidden flex items-center justify-center w-full"
       style={{
         backgroundColor: theme === 'light' ? '#F3F4F6' : '#151515',
-        transition: 'none' // Prevent any transition during initial load
+        transition: 'none', // Prevent any transition during initial load
+        minHeight: '-webkit-fill-available'
       }}
     >
       <div className="text-center animate-pulse">
