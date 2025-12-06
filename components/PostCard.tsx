@@ -3,9 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Clock, TrendingUp, Image as ImageIcon, X } from "lucide-react"
-import { useState } from "react"
-import { createPortal } from "react-dom"
+import { Clock, TrendingUp, Image as ImageIcon } from "lucide-react"
 
 interface Post {
   id: string
@@ -46,7 +44,6 @@ interface PostCardProps {
 export default function PostCard({ post, viewedPosts, postViewTimestamps, userJustCommented, showUniversityInfo = true, onPostClick }: PostCardProps) {
   const { data: session } = useSession()
   const router = useRouter()
-  const [enlargedImage, setEnlargedImage] = useState<string | null>(null)
   const titleLineClamp = 2
   const contentLineClamp = showUniversityInfo ? 2 : 3
   
@@ -111,9 +108,9 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
             isNew 
               ? 'bg-red-500 text-white' 
               : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-          }`}>
-            {post._count?.comments || 0}
-          </div>
+        }`}>
+          {post._count?.comments || 0}
+        </div>
 
           {/* Metadata Row */}
           <div className="flex justify-between items-center mb-3 text-sm text-gray-500 dark:text-gray-400">
@@ -129,7 +126,7 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
                 <div className="flex items-center gap-1.5 text-orange-500 font-bold ml-2">
                   <TrendingUp className="w-4 h-4" />
                   <span>Trend</span>
-                </div>
+      </div>
               )}
             </div>
           </div>
@@ -140,9 +137,9 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
               <h3 
                 className="font-display font-bold text-2xl leading-tight mb-2 text-black dark:text-white group-hover:text-pink-500 transition-colors"
                 style={{
-                  display: '-webkit-box',
+              display: '-webkit-box',
                   WebkitLineClamp: titleLineClamp,
-                  WebkitBoxOrient: 'vertical',
+              WebkitBoxOrient: 'vertical',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis'
                 }}
@@ -152,23 +149,18 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
               <p 
                 className="font-sans text-lg text-gray-600 dark:text-gray-300 leading-relaxed break-words"
                 style={{
-                  display: '-webkit-box',
+              display: '-webkit-box',
                   WebkitLineClamp: contentLineClamp,
-                  WebkitBoxOrient: 'vertical',
+              WebkitBoxOrient: 'vertical',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis'
                 }}
               >
                 {post.content}
-              </p>
+            </p>
             </div>
             {post.image && (
-              <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 relative bg-gray-100 dark:bg-gray-900 cursor-pointer hover:opacity-90 transition-opacity"
-                   onClick={(e) => {
-                     e.preventDefault()
-                     e.stopPropagation()
-                     setEnlargedImage(post.image || null)
-                   }}>
+              <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 relative bg-gray-100 dark:bg-gray-900">
                 <img 
                   src={post.image} 
                   alt="" 
@@ -176,8 +168,8 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
                 />
               </div>
             )}
-          </div>
-
+        </div>
+        
           {/* Footer Row */}
           <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
             {showUniversityInfo && post.university ? (
@@ -211,39 +203,6 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
           </div>
         </div>
       </Link>
-
-      {enlargedImage && typeof document !== 'undefined' && createPortal(
-        <div 
-          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4 cursor-pointer"
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            setEnlargedImage(null)
-          }}
-        >
-          <div 
-            className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center"
-          >
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                setEnlargedImage(null)
-              }}
-              className="hidden sm:block absolute -top-4 -right-4 bg-white dark:bg-black text-black dark:text-white rounded-full p-2 shadow-lg border border-gray-200 dark:border-gray-700 z-10 pointer-events-auto hover:scale-110 transition-transform"
-              aria-label="Close enlarged image"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <img 
-              src={enlargedImage} 
-              alt="Enlarged attachment" 
-              className="max-w-full max-h-[90vh] object-contain rounded-xl border border-gray-200 dark:border-gray-800 bg-black"
-            />
-          </div>
-        </div>,
-        document.body
-      )}
     </div>
   )
 }

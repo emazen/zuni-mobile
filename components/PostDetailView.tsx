@@ -257,42 +257,42 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
     <div className="flex-1 min-h-full bg-gray-50 dark:bg-[#121212]" style={{backgroundColor: 'var(--bg-primary)'}}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col min-h-full">
         <div className="flex-1">
-          {loading ? (
-            <div className="flex items-center justify-center min-h-[400px]">
-              <CustomSpinner size="lg" />
-            </div>
-          ) : !session ? (
+        {loading ? (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <CustomSpinner size="lg" />
+          </div>
+        ) : !session ? (
             <div className="text-center py-12 rounded-xl border-2 border-black bg-white dark:bg-[#151515] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" style={{borderColor: 'var(--border-color)'}}>
               <MessageSquare className="h-12 w-12 mx-auto text-black dark:text-white mb-4" />
               <h2 className="text-2xl font-display font-bold text-black dark:text-white mb-2">Giriş Yapın</h2>
               <p className="text-base font-sans text-gray-600 dark:text-gray-300 mb-6">Bu gönderiyi görmek için giriş yapmanız gerekiyor.</p>
-              <div className="flex gap-4 justify-center">
+            <div className="flex gap-4 justify-center">
                 <Link href="/auth/signin" className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black font-bold rounded-lg border-2 border-black hover:-translate-y-0.5 transition-transform">Giriş Yap</Link>
                 <Link href="/auth/signup" className="px-6 py-2 bg-white dark:bg-black text-black dark:text-white font-bold rounded-lg border-2 border-black hover:-translate-y-0.5 transition-transform">Kayıt Ol</Link>
-              </div>
             </div>
-          ) : post ? (
-            <div className="space-y-6">
+          </div>
+        ) : post ? (
+          <div className="space-y-6">
               {/* Header Navigation */}
               <div className="flex items-center justify-between">
-                <button
-                  onClick={(e) => {
+              <button
+                onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     const uniId = post?.university?.id;
                     onGoBack(uniId);
-                  }}
+                }}
                   className="group flex items-center gap-2 text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors"
                 >
                    <div className="p-2 rounded-full bg-white dark:bg-[#1a1a1a] border-2 border-black group-hover:-translate-x-1 transition-transform duration-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" style={{borderColor: 'var(--border-color)'}}>
                     <ArrowLeft className="w-4 h-4" />
                   </div>
-                </button>
+              </button>
                 
                 <div className="px-3 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-full border border-gray-200 dark:border-gray-800">
                   <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{post.university.name.toLocaleUpperCase('tr-TR')}</span>
                 </div>
-              </div>
+            </div>
 
               {/* Main Post Card */}
               <div className="group bg-white dark:bg-[#151515] border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden relative" style={{borderColor: 'var(--border-color)'}}>
@@ -349,32 +349,32 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                       </div>
                     )}
                   </div>
-                </div>
-                
+              </div>
+              
                 {/* Post Footer */}
                 <div className="px-4 sm:px-8 py-3 sm:py-4 bg-white dark:bg-[#151515] border-t-2 border-black flex items-center gap-4" style={{borderColor: 'var(--border-color)'}}>
                   <div className="flex items-center gap-2 text-xs text-gray-500 font-mono">
                     <Clock className="w-4 h-4 flex-shrink-0" />
                     <span>{new Date(post.createdAt).toLocaleDateString('tr-TR')} {new Date(post.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                </div>
               </div>
+              </div>
+            </div>
 
-              {/* Comments Section */}
+            {/* Comments Section */}
               <div className="space-y-6" data-comments-section>
                 <h3 className="font-display font-bold text-xl text-black dark:text-white flex items-center gap-2">
                   Yorumlar 
                   <span className="px-2 py-0.5 bg-gray-200 dark:bg-gray-800 rounded-full text-sm">{post.comments.length}</span>
-                </h3>
+              </h3>
 
-                {/* Comment Form */}
+              {/* Comment Form */}
                 <div className="bg-white dark:bg-[#151515] border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4" style={{borderColor: 'var(--border-color)'}}>
                   <form onSubmit={handleSubmitComment} className="flex flex-col gap-2">
                     <div className="flex gap-4">
                       <div className="flex-1 min-w-0">
-                        <textarea
-                          value={commentContent}
-                          onChange={(e) => setCommentContent(e.target.value)}
+                    <textarea
+                      value={commentContent}
+                      onChange={(e) => setCommentContent(e.target.value)}
                           placeholder="Tartışmaya katıl..."
                           className="w-full p-3 bg-transparent border-none focus:ring-0 focus:outline-none resize-none text-lg font-sans placeholder:text-gray-400"
                           rows={2}
@@ -387,8 +387,8 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                             overflow: 'hidden',
                             whiteSpace: 'pre-wrap'
                           }}
-                        />
-                      </div>
+                    />
+                  </div>
                       <div className="flex items-end pb-2 gap-2">
                         <input
                           type="file"
@@ -405,9 +405,9 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                         >
                           <ImageIcon className="w-5 h-5" />
                         </button>
-                        <button
-                          type="submit"
-                          disabled={submittingComment || !commentContent.trim()}
+                  <button
+                    type="submit"
+                    disabled={submittingComment || !commentContent.trim()}
                           className="p-3 bg-black dark:bg-white text-white dark:text-black rounded-lg disabled:opacity-50 hover:scale-105 transition-transform"
                         >
                           <Send className="w-5 h-5" />
@@ -428,20 +428,20 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                           className="absolute -top-2 -right-2 p-0.5 bg-red-500 text-white rounded-full border border-white hover:bg-red-600 transition-colors"
                         >
                           <X className="w-3 h-3" />
-                        </button>
+                  </button>
                       </div>
                     )}
                   </form>
                 </div>
 
-                {/* Comments List */}
+              {/* Comments List */}
                 <div className="space-y-4 pb-8">
-                  {post.comments.length === 0 ? (
+                {post.comments.length === 0 ? (
                     <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl">
                       <MessageSquare className="h-8 w-8 mx-auto text-gray-400 mb-2" />
                     <p className="text-gray-500 font-medium">Henüz yorum yapılmadı. </p>
                     </div>
-                  ) : (
+                ) : (
                     post.comments.map((comment) => {
                       const isCommentAuthor = session?.user?.id === comment.authorId;
                       const isCommentDeleted = comment.content?.trim().toLowerCase() === 'silinmiş';
@@ -499,13 +499,13 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                         </div>
                       );
                     })
-                  )}
-                </div>
+                )}
               </div>
             </div>
-          ) : (
-            <div className="flex items-center justify-center p-8">
-              <p className="text-lg font-medium text-black dark:text-white">Post not found.</p>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center p-8">
+            <p className="text-lg font-medium text-black dark:text-white">Post not found.</p>
             </div>
           )}
         </div>

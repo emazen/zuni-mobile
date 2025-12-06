@@ -711,7 +711,7 @@ export default function Home() {
   const fetchData = async () => {
     try {
       console.log('fetchData: Starting to fetch all data...')
-
+      
       // Fetch all main datasets in parallel to reduce total load time
       const [activityResponse, subscribedResponse, allPostsResponse] = await Promise.all([
         fetch("/api/user/activity"),
@@ -745,7 +745,7 @@ export default function Home() {
       } else {
         console.error('fetchData: Failed to load all posts', allPostsResponse.status)
       }
-
+      
       // If we're currently viewing a university board, also fetch its posts
       if (selectedUniversity) {
         const universityResponse = await fetch(`/api/universities/${selectedUniversity.id}/posts`)
@@ -1298,13 +1298,13 @@ export default function Home() {
                       {isMenuOpen && (
                         <div className="absolute right-0 mt-2 w-48 bg-white border-2 border-black brutal-shadow z-50 user-menu-dropdown" style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}>
                           <div className="px-4 py-3 border-b-2 border-black" style={{borderColor: 'var(--border-color)'}}>
-                            <div className="flex items-center space-x-2">
-                              <div className="w-8 h-8 bg-yellow-300 rounded-full flex items-center justify-center border-2 border-black" style={{borderColor: 'var(--border-color)'}}>
-                                <User className="h-4 w-4 text-black" />
+                              <div className="flex items-center space-x-2">
+                                <div className="w-8 h-8 bg-yellow-300 rounded-full flex items-center justify-center border-2 border-black" style={{borderColor: 'var(--border-color)'}}>
+                                  <User className="h-4 w-4 text-black" />
+                                </div>
+                                <span className="text-sm font-semibold text-black" style={{color: 'var(--text-primary)'}}>{session?.user?.name}</span>
                               </div>
-                              <span className="text-sm font-semibold text-black" style={{color: 'var(--text-primary)'}}>{session?.user?.name}</span>
                             </div>
-                          </div>
                           <div className="flex items-center justify-between w-full px-4 py-3 border-b-2 border-black" style={{borderColor: 'var(--border-color)'}}>
                             <span className="text-sm font-semibold text-black" style={{color: 'var(--text-primary)'}}>
                               Karanlık Mod
@@ -1414,118 +1414,118 @@ export default function Home() {
             <div className="h-full overflow-y-auto overscroll-none">
               <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col min-h-full">
                 <div className="flex-1">
-                  {/* University Posts */}
-                  {universityLoading || !selectedUniversity ? (
-                    <div className="flex items-center justify-center min-h-[400px]">
-                      <CustomSpinner size="lg" />
-                    </div>
-                  ) : universityPosts.length === 0 ? (
-                    <div>
-                      {/* University Header */}
-                      <div className="mb-8">
-                        <div className="mb-4">
-                          <h1 className="text-3xl font-black text-black mb-2" style={{color: 'var(--text-primary)'}}>{selectedUniversity.name}</h1>
-                          <div className="flex items-center gap-4">
-                            <span className="text-sm font-medium text-black" style={{color: 'var(--text-secondary)'}}>{selectedUniversity.city}</span>
-                            <span className={`text-xs px-2 py-1 rounded-full font-medium border-2 border-black ${
-                              selectedUniversity.type === 'public'
-                                ? 'bg-green-300 text-black'
-                                : 'bg-purple-300 text-black'
-                            }`} style={{borderColor: 'var(--border-color)'}}>
-                              {selectedUniversity.type === 'public' ? 'Devlet' : 'Vakıf'}
-                            </span>
-                          </div>
+                {/* University Posts */}
+                {universityLoading || !selectedUniversity ? (
+                  <div className="flex items-center justify-center min-h-[400px]">
+                    <CustomSpinner size="lg" />
+                  </div>
+                ) : universityPosts.length === 0 ? (
+                  <div>
+                    {/* University Header */}
+                    <div className="mb-8">
+                      <div className="mb-4">
+                        <h1 className="text-3xl font-black text-black mb-2" style={{color: 'var(--text-primary)'}}>{selectedUniversity.name}</h1>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm font-medium text-black" style={{color: 'var(--text-secondary)'}}>{selectedUniversity.city}</span>
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium border-2 border-black ${
+                            selectedUniversity.type === 'public'
+                              ? 'bg-green-300 text-black'
+                              : 'bg-purple-300 text-black'
+                          }`} style={{borderColor: 'var(--border-color)'}}>
+                            {selectedUniversity.type === 'public' ? 'Devlet' : 'Vakıf'}
+                          </span>
                         </div>
                       </div>
-
-                      <div className="text-center py-12">
-                        <Building2 className="h-16 w-16 mx-auto mb-4 text-black" style={{color: 'var(--text-primary)'}} />
-                        <h3 className="text-xl font-black text-black mb-2" style={{color: 'var(--text-primary)'}}>Henüz gönderi yok</h3>
-                        <p className="text-black font-medium mb-6" style={{color: 'var(--text-secondary)'}}>Bu üniversitede henüz hiç gönderi paylaşılmamış.</p>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (selectedUniversity?.id) {
-                              router.push(`/university/${selectedUniversity.id}/create-post`);
-                            }
-                          }}
-                          className="px-6 py-3 bg-pink-300 text-black font-semibold border-2 border-black brutal-shadow-sm hover:brutal-shadow transition-all duration-150"
-                          type="button"
-                        >
-                          İlk Gönderiyi Oluştur
-                        </button>
-                      </div>
                     </div>
-                   ) : (
-                     <div>
-                       {/* University Header */}
-                       <div className="mb-8">
-                         <div className="flex items-center justify-between mb-4">
-                           <div className="flex-1">
-                             <div className="mb-2">
+
+                    <div className="text-center py-12">
+                      <Building2 className="h-16 w-16 mx-auto mb-4 text-black" style={{color: 'var(--text-primary)'}} />
+                      <h3 className="text-xl font-black text-black mb-2" style={{color: 'var(--text-primary)'}}>Henüz gönderi yok</h3>
+                      <p className="text-black font-medium mb-6" style={{color: 'var(--text-secondary)'}}>Bu üniversitede henüz hiç gönderi paylaşılmamış.</p>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (selectedUniversity?.id) {
+                            router.push(`/university/${selectedUniversity.id}/create-post`);
+                          }
+                        }}
+                        className="px-6 py-3 bg-pink-300 text-black font-semibold border-2 border-black brutal-shadow-sm hover:brutal-shadow transition-all duration-150"
+                        type="button"
+                      >
+                        İlk Gönderiyi Oluştur
+                      </button>
+                    </div>
+                  </div>
+                 ) : (
+                   <div>
+                     {/* University Header */}
+                     <div className="mb-8">
+                       <div className="flex items-center justify-between mb-4">
+                         <div className="flex-1">
+                           <div className="mb-2">
                                <h1 className="text-4xl font-display font-bold text-black tracking-tight" style={{color: 'var(--text-primary)'}}>{selectedUniversity.name}</h1>
-                             </div>
-                             <div className="flex items-center gap-4">
-                               <span className="text-sm font-medium text-black" style={{color: 'var(--text-secondary)'}}>{selectedUniversity.city}</span>
-                               <span className={`text-xs px-2 py-1 rounded-full font-medium border-2 border-black ${
-                                 selectedUniversity.type === 'public'
-                                   ? 'bg-green-300 text-black'
-                                   : 'bg-purple-300 text-black'
-                               }`} style={{borderColor: 'var(--border-color)'}}>
-                                 {selectedUniversity.type === 'public' ? 'Devlet' : 'Vakıf'}
-                               </span>
-                               <div className="relative sort-dropdown">
-                                 <button
-                                   onClick={() => setShowSortDropdown(!showSortDropdown)}
-                                   className="text-sm font-semibold px-2 py-1 rounded flex items-center gap-1 transition-colors text-gray-600 hover:text-black"
-                                   style={{color: 'var(--text-secondary)'}}
+                           </div>
+                           <div className="flex items-center gap-4">
+                             <span className="text-sm font-medium text-black" style={{color: 'var(--text-secondary)'}}>{selectedUniversity.city}</span>
+                             <span className={`text-xs px-2 py-1 rounded-full font-medium border-2 border-black ${
+                               selectedUniversity.type === 'public'
+                                 ? 'bg-green-300 text-black'
+                                 : 'bg-purple-300 text-black'
+                             }`} style={{borderColor: 'var(--border-color)'}}>
+                               {selectedUniversity.type === 'public' ? 'Devlet' : 'Vakıf'}
+                             </span>
+                             <div className="relative sort-dropdown">
+                               <button
+                                 onClick={() => setShowSortDropdown(!showSortDropdown)}
+                                 className="text-sm font-semibold px-2 py-1 rounded flex items-center gap-1 transition-colors text-gray-600 hover:text-black"
+                                 style={{color: 'var(--text-secondary)'}}
+                               >
+                                 {sortBy === 'newest' ? 'En Yeni' : 'Popüler'}
+                                 <ChevronDown className={`h-3 w-3 transition-transform ${showSortDropdown ? 'rotate-180' : ''}`} />
+                               </button>
+                               
+                               {showSortDropdown && (
+                                 <div 
+                                   className="absolute left-0 top-full mt-1 w-32 border-2 border-black brutal-shadow-sm z-50 rounded" 
+                                   style={{
+                                     borderColor: 'var(--border-color)',
+                                     backgroundColor: 'var(--bg-secondary)'
+                                   }}
                                  >
-                                   {sortBy === 'newest' ? 'En Yeni' : 'Popüler'}
-                                   <ChevronDown className={`h-3 w-3 transition-transform ${showSortDropdown ? 'rotate-180' : ''}`} />
-                                 </button>
-                                 
-                                 {showSortDropdown && (
-                                   <div 
-                                     className="absolute left-0 top-full mt-1 w-32 border-2 border-black brutal-shadow-sm z-50 rounded" 
-                                     style={{
-                                       borderColor: 'var(--border-color)',
-                                       backgroundColor: 'var(--bg-secondary)'
+                                   <button
+                                     onClick={() => {
+                                       setSortBy('newest')
+                                       setShowSortDropdown(false)
                                      }}
+                                    className={`w-full px-3 py-2 text-left font-semibold text-sm transition-all duration-150 group ${
+                                      effectiveTheme === 'dark' 
+                                        ? 'text-gray-400 hover:text-gray-200' 
+                                        : 'text-gray-500 hover:text-gray-700'
+                                    }`}
                                    >
-                                  <button
-                                    onClick={() => {
-                                      setSortBy('newest')
-                                      setShowSortDropdown(false)
-                                    }}
+                                     En Yeni
+                                   </button>
+                                   <div className="h-px" style={{backgroundColor: 'var(--border-color)'}}></div>
+                                   <button
+                                     onClick={() => {
+                                       setSortBy('popular')
+                                       setShowSortDropdown(false)
+                                     }}
                                     className={`w-full px-3 py-2 text-left font-semibold text-sm transition-all duration-150 group ${
                                       effectiveTheme === 'dark' 
                                         ? 'text-gray-400 hover:text-gray-200' 
                                         : 'text-gray-500 hover:text-gray-700'
                                     }`}
-                                  >
-                                    En Yeni
-                                  </button>
-                                  <div className="h-px" style={{backgroundColor: 'var(--border-color)'}}></div>
-                                  <button
-                                    onClick={() => {
-                                      setSortBy('popular')
-                                      setShowSortDropdown(false)
-                                    }}
-                                    className={`w-full px-3 py-2 text-left font-semibold text-sm transition-all duration-150 group ${
-                                      effectiveTheme === 'dark' 
-                                        ? 'text-gray-400 hover:text-gray-200' 
-                                        : 'text-gray-500 hover:text-gray-700'
-                                    }`}
-                                  >
-                                    Popüler
-                                  </button>
+                                   >
+                                     Popüler
+                                   </button>
                                  </div>
-                                 )}
-                               </div>
+                               )}
                              </div>
                            </div>
-                           <button
+                         </div>
+                         <button
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -1534,43 +1534,43 @@ export default function Home() {
                             }
                           }}
                           className="px-6 py-3 font-semibold border-2 border-black brutal-shadow-sm hover:brutal-shadow transition-all duration-150 rounded-full bg-white text-black"
-                          style={{
-                            backgroundColor: effectiveTheme === 'dark' ? 'var(--brutal-yellow)' : '#FFFFFF',
-                            color: '#000000'
-                          }}
-                         type="button"
-                        >
-                          + Yeni Gönderi
-                        </button>
-                         </div>
-                       </div>
-
-                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                       {universityPosts
-                         .sort((a, b) => {
-                           if (sortBy === 'newest') {
-                             // Sort by creation time (newest first)
-                             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                           } else {
-                             // Sort by comment count (most commented first)
-                             const aComments = a._count?.comments || 0
-                             const bComments = b._count?.comments || 0
-                             return bComments - aComments
-                           }
-                         })
-                         .map((post) => (
-                         <PostCard 
-                           key={post.id} 
-                           post={post} 
-                           viewedPosts={viewedPosts}
-                           onPostClick={handlePostClick}
-                           postViewTimestamps={postViewTimestamps}
-                           userJustCommented={userJustCommented}
-                           showUniversityInfo={false}
-                         />
-                       ))}
+                           style={{
+                             backgroundColor: effectiveTheme === 'dark' ? 'var(--brutal-yellow)' : '#FFFFFF',
+                             color: '#000000'
+                           }}
+                          type="button"
+                         >
+                           + Yeni Gönderi
+                         </button>
                        </div>
                      </div>
+
+                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                     {universityPosts
+                       .sort((a, b) => {
+                         if (sortBy === 'newest') {
+                           // Sort by creation time (newest first)
+                           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                         } else {
+                           // Sort by comment count (most commented first)
+                           const aComments = a._count?.comments || 0
+                           const bComments = b._count?.comments || 0
+                           return bComments - aComments
+                         }
+                       })
+                       .map((post) => (
+                       <PostCard 
+                         key={post.id} 
+                         post={post} 
+                         viewedPosts={viewedPosts}
+                         onPostClick={handlePostClick}
+                         postViewTimestamps={postViewTimestamps}
+                         userJustCommented={userJustCommented}
+                         showUniversityInfo={false}
+                       />
+                     ))}
+                     </div>
+                   </div>
                    )}
                 </div>
 
@@ -1594,7 +1594,7 @@ export default function Home() {
                       </p>
                     </div>
                   </footer>
-                )}
+                 )}
               </main>
             </div>
           ) : (
@@ -1609,13 +1609,13 @@ export default function Home() {
                       <div className="mb-6 sm:mb-10 inline-flex items-center justify-center">
                          <div className="bg-white border-4 border-black p-4 sm:p-6 rounded-2xl rotate-3 hover:rotate-0 transition-transform duration-300 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]" style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}>
                            <Logo className="scale-125 sm:scale-[2]" />
-                         </div>
+                    </div>
                       </div>
                       
                       <h1 className="text-6xl md:text-8xl font-display font-black text-black mb-6 tracking-tighter leading-none" style={{color: 'var(--text-primary)'}}>
                         FULL<br/>
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500">GİZLİLİK.</span>
-                      </h1>
+                    </h1>
                       
                       <p lang="tr" className="text-xl md:text-2xl font-medium text-gray-600 mb-12 max-w-xl mx-auto leading-relaxed" style={{color: 'var(--text-secondary)'}}>
                         Üniversite bağlamında bilgi paylaşımının en filtresiz hali.
@@ -1632,9 +1632,9 @@ export default function Home() {
                           <div key={i} className="flex flex-col items-center justify-center p-2 md:p-6 transition-all duration-300 group cursor-default">
                             <item.icon className="w-6 h-6 md:w-8 md:h-8 mb-2 text-black group-hover:scale-110 transition-transform duration-300" style={{color: 'var(--text-primary)'}} />
                             <span className="font-bold text-xs md:text-sm uppercase tracking-wider" style={{color: 'var(--text-secondary)'}}>{item.text}</span>
-                          </div>
+                    </div>
                         ))}
-                      </div>
+                    </div>
                     </div>
                     
                     {/* Footer for Welcome Screen */}
@@ -1653,8 +1653,8 @@ export default function Home() {
                         </div>
                         <p className="text-[10px] font-medium" style={{color: 'var(--text-secondary)'}}>
                           © 2025 zuni.social. Tüm hakları saklıdır.
-                        </p>
-                      </div>
+                    </p>
+                    </div>
                     </footer>
                   </main>
                 ) : (
@@ -1665,58 +1665,58 @@ export default function Home() {
                       {/* Modern Pill Navigation */}
                       <div className="flex justify-center px-4">
                         <div className="flex w-full max-w-6xl p-1.5 bg-gray-100 dark:bg-[#1a1a1a] rounded-full border-2 border-black dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" style={{borderColor: 'var(--border-color)'}}>
-                          <button
-                            onClick={() => handleTabChange('my-activity')}
+                      <button
+                        onClick={() => handleTabChange('my-activity')}
                             className={`flex-1 py-3 sm:py-4 rounded-full text-xs sm:text-lg font-bold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-3 ${
-                              activeTab === 'my-activity' 
+                          activeTab === 'my-activity'
                                 ? 'bg-yellow-300 text-black shadow-sm border-2 border-black transform -translate-y-0.5' 
                                 : 'text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white border-2 border-transparent'
-                            }`}
+                        }`}
                             style={{
                               backgroundColor: activeTab === 'my-activity' ? '#FFE066' : 'transparent',
                               borderColor: activeTab === 'my-activity' ? 'var(--border-color)' : 'transparent',
                               color: activeTab === 'my-activity' ? '#000' : 'var(--text-secondary)'
                             }}
-                          >
+                      >
                             <BookOpen className="w-4 h-4 sm:w-6 sm:h-6" />
                             Aktiviteler
-                          </button>
+                      </button>
                           
-                          <button
-                            onClick={() => handleTabChange('subscribed')}
+                      <button
+                        onClick={() => handleTabChange('subscribed')}
                             className={`flex-1 py-3 sm:py-4 rounded-full text-xs sm:text-lg font-bold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-3 ${
-                              activeTab === 'subscribed'
+                          activeTab === 'subscribed'
                                 ? 'bg-yellow-300 text-black shadow-sm border-2 border-black transform -translate-y-0.5'
                                 : 'text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white border-2 border-transparent'
-                            }`}
+                        }`}
                             style={{
                               backgroundColor: activeTab === 'subscribed' ? '#FFE066' : 'transparent',
                               borderColor: activeTab === 'subscribed' ? 'var(--border-color)' : 'transparent',
                               color: activeTab === 'subscribed' ? '#000' : 'var(--text-secondary)'
                             }}
-                          >
+                      >
                             <Star className="w-4 h-4 sm:w-6 sm:h-6" />
                             Abonelikler
-                          </button>
+                      </button>
                           
-                          <button
-                            onClick={() => handleTabChange('trending')}
+                      <button
+                        onClick={() => handleTabChange('trending')}
                             className={`flex-1 py-3 sm:py-4 rounded-full text-xs sm:text-lg font-bold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-3 ${
-                              activeTab === 'trending'
+                          activeTab === 'trending'
                                 ? 'bg-yellow-300 text-black shadow-sm border-2 border-black transform -translate-y-0.5'
                                 : 'text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white border-2 border-transparent'
-                            }`}
+                        }`}
                             style={{
                               backgroundColor: activeTab === 'trending' ? '#FFE066' : 'transparent',
                               borderColor: activeTab === 'trending' ? 'var(--border-color)' : 'transparent',
                               color: activeTab === 'trending' ? '#000' : 'var(--text-secondary)'
                             }}
-                          >
+                      >
                             <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6" />
                             Trendler
-                          </button>
+                      </button>
                         </div>
-                      </div>
+                  </div>
                     </div>
 
             {session && (
@@ -1739,18 +1739,18 @@ export default function Home() {
                             <div>
                               {/* Carousel Container */}
                               <div className="mb-6 min-h-[280px] lg:min-h-[560px]">
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                   {getVisiblePosts(userActivity.userPosts, myPostsIndex).map((post) => (
-                                    <PostCard 
-                                      key={post.id} 
-                                      post={post} 
-                                      viewedPosts={viewedPosts}
-                                      onPostClick={handlePostClick}
-                                      postViewTimestamps={postViewTimestamps}
-                                      userJustCommented={userJustCommented}
-                                      showUniversityInfo={true}
-                                    />
-                                  ))}
+                       <PostCard 
+                         key={post.id} 
+                         post={post} 
+                         viewedPosts={viewedPosts}
+                         onPostClick={handlePostClick}
+                         postViewTimestamps={postViewTimestamps}
+                         userJustCommented={userJustCommented}
+                         showUniversityInfo={true}
+                       />
+                              ))}
                                 </div>
                               </div>
                               
@@ -1810,18 +1810,18 @@ export default function Home() {
                             <div>
                               {/* Carousel Container */}
                               <div className="mb-6 min-h-[280px] lg:min-h-[560px]">
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                   {getVisiblePosts(userActivity.postsWithUserComments, commentedPostsIndex).map((post) => (
-                                    <PostCard 
-                                      key={post.id} 
-                                      post={post} 
-                                      viewedPosts={viewedPosts}
-                                      onPostClick={handlePostClick}
-                                      postViewTimestamps={postViewTimestamps}
-                                      userJustCommented={userJustCommented}
-                                      showUniversityInfo={true}
-                                    />
-                                  ))}
+                       <PostCard 
+                         key={post.id} 
+                         post={post} 
+                         viewedPosts={viewedPosts}
+                         onPostClick={handlePostClick}
+                         postViewTimestamps={postViewTimestamps}
+                         userJustCommented={userJustCommented}
+                         showUniversityInfo={true}
+                       />
+                              ))}
                                 </div>
                               </div>
                               
@@ -1982,8 +1982,8 @@ export default function Home() {
                             </p>
                           </div>
                         </footer>
-                      )}
-                    </main>
+            )}
+                  </main>
                   </div>
                 )}
               </div>
@@ -1994,7 +1994,7 @@ export default function Home() {
       {/* Auth Modal (for university board access) */}
       <AuthModal 
         isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)}
+        onClose={() => setShowAuthModal(false)} 
         onSignIn={() => {
           setAuthModalMode('signin')
           setShowAuthModalCombined(true)
