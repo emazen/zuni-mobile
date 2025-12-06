@@ -106,14 +106,17 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         
         // Add the new comment to the existing post without full refresh
         if (post) {
-          setPost(prevPost => ({
-            ...prevPost,
-            comments: [...(prevPost.comments || []), newComment],
-            _count: {
-              ...prevPost._count,
-              comments: prevPost._count.comments + 1
-            }
-          }));
+          setPost(prevPost => {
+            if (!prevPost) return prevPost;
+            return {
+              ...prevPost,
+              comments: [...(prevPost.comments || []), newComment],
+              _count: {
+                ...prevPost._count,
+                comments: prevPost._count.comments + 1
+              }
+            };
+          });
         }
         
         // Scroll to comments section to show the new comment
