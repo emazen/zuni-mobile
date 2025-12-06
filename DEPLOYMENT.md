@@ -10,12 +10,12 @@ You need to set these environment variables in your hosting platform (Vercel, Ra
 
 #### **Database (Supabase PostgreSQL)**
 ```env
-DATABASE_URL="postgresql://postgres.kapoavjqihxgvznxjnux:zaza5@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require"
-DIRECT_URL="postgresql://postgres.kapoavjqihxgvznxjnux:zaza5@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
+DATABASE_URL="postgresql://postgres.kapoavjqihxgvznxjnux:YOUR_DATABASE_PASSWORD@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require"
+DIRECT_URL="postgresql://postgres.kapoavjqihxgvznxjnux:YOUR_DATABASE_PASSWORD@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
 ```
 
 **⚠️ IMPORTANT:** 
-- Replace `zaza5` with your actual database password
+- Replace `YOUR_DATABASE_PASSWORD` with your actual database password
 - Keep these secure - never commit them to Git
 - Use your production database credentials (not local dev)
 
@@ -42,7 +42,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJz
 
 #### **Resend Email Service**
 ```env
-RESEND_API_KEY="re_8Ddq1SAZ_sd74rNCKnRo5g7FqxQ58drLP"
+RESEND_API_KEY="YOUR_RESEND_API_KEY"
 FROM_EMAIL="Zuni <noreply@mail.zuni.social>"
 BASE_URL="https://your-production-domain.com"
 ```

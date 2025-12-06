@@ -75,9 +75,9 @@ Copy the output (you'll need it in the next step).
 
 ```env
 # Database (Supabase PostgreSQL)
-DATABASE_URL=postgresql://postgres.kapoavjqihxgvznxjnux:zaza5@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require
+DATABASE_URL=postgresql://postgres.kapoavjqihxgvznxjnux:YOUR_DATABASE_PASSWORD@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require
 
-DIRECT_URL=postgresql://postgres.kapoavjqihxgvznxjnux:zaza5@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require
+DIRECT_URL=postgresql://postgres.kapoavjqihxgvznxjnux:YOUR_DATABASE_PASSWORD@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require
 
 # NextAuth.js (CRITICAL - Replace with your values!)
 NEXTAUTH_URL=https://your-project.vercel.app
@@ -88,7 +88,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://kapoavjqihxgvznxjnux.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthcG9hdmpxaWh4Z3Z6bnhqbnV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0ODQ1ODksImV4cCI6MjA3NjA2MDU4OX0.G_ENKasKUJeAu6LH6O1fipdOBcqiNldO3u2AQgKUWWk
 
 # Resend Email Service
-RESEND_API_KEY=re_8Ddq1SAZ_sd74rNCKnRo5g7FqxQ58drLP
+RESEND_API_KEY=YOUR_RESEND_API_KEY
 FROM_EMAIL=Zuni <noreply@mail.zuni.social>
 BASE_URL=https://your-project.vercel.app
 ```

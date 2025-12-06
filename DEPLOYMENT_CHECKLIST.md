@@ -20,7 +20,7 @@ NEXT_PUBLIC_SUPABASE_URL="https://kapoavjqihxgvznxjnux.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthcG9hdmpxaWh4Z3Z6bnhqbnV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0ODQ1ODksImV4cCI6MjA3NjA2MDU4OX0.G_ENKasKUJeAu6LH6O1fipdOBcqiNldO3u2AQgKUWWk"
 
 # Email (Resend)
-RESEND_API_KEY="re_8Ddq1SAZ_sd74rNCKnRo5g7FqxQ58drLP"
+RESEND_API_KEY="YOUR_RESEND_API_KEY"
 FROM_EMAIL="Zuni <noreply@mail.zuni.social>"
 BASE_URL="https://your-domain.com"
 ```
