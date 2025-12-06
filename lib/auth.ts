@@ -8,7 +8,6 @@ import { createEmailVerificationToken, sendVerificationEmail } from "./email-ver
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  trustHost: true, // Trust the host header (needed for Vercel)
   providers: [
     CredentialsProvider({
       name: "credentials",
