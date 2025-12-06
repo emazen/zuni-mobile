@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, MessageSquare, Trash2, Send, Clock, ChevronDown, Image as ImageIcon, X } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Trash2, Send, Clock, ChevronDown, Image as ImageIcon, X, MoreVertical } from 'lucide-react';
 import CustomSpinner from './CustomSpinner';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -62,6 +62,9 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
   const [commentImagePreview, setCommentImagePreview] = useState<string | null>(null);
   const [uploadingCommentImage, setUploadingCommentImage] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [isDeleteMenuOpen, setIsDeleteMenuOpen] = useState(false);
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+  const [enlargedImageTouchStart, setEnlargedImageTouchStart] = useState<{ x: number; y: number; touchCount: number } | null>(null);
 
   useEffect(() => {
     fetchPost();
@@ -302,7 +305,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                   className="px-3 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-full border border-gray-200 dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                 >
                   <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{post.university.name.toLocaleUpperCase('tr-TR')}</span>
-                </button>
+              </button>
             </div>
 
               {/* Main Post Card */}
@@ -310,15 +313,54 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                 
                 {/* Delete Button - Top Right */}
                 {isAuthor && (
+                  <>
+                    {/* Desktop: Hover button */}
                   <button
                     onClick={handleDeletePost}
                     disabled={deletingPost}
-                    className="absolute top-8 right-8 p-1.5 bg-white dark:bg-[#151515] border border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all z-20 opacity-0 group-hover:opacity-100"
-                    style={{borderColor: '#ef4444'}}
+                      className="hidden sm:block absolute top-8 right-8 p-1.5 bg-white dark:bg-[#151515] border border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all z-20 opacity-0 group-hover:opacity-100"
+                      style={{borderColor: '#ef4444'}}
                     title="Delete post"
                   >
-                    <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                    
+                    {/* Mobile: Dot menu */}
+                    <div className="sm:hidden absolute top-4 right-4 z-20">
+                      <button
+                        onClick={() => setIsDeleteMenuOpen(!isDeleteMenuOpen)}
+                        className="p-2"
+                        aria-label="Menu"
+                      >
+                        <MoreVertical className="h-5 w-5" style={{color: 'var(--text-primary)'}} />
+                      </button>
+                      
+                      {isDeleteMenuOpen && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-30" 
+                            onClick={() => setIsDeleteMenuOpen(false)}
+                          />
+                          <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-[#151515] border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-40"
+                            style={{borderColor: 'var(--border-color)'}}
+                          >
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setIsDeleteMenuOpen(false)
+                                handleDeletePost(e)
+                              }}
+                              disabled={deletingPost}
+                              className="w-full px-4 py-3 flex items-center gap-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left font-semibold"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span>Sil</span>
                   </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </>
                 )}
                 
                 {/* Post Body */}
@@ -356,6 +398,22 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                           alt="Post attachment" 
                           className="rounded-lg max-h-[500px] w-auto object-contain border border-gray-200 dark:border-gray-800 cursor-pointer"
                           onClick={() => setEnlargedImage(post.image || null)}
+                          onTouchStart={(e) => {
+                            const touch = e.touches[0]
+                            setTouchStart({ x: touch.clientX, y: touch.clientY })
+                          }}
+                          onTouchEnd={(e) => {
+                            if (!touchStart) return
+                            const touch = e.changedTouches[0]
+                            const deltaX = Math.abs(touch.clientX - touchStart.x)
+                            const deltaY = Math.abs(touch.clientY - touchStart.y)
+                            // Only enlarge if movement is less than 10px (indicating a tap, not a scroll)
+                            if (deltaX < 10 && deltaY < 10) {
+                              e.preventDefault()
+                              setEnlargedImage(post.image || null)
+                            }
+                            setTouchStart(null)
+                          }}
                         />
                       </div>
                     )}
@@ -504,6 +562,22 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                                 alt="Comment attachment" 
                                 className="rounded-lg max-h-48 w-auto object-contain border border-gray-200 dark:border-gray-800 cursor-pointer"
                                 onClick={() => setEnlargedImage(comment.image || null)}
+                                onTouchStart={(e) => {
+                                  const touch = e.touches[0]
+                                  setTouchStart({ x: touch.clientX, y: touch.clientY })
+                                }}
+                                onTouchEnd={(e) => {
+                                  if (!touchStart) return
+                                  const touch = e.changedTouches[0]
+                                  const deltaX = Math.abs(touch.clientX - touchStart.x)
+                                  const deltaY = Math.abs(touch.clientY - touchStart.y)
+                                  // Only enlarge if movement is less than 10px (indicating a tap, not a scroll)
+                                  if (deltaX < 10 && deltaY < 10) {
+                                    e.preventDefault()
+                                    setEnlargedImage(comment.image || null)
+                                  }
+                                  setTouchStart(null)
+                                }}
                               />
                             </div>
                           )}
@@ -545,11 +619,64 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
         
         {enlargedImage && (
           <div 
-            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-2 sm:p-4 cursor-pointer"
+            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3 sm:p-4 cursor-pointer"
             onClick={() => setEnlargedImage(null)}
+            onTouchStart={(e) => {
+              // Only track on mobile with single touch (not two-finger zoom)
+              if (typeof window !== 'undefined' && window.innerWidth < 640 && e.touches.length === 1) {
+                const touch = e.touches[0]
+                if (touch) {
+                  setEnlargedImageTouchStart({ x: touch.clientX, y: touch.clientY, touchCount: 1 })
+                }
+              } else if (e.touches.length > 1) {
+                // Multiple touches - cancel scroll tracking for zoom
+                setEnlargedImageTouchStart(null)
+              }
+            }}
+            onTouchMove={(e) => {
+              // Only handle on mobile with single touch (allow two-finger zoom)
+              if (typeof window !== 'undefined' && window.innerWidth < 640 && enlargedImageTouchStart) {
+                // If two or more touches, it's a zoom gesture - cancel tracking immediately
+                if (e.touches.length !== 1) {
+                  setEnlargedImageTouchStart(null)
+                  return
+                }
+                
+                // Single touch - check for scroll
+                if (e.touches.length === 1 && enlargedImageTouchStart.touchCount === 1) {
+                  const touch = e.touches[0]
+                  if (touch) {
+                    const deltaX = Math.abs(touch.clientX - enlargedImageTouchStart.x)
+                    const deltaY = Math.abs(touch.clientY - enlargedImageTouchStart.y)
+                    // If user scrolls more than 20px in any direction, close the image
+                    if (deltaX > 20 || deltaY > 20) {
+                      // Use setTimeout to avoid blocking native zoom
+                      setTimeout(() => {
+                        setEnlargedImage(null)
+                        setEnlargedImageTouchStart(null)
+                      }, 0)
+                    }
+                  }
+                }
+              }
+            }}
+            onTouchEnd={() => {
+              if (typeof window !== 'undefined' && window.innerWidth < 640) {
+                setEnlargedImageTouchStart(null)
+              }
+            }}
+            style={{
+              paddingTop: typeof window !== 'undefined' && window.innerWidth < 640 ? '64px' : '1rem',
+              paddingBottom: typeof window !== 'undefined' && window.innerWidth < 640 ? '64px' : '1rem',
+              touchAction: typeof window !== 'undefined' && window.innerWidth < 640 ? 'pan-y pinch-zoom' : 'none',
+              height: typeof window !== 'undefined' && window.innerWidth < 640 ? '100dvh' : '100vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
           >
             <div 
-              className="relative inline-block max-w-4xl max-h-[95vh] sm:max-h-[90vh]"
+              className="relative inline-block max-w-4xl max-h-[75vh] sm:max-h-[90vh]"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -562,8 +689,20 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
               <img 
                 src={enlargedImage} 
                 alt="Enlarged attachment" 
-                className="max-w-full max-h-[95vh] sm:max-h-[90vh] object-contain block"
-                onClick={(e) => e.stopPropagation()}
+                className="max-w-full max-h-[75vh] sm:max-h-[90vh] object-contain block sm:cursor-default"
+                style={{
+                  touchAction: typeof window !== 'undefined' && window.innerWidth < 640 ? 'pan-y pinch-zoom' : 'none',
+                  minHeight: typeof window !== 'undefined' && window.innerWidth < 640 ? '500px' : 'auto'
+                }}
+                onClick={(e) => {
+                  // On mobile, clicking image closes it; on desktop, prevent closing
+                  if (window.innerWidth < 640) {
+                    e.stopPropagation()
+                    setEnlargedImage(null)
+                  } else {
+                    e.stopPropagation()
+                  }
+                }}
               />
             </div>
           </div>
