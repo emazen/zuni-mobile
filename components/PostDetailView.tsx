@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, MessageSquare, Trash2, Send, Clock, ChevronDown, Image as ImageIcon, X } from 'lucide-react';
 import CustomSpinner from './CustomSpinner';
 import { useSession } from 'next-auth/react';
@@ -50,6 +51,7 @@ interface PostDetailViewProps {
 
 export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPostDeleted }: PostDetailViewProps) {
   const { data: session } = useSession();
+  const router = useRouter();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [commentContent, setCommentContent] = useState('');
@@ -289,9 +291,18 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                   </div>
               </button>
                 
-                <div className="px-3 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-full border border-gray-200 dark:border-gray-800">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    if (post?.university?.id) {
+                      router.push(`/?university=${post.university.id}`)
+                    }
+                  }}
+                  className="px-3 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-full border border-gray-200 dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                >
                   <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{post.university.name.toLocaleUpperCase('tr-TR')}</span>
-                </div>
+                </button>
             </div>
 
               {/* Main Post Card */}

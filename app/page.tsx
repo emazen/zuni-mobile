@@ -1423,17 +1423,21 @@ export default function Home() {
                   <div>
                     {/* University Header */}
                     <div className="mb-8">
-                      <div className="mb-4">
-                        <h1 className="text-3xl font-black text-black mb-2" style={{color: 'var(--text-primary)'}}>{selectedUniversity.name}</h1>
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm font-medium text-black" style={{color: 'var(--text-secondary)'}}>{selectedUniversity.city}</span>
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium border-2 border-black ${
-                            selectedUniversity.type === 'public'
-                              ? 'bg-green-300 text-black'
-                              : 'bg-purple-300 text-black'
-                          }`} style={{borderColor: 'var(--border-color)'}}>
-                            {selectedUniversity.type === 'public' ? 'Devlet' : 'Vakıf'}
-                          </span>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                        <div className="flex-1">
+                          <div className="mb-2">
+                              <h1 className="text-2xl sm:text-4xl font-display font-bold text-black tracking-tight" style={{color: 'var(--text-primary)'}}>{selectedUniversity.name}</h1>
+                          </div>
+                          <div className="flex items-center gap-4 flex-wrap">
+                            <span className="text-sm font-medium text-black" style={{color: 'var(--text-secondary)'}}>{selectedUniversity.city}</span>
+                            <span className={`text-xs px-2 py-1 rounded-full font-medium border-2 border-black ${
+                              selectedUniversity.type === 'public'
+                                ? 'bg-green-300 text-black'
+                                : 'bg-purple-300 text-black'
+                            }`} style={{borderColor: 'var(--border-color)'}}>
+                              {selectedUniversity.type === 'public' ? 'Devlet' : 'Vakıf'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1461,12 +1465,12 @@ export default function Home() {
                    <div>
                      {/* University Header */}
                      <div className="mb-8">
-                       <div className="flex items-center justify-between mb-4">
+                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                          <div className="flex-1">
                            <div className="mb-2">
-                               <h1 className="text-4xl font-display font-bold text-black tracking-tight" style={{color: 'var(--text-primary)'}}>{selectedUniversity.name}</h1>
+                               <h1 className="text-2xl sm:text-4xl font-display font-bold text-black tracking-tight" style={{color: 'var(--text-primary)'}}>{selectedUniversity.name}</h1>
                            </div>
-                           <div className="flex items-center gap-4">
+                           <div className="flex items-center gap-4 flex-wrap">
                              <span className="text-sm font-medium text-black" style={{color: 'var(--text-secondary)'}}>{selectedUniversity.city}</span>
                              <span className={`text-xs px-2 py-1 rounded-full font-medium border-2 border-black ${
                                selectedUniversity.type === 'public'
@@ -1533,7 +1537,7 @@ export default function Home() {
                               router.push(`/university/${selectedUniversity.id}/create-post`);
                             }
                           }}
-                          className="px-6 py-3 font-semibold border-2 border-black brutal-shadow-sm hover:brutal-shadow transition-all duration-150 rounded-full bg-white text-black"
+                          className="w-full sm:w-auto px-6 py-3 font-semibold border-2 border-black brutal-shadow-sm hover:brutal-shadow transition-all duration-150 rounded-full bg-white text-black text-center"
                            style={{
                              backgroundColor: effectiveTheme === 'dark' ? 'var(--brutal-yellow)' : '#FFFFFF',
                              color: '#000000'
@@ -1663,11 +1667,11 @@ export default function Home() {
                       <div className="flex-1">
                     <div className="mb-4 mt-2">
                       {/* Modern Pill Navigation */}
-                      <div className="flex justify-center px-4">
-                        <div className="flex w-full max-w-6xl p-1.5 bg-gray-100 dark:bg-[#1a1a1a] rounded-full border-2 border-black dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" style={{borderColor: 'var(--border-color)'}}>
+                      <div className="flex justify-center px-2 sm:px-4">
+                        <div className="flex w-full max-w-6xl p-1 sm:p-1.5 bg-gray-100 dark:bg-[#1a1a1a] rounded-full border-2 border-black dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" style={{borderColor: 'var(--border-color)'}}>
                       <button
                         onClick={() => handleTabChange('my-activity')}
-                            className={`flex-1 py-3 sm:py-4 rounded-full text-xs sm:text-lg font-bold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-3 ${
+                            className={`flex-1 py-2.5 sm:py-4 rounded-full text-xs sm:text-lg font-bold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-3 min-w-0 ${
                           activeTab === 'my-activity'
                                 ? 'bg-yellow-300 text-black shadow-sm border-2 border-black transform -translate-y-0.5' 
                                 : 'text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white border-2 border-transparent'
@@ -1678,13 +1682,13 @@ export default function Home() {
                               color: activeTab === 'my-activity' ? '#000' : 'var(--text-secondary)'
                             }}
                       >
-                            <BookOpen className="w-4 h-4 sm:w-6 sm:h-6" />
-                            Aktiviteler
+                            <BookOpen className="w-3.5 h-3.5 sm:w-6 sm:h-6 flex-shrink-0" />
+                            <span className="truncate">Aktiviteler</span>
                       </button>
                           
                       <button
                         onClick={() => handleTabChange('subscribed')}
-                            className={`flex-1 py-3 sm:py-4 rounded-full text-xs sm:text-lg font-bold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-3 ${
+                            className={`flex-1 py-2.5 sm:py-4 rounded-full text-xs sm:text-lg font-bold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-3 min-w-0 ${
                           activeTab === 'subscribed'
                                 ? 'bg-yellow-300 text-black shadow-sm border-2 border-black transform -translate-y-0.5'
                                 : 'text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white border-2 border-transparent'
@@ -1695,13 +1699,13 @@ export default function Home() {
                               color: activeTab === 'subscribed' ? '#000' : 'var(--text-secondary)'
                             }}
                       >
-                            <Star className="w-4 h-4 sm:w-6 sm:h-6" />
-                            Abonelikler
+                            <Star className="w-3.5 h-3.5 sm:w-6 sm:h-6 flex-shrink-0" />
+                            <span className="truncate">Abonelikler</span>
                       </button>
                           
                       <button
                         onClick={() => handleTabChange('trending')}
-                            className={`flex-1 py-3 sm:py-4 rounded-full text-xs sm:text-lg font-bold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-3 ${
+                            className={`flex-1 py-2.5 sm:py-4 rounded-full text-xs sm:text-lg font-bold transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-3 min-w-0 ${
                           activeTab === 'trending'
                                 ? 'bg-yellow-300 text-black shadow-sm border-2 border-black transform -translate-y-0.5'
                                 : 'text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white border-2 border-transparent'
@@ -1712,8 +1716,8 @@ export default function Home() {
                               color: activeTab === 'trending' ? '#000' : 'var(--text-secondary)'
                             }}
                       >
-                            <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6" />
-                            Trendler
+                            <TrendingUp className="w-3.5 h-3.5 sm:w-6 sm:h-6 flex-shrink-0" />
+                            <span className="truncate">Trendler</span>
                       </button>
                         </div>
                   </div>
@@ -1901,7 +1905,7 @@ export default function Home() {
                       <div className="pt-6 pb-6">
                         <h3 className="text-2xl font-display font-bold text-black mb-4 flex items-center" style={{color: 'var(--text-primary)'}}>
                           <Star className="h-6 w-6 mr-3 text-yellow-500" />
-                          Abone Olduğun Üniversiteler ({posts.length})
+                          Abonelikler ({posts.length})
                         </h3>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           {posts.map((post) => (

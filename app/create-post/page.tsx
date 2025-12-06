@@ -66,25 +66,25 @@ export default function CreatePost() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100" style={{backgroundColor: 'var(--bg-primary)'}}>
       {/* Header */}
-      <header className="brutal-header">
+      <header className="brutal-header fixed top-0 left-0 right-0 z-50">
         <div className="w-full px-2 sm:px-4">
           <div className="flex items-center h-16">
             <Link
               href="/"
-              className="inline-flex items-center text-black font-black hover:text-pink-600 transition-colors mr-4"
+              className="inline-flex items-center text-black font-black hover:text-pink-600 transition-colors mr-2 sm:mr-4"
             >
-              <ArrowLeft className="h-5 w-5 mr-2" />
-              Back to Board
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+              <span className="text-sm sm:text-base">Back</span>
             </Link>
-            <h1 className="text-2xl font-black text-black">Create New Post</h1>
+            <h1 className="text-lg sm:text-2xl font-black text-black" style={{color: 'var(--text-primary)'}}>Create New Post</h1>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 sm:pt-8">
         <div className="brutal-card">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
@@ -94,7 +94,7 @@ export default function CreatePost() {
             )}
 
             <div>
-              <label htmlFor="title" className="block text-sm font-black text-black mb-2">
+              <label htmlFor="title" className="block text-xs sm:text-sm font-black text-black mb-2" style={{color: 'var(--text-primary)'}}>
                 Post Title
               </label>
               <input
@@ -103,45 +103,45 @@ export default function CreatePost() {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="brutal-input w-full"
+                className="brutal-input w-full text-sm sm:text-base"
                 placeholder="What's your post about?"
                 maxLength={200}
               />
-              <p className="mt-2 text-sm font-semibold text-black" style={{color: 'var(--text-primary)'}}>
+              <p className="mt-2 text-xs sm:text-sm font-semibold text-black" style={{color: 'var(--text-primary)'}}>
                 {title.length}/200 characters
               </p>
             </div>
 
             <div>
-              <label htmlFor="content" className="block text-sm font-black text-black mb-2">
+              <label htmlFor="content" className="block text-xs sm:text-sm font-black text-black mb-2" style={{color: 'var(--text-primary)'}}>
                 Post Content
               </label>
               <textarea
                 id="content"
-                rows={12}
+                rows={10}
                 required
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="brutal-input w-full"
+                className="brutal-input w-full text-sm sm:text-base"
                 placeholder="Share your thoughts, ask questions, or start a discussion..."
                 maxLength={10000}
               />
-              <p className="mt-2 text-sm font-semibold text-black" style={{color: 'var(--text-primary)'}}>
+              <p className="mt-2 text-xs sm:text-sm font-semibold text-black" style={{color: 'var(--text-primary)'}}>
                 {content.length}/10,000 characters - Be respectful and follow community guidelines.
               </p>
             </div>
 
-            <div className="flex justify-end space-x-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-3 sm:space-x-3">
               <Link
                 href="/"
-                className="brutal-button-secondary"
+                className="brutal-button-secondary text-sm sm:text-base py-2 sm:py-3"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
                 disabled={loading}
-                className="brutal-button-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                className="brutal-button-primary disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base py-2 sm:py-3"
               >
                 <Save className="h-4 w-4 mr-2" />
                 {loading ? "Creating..." : "Create Post"}

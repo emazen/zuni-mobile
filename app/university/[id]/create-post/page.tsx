@@ -262,7 +262,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
   return (
     <div className="h-screen bg-gray-100 overflow-hidden" style={{backgroundColor: 'var(--bg-primary)'}}>
       {/* Header */}
-      <header className="brutal-header relative">
+      <header className={`brutal-header ${isMobile ? 'fixed top-0 left-0 right-0 z-50' : 'relative'}`}>
         <div className="w-full px-2 sm:px-4">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -374,13 +374,13 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
       </header>
 
       {/* Sidebar and Main Content */}
-      <div className="flex h-[calc(100vh-64px)] overscroll-none">
+      <div className={`flex ${isMobile ? 'absolute inset-0 top-16' : 'h-[calc(100vh-64px)]'} overscroll-none`}>
         {/* Desktop Sidebar */}
         {!isMobile && (
           <UniversitySidebar />
         )}
         
-        <div className="flex-1 overflow-y-auto overscroll-none h-[calc(100vh-64px)]">
+        <div className={`flex-1 ${isMobile ? 'overflow-y-auto overscroll-none h-full' : 'overflow-y-auto overscroll-none h-[calc(100vh-64px)]'}`} style={{backgroundColor: 'var(--bg-primary)'}}>
           {/* Mobile Universities Full Page - No Sliding */}
           {isMobile && isMobileMenuOpen ? (
             <div className="h-full bg-gray-100 flex flex-col" style={{backgroundColor: 'var(--bg-primary)'}}>
@@ -405,7 +405,8 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
             </div>
           ) : (
             <div className="h-full overflow-y-auto overscroll-none bg-gray-50 dark:bg-[#121212]" style={{backgroundColor: 'var(--bg-primary)'}}>
-              <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <div className={`max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col ${isMobile ? 'min-h-[calc(100dvh-64px)]' : 'min-h-full'}`}>
+                <div className="flex-1">
                 {/* Back Button & Title */}
                 <div className="mb-6 flex items-center justify-between">
                   <button 
@@ -428,15 +429,15 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                 <div className="bg-white dark:bg-[#151515] border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden" style={{borderColor: 'var(--border-color)'}}>
                   
                   {/* Header */}
-                  <div className="px-8 py-6 border-b-2 border-black bg-gray-50 dark:bg-[#1a1a1a]" style={{borderColor: 'var(--border-color)'}}>
-                    <h1 className="font-display font-bold text-3xl text-black dark:text-white mb-1">Yeni Gönderi</h1>
-                    <p className="font-sans text-gray-500 text-sm">Düşüncelerini, sorularını veya tartışmalarını paylaş.</p>
+                  <div className="px-4 sm:px-8 py-4 sm:py-6 border-b-2 border-black bg-gray-50 dark:bg-[#1a1a1a]" style={{borderColor: 'var(--border-color)'}}>
+                    <h1 className="font-display font-bold text-xl sm:text-3xl text-black dark:text-white mb-1">Yeni Gönderi</h1>
+                    <p className="font-sans text-gray-500 text-xs sm:text-sm">Düşüncelerini, sorularını veya tartışmalarını paylaş.</p>
               </div>
 
-                  <div className="p-8">
+                  <div className="p-4 sm:p-8">
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label htmlFor="title" className="block text-sm font-bold text-black dark:text-white mb-2 uppercase tracking-wide">
+                        <label htmlFor="title" className="block text-xs sm:text-sm font-bold text-black dark:text-white mb-2 uppercase tracking-wide">
                         Başlık
                       </label>
                       <input
@@ -445,7 +446,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                           placeholder="Etkileyici bir başlık yaz..."
-                          className="w-full px-4 py-3 bg-white dark:bg-[#121212] border-2 border-black rounded-lg font-sans text-lg focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 placeholder:text-gray-400"
+                          className="w-full px-4 py-3 bg-white dark:bg-[#121212] border-2 border-black rounded-lg font-sans text-base sm:text-lg focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 placeholder:text-gray-400"
                           style={{borderColor: 'var(--border-color)'}}
                         maxLength={200}
                         required
@@ -459,7 +460,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                     </div>
 
                     <div>
-                        <label htmlFor="content" className="block text-sm font-bold text-black dark:text-white mb-2 uppercase tracking-wide">
+                        <label htmlFor="content" className="block text-xs sm:text-sm font-bold text-black dark:text-white mb-2 uppercase tracking-wide">
                         İçerik
                       </label>
                       <textarea
@@ -467,8 +468,8 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                           placeholder="Nelerden bahsetmek istersin?"
-                        rows={12}
-                          className="w-full px-4 py-3 bg-white dark:bg-[#121212] border-2 border-black rounded-lg font-sans text-base leading-relaxed resize-none focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 placeholder:text-gray-400"
+                        rows={10}
+                          className="w-full px-4 py-3 bg-white dark:bg-[#121212] border-2 border-black rounded-lg font-sans text-sm sm:text-base leading-relaxed resize-none focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 placeholder:text-gray-400"
                           style={{borderColor: 'var(--border-color)'}}
                         maxLength={5000}
                         required
@@ -515,11 +516,11 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                         )}
                     </div>
 
-                      <div className="flex items-center justify-end pt-4 gap-4">
+                      <div className="flex flex-row items-center justify-between sm:justify-end pt-4 gap-3 sm:gap-4">
                         <button
                           type="button"
                           onClick={handleGoBack}
-                          className="px-6 py-3 font-bold text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors"
+                          className="px-4 sm:px-6 py-2.5 sm:py-3 font-bold text-sm sm:text-base text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors"
                       >
                         İptal
                         </button>
@@ -527,11 +528,11 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                       <button
                         type="submit"
                         disabled={loading || !title.trim() || !content.trim()}
-                          className="group relative px-8 py-3 bg-black dark:bg-white text-white dark:text-black font-bold rounded-lg border-2 border-black disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+                          className="group relative px-6 sm:px-8 py-2.5 sm:py-3 bg-black dark:bg-white text-white dark:text-black font-bold text-sm sm:text-base rounded-lg border-2 border-black disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden flex-1 sm:flex-none"
                           style={{borderColor: 'var(--border-color)'}}
                       >
                           <div className="absolute inset-0 w-full h-full bg-pink-500 translate-y-full group-hover:translate-y-0 transition-transform duration-200 ease-out" />
-                          <div className="relative flex items-center gap-2 group-hover:text-white">
+                          <div className="relative flex items-center justify-center gap-2 group-hover:text-white">
                         {loading ? (
                           <CustomSpinner size="sm" />
                         ) : (
@@ -544,6 +545,27 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                   </form>
                   </div>
                 </div>
+                </div>
+                
+                {/* Footer */}
+                <footer className="mt-8" style={{paddingBottom: 0, marginBottom: '-1rem'}}>
+                  <div className="max-w-4xl mx-auto px-6" style={{paddingBottom: 0, marginBottom: 0}}>
+                    <div className="flex flex-wrap justify-center items-center gap-6" style={{marginBottom: 0}}>
+                      <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                        Hakkında
+                      </a>
+                      <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                        Hizmet Şartları
+                      </a>
+                      <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                        Gizlilik Politikası
+                      </a>
+                    </div>
+                    <p className="text-center text-xs font-medium" style={{color: 'var(--text-secondary)', marginBottom: 0, paddingBottom: 0}}>
+                      © 2025 zuni.social. Tüm hakları saklıdır.
+                    </p>
+                  </div>
+                </footer>
               </div>
             </div>
           )}
