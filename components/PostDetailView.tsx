@@ -549,7 +549,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
             onClick={() => setEnlargedImage(null)}
           >
             <div 
-              className="relative max-w-4xl max-h-[95vh] sm:max-h-[90vh] w-full h-full flex items-center justify-center"
+              className="relative inline-block max-w-4xl max-h-[95vh] sm:max-h-[90vh]"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -562,7 +562,8 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
               <img 
                 src={enlargedImage} 
                 alt="Enlarged attachment" 
-                className="w-full h-full max-w-full max-h-full object-contain rounded-lg sm:rounded-xl"
+                className="max-w-full max-h-[95vh] sm:max-h-[90vh] object-contain block"
+                onClick={(e) => e.stopPropagation()}
               />
             </div>
           </div>
