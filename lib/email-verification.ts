@@ -129,7 +129,7 @@ export async function sendVerificationEmail(email: string, token: string, userna
     const emailTemplate = getVerificationEmailTemplate(verificationUrl, username)
 
     // Send email using Resend
-    const data = await resend.emails.send({
+    const result = await resend.emails.send({
       from: process.env.FROM_EMAIL || 'Zuni <onboarding@resend.dev>',
       to: email,
       subject: emailTemplate.subject,
@@ -137,14 +137,15 @@ export async function sendVerificationEmail(email: string, token: string, userna
       text: emailTemplate.text,
     })
 
-    console.log('✅ Verification email sent successfully:', data.id)
+    const messageId = result.data?.id || 'unknown'
+    console.log('✅ Verification email sent successfully:', messageId)
     
     // Also log to console for development
     console.log('\n' + '='.repeat(80))
     console.log('📧 EMAIL VERIFICATION SENT')
     console.log('='.repeat(80))
     console.log(`To: ${email}`)
-    console.log(`Message ID: ${data.id}`)
+    console.log(`Message ID: ${messageId}`)
     console.log(`Verification URL: ${verificationUrl}`)
     console.log('='.repeat(80) + '\n')
 
