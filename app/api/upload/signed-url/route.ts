@@ -5,6 +5,14 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin"
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if service role key is available
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: "Signed URL feature not configured. SUPABASE_SERVICE_ROLE_KEY is required." },
+        { status: 503 }
+      )
+    }
+
     // 1. Authenticate user
     const session = await getServerSession(authOptions)
     
