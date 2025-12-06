@@ -545,11 +545,12 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
         
         {enlargedImage && (
           <div 
-            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 cursor-pointer"
+            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-2 sm:p-4 cursor-pointer"
             onClick={() => setEnlargedImage(null)}
           >
             <div 
-              className="relative max-w-4xl max-h-[90vh] w-full"
+              className="relative max-w-4xl max-h-[95vh] sm:max-h-[90vh] w-full h-full flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setEnlargedImage(null)}
@@ -561,7 +562,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
               <img 
                 src={enlargedImage} 
                 alt="Enlarged attachment" 
-                className="w-full max-h-[90vh] object-contain rounded-xl border border-gray-200 dark:border-gray-800 bg-black"
+                className="w-full h-full max-w-full max-h-full object-contain rounded-lg sm:rounded-xl"
               />
             </div>
           </div>
