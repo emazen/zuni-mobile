@@ -764,7 +764,8 @@ export default function Home() {
 
   const handleSignOut = async () => {
     const { signOut } = await import("next-auth/react")
-    signOut({ callbackUrl: "/" })
+    const callbackUrl = typeof window !== 'undefined' ? `${window.location.origin}/` : "/"
+    signOut({ callbackUrl })
   }
 
   const handlePostClick = (postId: string) => {
@@ -1253,7 +1254,7 @@ export default function Home() {
       {/* Header */}
       <header className={`brutal-header ${isMobile ? 'fixed top-0 left-0 right-0 z-50' : 'relative'}`}>
         <div className="w-full px-2 sm:px-4">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-14">
             {/* Logo */}
             <div className="flex-shrink-0">
               <button onClick={handleLogoClick} className="hover:opacity-80 transition-opacity">
@@ -1271,7 +1272,7 @@ export default function Home() {
                      {isMobile && (
                        <button
                          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                         className="p-3 border-2 border-black bg-white brutal-shadow-sm hover:brutal-shadow"
+                         className="p-2.5 border-2 border-black bg-white brutal-shadow-sm hover:brutal-shadow"
                          style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}
                          aria-label="Universities menu"
                        >
@@ -1283,7 +1284,7 @@ export default function Home() {
                     <div className="relative">
                       <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="p-3 border-2 border-black bg-white brutal-shadow-sm hover:brutal-shadow transition-all duration-150"
+                        className="p-2.5 border-2 border-black bg-white brutal-shadow-sm hover:brutal-shadow transition-all duration-150"
                         style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}
                         aria-label="User menu"
                       >
@@ -1335,7 +1336,7 @@ export default function Home() {
                   {isMobile && (
                     <button
                       onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                      className="p-3 border-2 border-black bg-white brutal-shadow-sm hover:brutal-shadow"
+                      className="p-2.5 border-2 border-black bg-white brutal-shadow-sm hover:brutal-shadow"
                       style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}
                       aria-label="Universities menu"
                     >
@@ -1379,7 +1380,7 @@ export default function Home() {
       </header>
 
       {/* Sidebar and Main Content */}
-      <div className={`flex ${isMobile ? 'absolute inset-0 top-16' : 'h-[calc(100vh-64px)] sm:h-[calc(100dvh-64px)]'} overscroll-none`}>
+      <div className={`flex ${isMobile ? 'absolute inset-0 top-14' : 'h-[calc(100vh-56px)] sm:h-[calc(100dvh-56px)]'} overscroll-none`}>
         {/* Desktop Sidebar */}
         {!isMobile && (
           <UniversitySidebar onUniversityClick={handleUniversityClick} />
@@ -1876,12 +1877,12 @@ export default function Home() {
                         )}
                       </div>
                     ) : (
-                      <div className="text-center py-12 bg-white brutal-border brutal-shadow-sm" style={{backgroundColor: 'var(--bg-secondary)'}}>
-                        <BookOpen className="h-16 w-16 mx-auto text-black mb-4" style={{color: 'var(--text-primary)'}} />
-                        <h3 className="text-2xl font-semibold text-black mb-3" style={{color: 'var(--text-primary)'}}>
+                      <div className="text-center py-10 font-sans">
+                        <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-80" style={{color: 'var(--text-secondary)'}} />
+                        <h3 className="text-lg font-semibold tracking-tight" style={{color: 'var(--text-secondary)'}}>
                           Henüz bir aktiviten yok
                         </h3>
-                        <p className="text-lg font-medium text-black" style={{color: 'var(--text-secondary)'}}>
+                        <p className="text-sm font-medium mt-1 leading-relaxed opacity-90" style={{color: 'var(--text-secondary)'}}>
                           Henüz bir gönderi paylaşmadın veya bir gönderiye yorum yapmadın.
                         </p>
                       </div>
@@ -1892,13 +1893,13 @@ export default function Home() {
                     {activeTab === 'subscribed' && (
                       <>
                     {posts.length === 0 ? (
-                      <div className="text-center py-12 bg-white brutal-border brutal-shadow-sm" style={{backgroundColor: 'var(--bg-secondary)'}}>
-                        <Star className="h-16 w-16 mx-auto text-black mb-4" style={{color: 'var(--text-primary)'}} />
-                        <h3 className="text-2xl font-semibold text-black mb-3" style={{color: 'var(--text-primary)'}}>
+                      <div className="text-center py-10 font-sans">
+                        <Star className="h-10 w-10 mx-auto mb-3 opacity-80" style={{color: 'var(--text-secondary)'}} />
+                        <h3 className="text-lg font-semibold tracking-tight" style={{color: 'var(--text-secondary)'}}>
                           Abone olduğun üniversitelerden gönderi yok
                         </h3>
-                        <p className="text-lg font-medium text-black" style={{color: 'var(--text-secondary)'}}>
-                          Üniversite panolarına abone olarak gönderileri burada görebilirsin. Sol menüdeki yıldız ikonunu kullan!
+                        <p className="text-sm font-medium mt-1 leading-relaxed opacity-90" style={{color: 'var(--text-secondary)'}}>
+                          Üniversite panolarına abone olarak gönderileri burada görebilirsin.
                         </p>
                       </div>
                     ) : (
@@ -1928,12 +1929,12 @@ export default function Home() {
                     {activeTab === 'trending' && (
                       <>
                         {allPosts.filter(post => post.isTrending).length === 0 ? (
-                          <div className="text-center py-12 bg-white brutal-border brutal-shadow-sm" style={{backgroundColor: 'var(--bg-secondary)'}}>
-                            <TrendingUp className="h-16 w-16 mx-auto text-black mb-4" style={{color: 'var(--text-primary)'}} />
-                            <h3 className="text-2xl font-semibold text-black mb-3" style={{color: 'var(--text-primary)'}}>
+                          <div className="text-center py-10 font-sans">
+                            <TrendingUp className="h-10 w-10 mx-auto mb-3 opacity-80" style={{color: 'var(--text-secondary)'}} />
+                            <h3 className="text-lg font-semibold tracking-tight" style={{color: 'var(--text-secondary)'}}>
                               Trend gönderi yok
                             </h3>
-                            <p className="text-lg font-medium text-black" style={{color: 'var(--text-secondary)'}}>
+                            <p className="text-sm font-medium mt-1 leading-relaxed opacity-90" style={{color: 'var(--text-secondary)'}}>
                               Son 48 saatte 10+ yorum alan gönderiler burada görünecek!
                             </p>
                           </div>

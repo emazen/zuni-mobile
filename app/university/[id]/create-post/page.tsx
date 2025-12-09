@@ -324,7 +324,8 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                         </div>
                         <button
                           onClick={() => {
-                            signOut()
+                            const callbackUrl = typeof window !== 'undefined' ? `${window.location.origin}/` : '/'
+                            signOut({ callbackUrl })
                             setIsMenuOpen(false)
                           }}
                           className="flex items-center w-full px-4 py-3 text-sm font-semibold text-black"
