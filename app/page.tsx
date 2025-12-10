@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from "react"
 import { MessageSquare, LogOut, User, GraduationCap, Star, BookOpen, Plus, Menu, X, Send, Calendar, TrendingUp, Building2, Moon, Sun, ArrowUpDown, Clock, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import CustomSpinner from "@/components/CustomSpinner"
 import Link from "next/link"
+import Image from "next/image"
 import UniversitySidebar from "@/components/UniversitySidebar"
 import PostDetailView from "@/components/PostDetailView"
 import SplashScreen from "@/components/SplashScreen"
@@ -1607,43 +1608,48 @@ export default function Home() {
                 {!session ? (
                   <main className="h-full flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 relative overflow-y-auto overflow-x-hidden no-overscroll">
                     {/* Decorative Background Elements */}
-                    <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-                    <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{animationDelay: '2s'}}></div>
+                    <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-15" style={{backgroundColor: '#FFE066'}}></div>
+                    <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-15" style={{backgroundColor: '#45B7D1'}}></div>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-15" style={{backgroundColor: '#9B59B6'}}></div>
                     
-                    <div className="text-center max-w-4xl mx-auto w-full z-10 py-8">
-                      <div className="mb-6 sm:mb-10 inline-flex items-center justify-center">
-                         <div className="bg-white border-4 border-black p-4 sm:p-6 rounded-2xl rotate-3 hover:rotate-0 transition-transform duration-300 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]" style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}>
-                           <Logo className="scale-125 sm:scale-[2]" />
-                    </div>
+                    <div className="text-center max-w-6xl mx-auto w-full z-10 py-6 sm:py-10 flex flex-col items-center justify-center flex-1">
+                      <div className="mb-5 sm:mb-8 w-full max-w-4xl mx-auto flex items-center justify-center">
+                        <div className="bg-white border-4 border-black px-6 py-4 rounded-2xl rotate-3 hover:rotate-0 transition-transform duration-300 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] scale-90 sm:scale-100 translate-x-10 sm:translate-x-9" style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}>
+                          <Logo className="scale-[1.5]" />
+                        </div>
                       </div>
                       
-                      <h1 className="text-6xl md:text-8xl font-display font-black text-black mb-6 tracking-tighter leading-none" style={{color: 'var(--text-primary)'}}>
-                        FULL<br/>
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500">GİZLİLİK.</span>
-                    </h1>
-                      
-                      <p lang="tr" className="text-xl md:text-2xl font-medium text-gray-600 mb-12 max-w-xl mx-auto leading-relaxed" style={{color: 'var(--text-secondary)'}}>
-                        Üniversite bağlamında bilgi paylaşımının en filtresiz hali.
-                      </p>
+                      <div className="relative w-full max-w-4xl mx-auto mb-10 sm:mb-12 flex items-center justify-center px-4 sm:px-0">
+                        <div className="relative w-full min-h-[260px] max-h-[380px] sm:min-h-[320px] sm:max-h-[480px]">
+                          <Image
+                            src="/image.png"
+                            alt="Baya bi gizli Zuni markası"
+                            fill
+                            priority
+                            className="object-contain"
+                            unoptimized
+                            sizes="(max-width: 640px) 90vw, (max-width: 768px) 85vw, (max-width: 1024px) 80vw, 1024px"
+                          />
+                        </div>
+                      </div>
 
                       {/* Minimalist Features Grid */}
-                      <div className="grid grid-cols-4 gap-2 md:gap-6 max-w-3xl mx-auto mb-8">
+                      <div className="grid grid-cols-3 gap-3 md:gap-5 max-w-4xl mx-auto mb-1 sm:mb-2 w-full mt-4 sm:mt-6">
                         {[
                           { icon: MessageSquare, text: "Tartış" },
                           { icon: Building2, text: "Keşfet" },
-                          { icon: User, text: "Bağlan" },
-                          { icon: TrendingUp, text: "Yüksel" }
+                          { icon: User, text: "Bağlan" }
                         ].map((item, i) => (
-                          <div key={i} className="flex flex-col items-center justify-center p-2 md:p-6 transition-all duration-300 group cursor-default">
-                            <item.icon className="w-6 h-6 md:w-8 md:h-8 mb-2 text-black group-hover:scale-110 transition-transform duration-300" style={{color: 'var(--text-primary)'}} />
-                            <span className="font-bold text-xs md:text-sm uppercase tracking-wider" style={{color: 'var(--text-secondary)'}}>{item.text}</span>
+                          <div key={i} className="flex flex-col items-center justify-center p-3 md:p-4 transition-all duration-300 group cursor-default">
+                            <item.icon className="w-6 h-6 md:w-9 md:h-9 mb-2 group-hover:scale-110 transition-transform duration-300 text-black dark:text-gray-300" style={{strokeWidth: 2.5}} />
+                            <span className="font-black text-xs md:text-base uppercase tracking-tight text-black dark:text-gray-300" style={{letterSpacing: '0.05em'}}>{item.text}</span>
                     </div>
                         ))}
                     </div>
                     </div>
                     
                     {/* Footer for Welcome Screen */}
-                    <footer className="absolute bottom-2 left-0 right-0 z-20 w-full py-2">
+                    <footer className="w-full py-3 z-20 mt-auto">
                       <div className="max-w-4xl mx-auto px-6 text-center">
                         <div className="flex flex-wrap justify-center items-center gap-4 mb-1">
                           <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
