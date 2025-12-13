@@ -1612,14 +1612,14 @@ export default function Home() {
                     <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-15" style={{backgroundColor: '#45B7D1'}}></div>
                     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-15" style={{backgroundColor: '#9B59B6'}}></div>
                     
-                    <div className="text-center max-w-6xl mx-auto w-full z-10 py-6 sm:py-10 flex flex-col items-center justify-center flex-1">
-                      <div className="mb-5 sm:mb-8 w-full max-w-4xl mx-auto flex items-center justify-center">
-                        <div className="bg-white border-4 border-black px-6 py-4 rounded-2xl rotate-3 hover:rotate-0 transition-transform duration-300 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] scale-90 sm:scale-100 translate-x-10 sm:translate-x-9" style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}>
-                          <Logo className="scale-[1.5]" />
+                    <div className="text-center max-w-6xl mx-auto w-full z-10 py-6 flex flex-col items-center justify-center flex-1">
+                      <div className="mb-0 sm:mb-6 w-full max-w-4xl mx-auto flex items-center justify-center">
+                        <div className="bg-white border-4 border-black px-6 py-4 rounded-2xl rotate-3 hover:rotate-0 transition-transform duration-300 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] scale-75 sm:scale-100 translate-x-9 sm:translate-x-9" style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}>
+                          <Logo className="scale-[1.5] sm:scale-[1.5]" />
                         </div>
                       </div>
                       
-                      <div className="relative w-full max-w-4xl mx-auto mb-10 sm:mb-12 flex items-center justify-center px-4 sm:px-0">
+                      <div className="relative w-full max-w-4xl mx-auto mb-6 sm:mb-10 -mt-4 sm:mt-0 flex items-center justify-center px-4 sm:px-0">
                         <div className="relative w-full min-h-[260px] max-h-[380px] sm:min-h-[320px] sm:max-h-[480px]">
                           <Image
                             src="/image.png"
@@ -1634,14 +1634,17 @@ export default function Home() {
                       </div>
                       
                       {/* Text under image */}
-                      <div className="text-center max-w-2xl mx-auto px-4 -mt-2 sm:-mt-4 -mb-4 sm:-mb-6">
-                        <p className="text-base sm:text-lg md:text-xl font-medium text-black leading-relaxed" style={{color: 'var(--text-secondary)'}}>
+                      <div className="text-center max-w-2xl mx-auto px-4 -mt-4 sm:-mt-2 -mb-4">
+                        <p className="text-base sm:text-lg md:text-xl font-medium text-black leading-relaxed sm:hidden" style={{color: 'var(--text-secondary)'}}>
+                          Üniversitene özel gönderiler paylaş ve tartışmalara katıl.
+                        </p>
+                        <p className="text-base sm:text-lg md:text-xl font-medium text-black leading-relaxed hidden sm:block" style={{color: 'var(--text-secondary)'}}>
                           Üniversitene özel gönderiler paylaş, tartışmalara katıl ve kampüs topluluğunla bağlan.
                         </p>
                       </div>
 
                       {/* Minimalist Features Grid */}
-                      <div className="grid grid-cols-3 gap-3 md:gap-5 max-w-4xl mx-auto mb-0 w-full mt-8 sm:mt-12">
+                      <div className="grid grid-cols-3 gap-3 md:gap-5 max-w-4xl mx-auto mb-0 w-full mt-8">
                         {[
                           { icon: MessageSquare, text: "Tartış" },
                           { icon: Building2, text: "Keşfet" },
