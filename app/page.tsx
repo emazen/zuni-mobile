@@ -1632,9 +1632,16 @@ export default function Home() {
                           />
                         </div>
                       </div>
+                      
+                      {/* Text under image */}
+                      <div className="text-center max-w-2xl mx-auto px-4 -mt-2 sm:-mt-4 -mb-4 sm:-mb-6">
+                        <p className="text-base sm:text-lg md:text-xl font-medium text-black leading-relaxed" style={{color: 'var(--text-secondary)'}}>
+                          Üniversitene özel gönderiler paylaş, tartışmalara katıl ve kampüs topluluğunla bağlan.
+                        </p>
+                      </div>
 
                       {/* Minimalist Features Grid */}
-                      <div className="grid grid-cols-3 gap-3 md:gap-5 max-w-4xl mx-auto mb-1 sm:mb-2 w-full mt-4 sm:mt-6">
+                      <div className="grid grid-cols-3 gap-3 md:gap-5 max-w-4xl mx-auto mb-0 w-full mt-8 sm:mt-12">
                         {[
                           { icon: MessageSquare, text: "Tartış" },
                           { icon: Building2, text: "Keşfet" },
@@ -1649,7 +1656,7 @@ export default function Home() {
                     </div>
                     
                     {/* Footer for Welcome Screen */}
-                    <footer className="w-full py-3 z-20 mt-auto">
+                    <footer className="w-full pt-0 pb-3 z-20 -mt-2">
                       <div className="max-w-4xl mx-auto px-6 text-center">
                         <div className="flex flex-wrap justify-center items-center gap-4 mb-1">
                           <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>

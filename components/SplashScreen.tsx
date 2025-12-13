@@ -68,37 +68,28 @@ export default function SplashScreen() {
           display: flex;
           align-items: center;
           justify-content: center;
-          /* Base scale for consistent proportions across all devices */
-          /* Desktop (1920px): 2.5 = ~0.13% of viewport */
-          /* Mobile (375px): ~0.49 = same visual proportion */
-          transform: scale(2.5);
+          /* Professional standard: 2x scale on desktop for splash screens */
+          transform: scale(2.0);
         }
         
-        /* Proportional scaling: maintain same visual size ratio */
-        /* Desktop: 1920px base, Mobile: 375px (0.195x ratio) */
-        /* To maintain same visual proportion: 2.5 * 0.195 ≈ 0.49 */
-        /* But we want it bigger on mobile, so using proportional calculation */
+        /* Mobile: Slightly smaller but still prominent (1.6x) */
         @media (max-width: 640px) {
           .splash-logo-wrapper {
-            /* Mobile viewport is ~375px, desktop is ~1920px */
-            /* Ratio: 375/1920 = 0.195 */
-            /* To maintain visual proportion: 2.5 * (375/1920) * 4 ≈ 1.95 */
-            /* Using a more visible scale while maintaining proportion */
-            transform: scale(1.95);
+            transform: scale(1.6);
           }
         }
         
+        /* Tablet: Balanced scale (1.8x) */
         @media (min-width: 641px) and (max-width: 1024px) {
           .splash-logo-wrapper {
-            /* Tablet: ~768px, ratio: 768/1920 = 0.4 */
-            /* Proportional: 2.5 * 0.4 * 2.25 ≈ 2.25 */
-            transform: scale(2.25);
+            transform: scale(1.8);
           }
         }
         
+        /* Desktop: Professional standard 2x scale */
         @media (min-width: 1025px) {
           .splash-logo-wrapper {
-            transform: scale(2.5);
+            transform: scale(2.0);
           }
         }
       `}</style>
