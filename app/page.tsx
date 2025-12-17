@@ -1381,13 +1381,13 @@ export default function Home() {
       </header>
 
       {/* Sidebar and Main Content */}
-      <div className={`flex ${isMobile ? 'absolute inset-0 top-14' : 'h-[calc(100vh-56px)] sm:h-[calc(100dvh-56px)]'} overscroll-none`}>
+      <div className={`flex ${isMobile ? 'absolute inset-0 top-14' : 'h-[calc(100vh-56px)] sm:h-[calc(100dvh-56px)]'}`}>
         {/* Desktop Sidebar */}
         {!isMobile && (
           <UniversitySidebar onUniversityClick={handleUniversityClick} />
         )}
         
-        <div className={`flex-1 ${isMobile ? 'overflow-y-auto overscroll-none h-full pb-0' : 'overflow-y-auto overscroll-none h-full pb-20 sm:pb-0'}`} style={{backgroundColor: 'var(--bg-primary)'}}>
+        <div className={`flex-1 ${isMobile ? 'overflow-y-auto h-full pb-0' : 'overflow-y-auto h-full pb-20 sm:pb-0'}`} style={{backgroundColor: 'var(--bg-primary)'}}>
           {/* Mobile Universities Full Page - No Sliding */}
           {isMobile && isMobileMenuOpen ? (
             <div className="h-full flex flex-col" style={{backgroundColor: 'var(--bg-primary)'}}>
@@ -1406,14 +1406,14 @@ export default function Home() {
               </div>
               
               {/* Mobile Universities Content - Static */}
-              <div className="flex-1 overflow-y-auto overscroll-none p-4 pb-20">
+              <div className="flex-1 overflow-y-auto p-4 pb-20">
                 <UniversitySidebar onUniversityClick={handleUniversityClick} isMobile={true} />
               </div>
             </div>
           ) : (showPostDetail && (postId || selectedPostId)) ? (
             <PostDetailView postId={postId || selectedPostId || ''} onGoBack={handleGoBack} onCommentAdded={handleCommentAdded} onPostDeleted={fetchData} />
           ) : (showUniversityBoard || (session && universityParam && !postId)) ? (
-            <div className={`${isMobile ? 'h-full' : 'h-full overflow-y-auto overscroll-none'}`}>
+            <div className={`${isMobile ? 'h-full' : 'h-full overflow-y-auto'}`}>
               <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col ${isMobile ? 'min-h-[calc(100dvh-64px)]' : 'min-h-full'}`}>
                 <div className="flex-1">
                 {/* University Posts */}
@@ -1604,9 +1604,9 @@ export default function Home() {
               </main>
             </div>
           ) : (
-              <div className={`h-full flex flex-col overscroll-none ${!session ? 'overflow-hidden' : ''}`}>
+              <div className={`h-full flex flex-col ${!session ? 'overflow-hidden' : ''}`}>
                 {!session ? (
-                  <main className="h-full flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 relative overflow-y-auto overflow-x-hidden no-overscroll">
+                  <main className="h-full flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 relative overflow-y-auto overflow-x-hidden">
                     {/* Decorative Background Elements */}
                     <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-15" style={{backgroundColor: '#FFE066'}}></div>
                     <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-15" style={{backgroundColor: '#45B7D1'}}></div>
@@ -1636,10 +1636,10 @@ export default function Home() {
                       {/* Text under image */}
                       <div className="text-center max-w-2xl mx-auto px-4 -mt-4 sm:-mt-2 -mb-4">
                         <p className="text-base sm:text-lg md:text-xl font-medium text-black leading-relaxed sm:hidden" style={{color: 'var(--text-secondary)'}}>
-                          Üniversitene özel gönderiler paylaş ve tartışmalara katıl.
+                          Üniversitene özel yazılı, görsel ve sesli gönderiler paylaş, tartışmalara katıl.
                         </p>
                         <p className="text-base sm:text-lg md:text-xl font-medium text-black leading-relaxed hidden sm:block" style={{color: 'var(--text-secondary)'}}>
-                          Üniversitene özel gönderiler paylaş, tartışmalara katıl ve kampüs topluluğunla bağlan.
+                          Üniversitene özel yazılı, görsel ve sesli gönderiler paylaş, tartışmalara katıl.
                         </p>
                       </div>
 

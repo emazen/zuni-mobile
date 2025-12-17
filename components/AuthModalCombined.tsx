@@ -36,7 +36,18 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [signUpError, setSignUpError] = useState("")
   const [signUpLoading, setSignUpLoading] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const router = useRouter()
+  
+  // Detect mobile on mount
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
   
   // Update mode when initialMode prop changes or modal opens
   useEffect(() => {
@@ -58,7 +69,7 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
         setIsMounted(false)
         setShouldAnimate(false)
         setContainerHeight('auto')
-      }, 100)
+      }, isMobile ? 200 : 100)
       return () => clearTimeout(timer)
     }
   }, [isOpen, initialMode, isMounted])
@@ -233,10 +244,10 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
   if (!isMounted) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className={`fixed inset-0 z-50 ${isMobile ? 'flex items-end' : 'flex items-center justify-center'}`}>
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/50 transition-opacity duration-100 ease-out"
+        className={`absolute inset-0 bg-black/50 transition-opacity ease-out ${isMobile ? 'duration-200' : 'duration-100'}`}
         style={{
           opacity: isVisible ? 1 : 0,
           pointerEvents: isVisible ? 'auto' : 'none'
@@ -246,16 +257,46 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
       
       {/* Modal */}
       <div 
-        className="relative bg-white dark:bg-[#151515] border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] w-full max-w-md mx-4 overflow-hidden transition-all duration-100 ease-out"
+        className={`relative bg-white dark:bg-[#151515] border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] w-full mx-4 overflow-hidden transition-all ease-out ${
+          isMobile ? 'max-w-full duration-200' : 'max-w-md rounded-xl duration-100'
+        }`}
         style={{
-          maxHeight: '90vh',
+          maxHeight: isMobile ? '100vh' : '90vh',
+          height: isMobile ? '100vh' : 'auto',
           opacity: isVisible ? 1 : 0,
-          transform: isVisible ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(-10px)',
-          transition: 'opacity 100ms ease-out, transform 100ms ease-out, height 0.2s ease-out'
+          transform: isVisible 
+            ? (isMobile ? 'translateY(0)' : 'scale(1) translateY(0)')
+            : (isMobile ? 'translateY(100%)' : 'scale(0.95) translateY(-10px)'),
+          transition: isMobile 
+            ? 'opacity 200ms ease-out, transform 200ms ease-out, height 0.2s ease-out'
+            : 'opacity 100ms ease-out, transform 100ms ease-out, height 0.2s ease-out',
+          ...(isMobile && {
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            top: 0,
+            margin: 0,
+            borderBottom: 'none',
+            borderLeft: 'none',
+            borderRight: 'none',
+            borderTop: 'none',
+            borderRadius: 0
+          })
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-8 overflow-y-auto custom-scrollbar" style={{maxHeight: '90vh'}}>
+        {/* Drag Handle / Close Arrow - Mobile Only */}
+        {isMobile && (
+          <div 
+            className="flex justify-center pt-3 pb-2 cursor-pointer"
+            onClick={onClose}
+          >
+            <div className="w-12 h-1.5 bg-gray-400 dark:bg-gray-600 rounded-full"></div>
+          </div>
+        )}
+        
+        <div className={`overflow-y-auto custom-scrollbar ${isMobile ? 'px-6 py-6 h-full' : 'p-8'}`} style={{maxHeight: isMobile ? '100vh' : '90vh'}}>
           {/* Toggle Switch */}
           <div className="mb-6">
             <div className="relative flex border-2 border-black rounded-lg overflow-hidden bg-white dark:bg-[#1a1a1a]">
@@ -299,7 +340,8 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
           <div 
             className="relative overflow-hidden"
             style={{
-              height: containerHeight === 'auto' ? 'auto' : `${containerHeight}px`,
+              minHeight: isMobile ? 'calc(100vh - 200px)' : (containerHeight === 'auto' ? 'auto' : `${containerHeight}px`),
+              height: isMobile ? 'auto' : (containerHeight === 'auto' ? 'auto' : `${containerHeight}px`),
               transition: shouldAnimate ? 'height 0.2s ease-out' : 'none'
             }}
           >
@@ -312,7 +354,8 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
                   : 'opacity-0 pointer-events-none absolute inset-0'
               }`}
               style={{
-                transition: mode === 'signin' ? 'opacity 0.1s ease-out' : 'none'
+                transition: mode === 'signin' ? 'opacity 0.1s ease-out' : 'none',
+                minHeight: isMobile ? 'calc(100vh - 200px)' : 'auto'
               }}
             >
               <form className="space-y-5" onSubmit={handleSignIn}>
@@ -376,7 +419,8 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
                   : 'opacity-0 pointer-events-none absolute inset-0'
               }`}
               style={{
-                transition: mode === 'signup' ? 'opacity 0.1s ease-out' : 'none'
+                transition: mode === 'signup' ? 'opacity 0.1s ease-out' : 'none',
+                minHeight: isMobile ? 'calc(100vh - 200px)' : 'auto'
               }}
             >
               <form className="space-y-4" onSubmit={handleSignUp}>

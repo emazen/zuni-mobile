@@ -42,6 +42,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  
 
   // Fetch university immediately when component mounts or params change
   useEffect(() => {
@@ -104,12 +105,15 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
         return;
       }
       
-      setImageFile(file);
+      const selectedFile = file;
+      setImageFile(selectedFile);
+      console.log('Image file selected:', selectedFile.name, 'State will update...');
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
+        console.log('Image preview set, imageFile state should be:', selectedFile);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(selectedFile);
     }
   };
 
@@ -150,8 +154,14 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !content.trim()) {
-      alert('Başlık ve içerik gereklidir');
+    // Validate that at least title and one of content/image/audio exists
+    if (!title.trim()) {
+      alert('Başlık gereklidir');
+      return;
+    }
+    
+    if (!content.trim() && !imageFile) {
+      alert('Lütfen içerik veya resim ekleyin');
       return;
     }
 
@@ -174,7 +184,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
         },
         body: JSON.stringify({
           title: title.trim(),
-          content: content.trim(),
+          content: content.trim() || '',
           image: imageUrl,
         }),
       });
@@ -473,7 +483,6 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                           className="w-full px-4 py-3 bg-white dark:bg-[#121212] border-2 border-black rounded-lg font-sans text-sm sm:text-base leading-relaxed resize-none focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 placeholder:text-gray-400"
                           style={{borderColor: 'var(--border-color)'}}
                         maxLength={5000}
-                        required
                       />
                         <div className="flex justify-between mt-1.5">
                           <div>
@@ -528,9 +537,10 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                       
                       <button
                         type="submit"
-                        disabled={loading || !title.trim() || !content.trim()}
+                        disabled={loading || !title.trim() || (!content.trim() && imageFile === null)}
                           className="group relative px-6 sm:px-8 py-2.5 sm:py-3 bg-black dark:bg-white text-white dark:text-black font-bold text-sm sm:text-base rounded-lg border-2 border-black disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden flex-1 sm:flex-none"
                           style={{borderColor: 'var(--border-color)'}}
+                          title={!title.trim() ? 'Başlık gereklidir' : (!content.trim() && imageFile === null) ? 'İçerik veya resim gereklidir' : ''}
                       >
                           <div className="absolute inset-0 w-full h-full bg-pink-500 translate-y-full group-hover:translate-y-0 transition-transform duration-200 ease-out" />
                           <div className="relative flex items-center justify-center gap-2 group-hover:text-white">

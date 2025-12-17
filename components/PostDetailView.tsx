@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, MessageSquare, Trash2, Send, Clock, ChevronDown, Image as ImageIcon, X, MoreVertical } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Trash2, Send, Clock, ChevronDown, Image as ImageIcon, X, MoreVertical, Mic } from 'lucide-react';
 import CustomSpinner from './CustomSpinner';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
+import VoiceRecorder from './VoiceRecorder';
+import AudioPlayer from './AudioPlayer';
 
 interface Comment {
   id: string;
@@ -18,6 +20,7 @@ interface Comment {
   };
   createdAt: string;
   image?: string | null;
+  audio?: string | null;
 }
 
 interface Post {
@@ -61,6 +64,10 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
   const [commentImage, setCommentImage] = useState<File | null>(null);
   const [commentImagePreview, setCommentImagePreview] = useState<string | null>(null);
   const [uploadingCommentImage, setUploadingCommentImage] = useState(false);
+  const [commentAudio, setCommentAudio] = useState<Blob | null>(null);
+  const [commentAudioUrl, setCommentAudioUrl] = useState<string | null>(null);
+  const [uploadingCommentAudio, setUploadingCommentAudio] = useState(false);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [isDeleteMenuOpen, setIsDeleteMenuOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
@@ -144,9 +151,158 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
     }
   };
 
+  const uploadAudio = async (audioBlob: Blob): Promise<string | null> => {
+    try {
+      setUploadingCommentAudio(true);
+      
+      // Validate blob
+      if (!audioBlob || audioBlob.size === 0) {
+        alert('Geçersiz ses kaydı. Lütfen tekrar deneyin.');
+        return null;
+      }
+      
+      // Check file size (max 10MB for audio)
+      if (audioBlob.size > 10 * 1024 * 1024) {
+        alert('Ses kaydı 10MB\'dan küçük olmalıdır.');
+        return null;
+      }
+      
+      // Determine file extension and MIME type
+      // Supabase Storage bucket allows: audio/mpeg, audio/mp3, audio/webm, video/mp4
+      // MediaRecorder typically produces: audio/webm or audio/mp4 (Safari)
+      const originalMimeType = audioBlob.type || 'audio/webm';
+      let fileExt = 'webm';
+      let uploadMimeType: string | undefined = 'audio/webm'; // Default to webm since it's now allowed
+      
+      // Determine file extension and MIME type based on original type
+      if (originalMimeType.includes('webm')) {
+        fileExt = 'webm';
+        uploadMimeType = 'audio/webm'; // Use webm since it's allowed
+      } else if (originalMimeType.includes('mp3') || originalMimeType.includes('mpeg')) {
+        fileExt = 'mp3';
+        uploadMimeType = 'audio/mpeg';
+      } else if (originalMimeType.includes('mp4') || originalMimeType.includes('m4a')) {
+        // audio/mp4 is NOT supported, try video/mp4 first (which IS supported)
+        fileExt = 'm4a';
+        uploadMimeType = 'video/mp4'; // Try video/mp4 first since it's in allowed list
+      } else {
+        fileExt = 'webm';
+        uploadMimeType = 'audio/webm';
+      }
+      
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = `comments/audio/${fileName}`;
+
+      console.log('Uploading audio:', {
+        size: audioBlob.size,
+        originalType: originalMimeType,
+        uploadType: uploadMimeType,
+        fileExt,
+        filePath
+      });
+
+      // Upload strategies (try multiple approaches if first fails)
+      let uploadError: any = null;
+      let uploadSuccess = false;
+
+      // Strategy 1: Upload with determined MIME type
+      const { error: error1 } = await supabase.storage
+        .from('uploads')
+        .upload(filePath, audioBlob, {
+          contentType: uploadMimeType,
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (!error1) {
+        uploadSuccess = true;
+      } else {
+        uploadError = error1;
+        console.log('Upload strategy 1 failed:', error1.message);
+        
+        // Strategy 2: For mp4, try without contentType (let Supabase infer)
+        if (originalMimeType.includes('mp4') || originalMimeType.includes('m4a')) {
+          console.log('Trying upload without contentType...');
+          const { error: error2 } = await supabase.storage
+            .from('uploads')
+            .upload(filePath, audioBlob, {
+              cacheControl: '3600',
+              upsert: false
+              // No contentType - let Supabase infer
+            });
+          
+          if (!error2) {
+            uploadSuccess = true;
+            uploadError = null;
+          } else {
+            uploadError = error2;
+            console.log('Upload strategy 2 failed:', error2.message);
+          }
+        }
+        
+        // Strategy 3: Try as audio/mpeg (most compatible)
+        if (!uploadSuccess && !originalMimeType.includes('mp4')) {
+          console.log('Trying upload as audio/mpeg...');
+          const { error: error3 } = await supabase.storage
+            .from('uploads')
+            .upload(filePath, audioBlob, {
+              contentType: 'audio/mpeg',
+              cacheControl: '3600',
+              upsert: false
+            });
+          
+          if (!error3) {
+            uploadSuccess = true;
+            uploadError = null;
+          } else {
+            uploadError = error3;
+            console.log('Upload strategy 3 failed:', error3.message);
+          }
+        }
+      }
+
+      if (!uploadSuccess && uploadError) {
+        // Log detailed error information
+        console.error('All upload strategies failed:', {
+          error: uploadError,
+          message: uploadError.message,
+          statusCode: uploadError.statusCode,
+          errorCode: uploadError.error,
+          blobSize: audioBlob.size,
+          blobType: audioBlob.type,
+          attemptedMimeType: uploadMimeType
+        });
+        
+        throw new Error(
+          uploadError.message || 
+          `Yükleme başarısız oldu. Hata kodu: ${uploadError.statusCode || uploadError.error || 'Bilinmeyen'}`
+        );
+      }
+
+      // Get public URL
+      const { data } = supabase.storage
+        .from('uploads')
+        .getPublicUrl(filePath);
+
+      if (!data?.publicUrl) {
+        throw new Error('Dosya yüklendi ancak URL alınamadı.');
+      }
+
+      console.log('Audio uploaded successfully:', data.publicUrl);
+      return data.publicUrl;
+    } catch (error: any) {
+      console.error('Error uploading audio to Supabase:', error);
+      const errorMessage = error?.message || 'Bilinmeyen hata';
+      alert(`Ses kaydı yüklenirken bir hata oluştu: ${errorMessage}. Lütfen tekrar deneyin.`);
+      return null;
+    } finally {
+      setUploadingCommentAudio(false);
+    }
+  };
+
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentContent.trim()) return;
+    if (!commentContent.trim() && !commentAudio && !commentImage) return;
 
     setSubmittingComment(true);
     try {
@@ -159,21 +315,52 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
         }
       }
 
+      let audioUrl = null;
+      if (commentAudio) {
+        audioUrl = await uploadAudio(commentAudio);
+        if (!audioUrl) {
+          setSubmittingComment(false);
+          return;
+        }
+      }
+
+      // Get trimmed content (can be empty if audio or image is present)
+      let finalContent = commentContent.trim();
+      
+      // Validate that at least one form of content exists
+      if (!finalContent && !audioUrl && !imageUrl) {
+        alert('Lütfen bir mesaj, resim veya ses kaydı ekleyin.');
+        setSubmittingComment(false);
+        return;
+      }
+
       const response = await fetch(`/api/posts/${postId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: commentContent.trim(),
+          content: finalContent,
           image: imageUrl,
+          audio: audioUrl,
         }),
       });
 
-      if (response.ok) {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || errorData.details || 'Yorum gönderilemedi';
+        alert(errorMessage);
+        console.error('Error submitting comment:', errorData);
+        setSubmittingComment(false);
+        return;
+      }
+
         const newComment = await response.json();
         setCommentContent('');
         removeCommentImage();
+      setCommentAudio(null);
+      setCommentAudioUrl(null);
+      setShowVoiceRecorder(false);
         
         if (post) {
           setPost(prevPost => ({
@@ -194,11 +381,27 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
             commentsSection.scrollIntoView({ behavior: 'smooth', block: 'end' });
           }
         }, 100);
-      }
     } catch (error) {
       console.error('Error submitting comment:', error);
+      alert('Bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setSubmittingComment(false);
+    }
+  };
+
+  const handleRecordingComplete = (audioBlob: Blob) => {
+    setCommentAudio(audioBlob);
+    const url = URL.createObjectURL(audioBlob);
+    setCommentAudioUrl(url);
+    setShowVoiceRecorder(false);
+  };
+
+  const handleCancelRecording = () => {
+    setShowVoiceRecorder(false);
+    setCommentAudio(null);
+    if (commentAudioUrl) {
+      URL.revokeObjectURL(commentAudioUrl);
+      setCommentAudioUrl(null);
     }
   };
 
@@ -474,15 +677,56 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                         >
                           <ImageIcon className="w-5 h-5" />
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
+                          className={`p-3 transition-colors ${
+                            showVoiceRecorder || commentAudio
+                              ? 'text-red-500 hover:text-red-600'
+                              : 'text-gray-500 hover:text-black dark:hover:text-white'
+                          }`}
+                          title="Ses kaydı"
+                        >
+                          <Mic className="w-5 h-5" />
+                        </button>
                   <button
                     type="submit"
-                    disabled={submittingComment || !commentContent.trim()}
+                    disabled={submittingComment || (!commentContent.trim() && !commentAudio && !commentImage)}
                           className="p-3 bg-black dark:bg-white text-white dark:text-black rounded-lg disabled:opacity-50 hover:scale-105 transition-transform"
                         >
                           <Send className="w-5 h-5" />
                         </button>
                       </div>
                     </div>
+                    
+                    {showVoiceRecorder && !commentAudio && (
+                      <div className="mt-2">
+                        <VoiceRecorder
+                          onRecordingComplete={handleRecordingComplete}
+                          onCancel={handleCancelRecording}
+                          maxDuration={120}
+                        />
+                      </div>
+                    )}
+                    
+                    {commentAudioUrl && commentAudio && (
+                      <div className="mt-2">
+                        <AudioPlayer audioUrl={commentAudioUrl} />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCommentAudio(null);
+                            if (commentAudioUrl) {
+                              URL.revokeObjectURL(commentAudioUrl);
+                              setCommentAudioUrl(null);
+                            }
+                          }}
+                          className="mt-2 text-xs text-red-500 hover:text-red-600"
+                        >
+                          Kaydı Sil
+                        </button>
+                      </div>
+                    )}
                     
                     {commentImagePreview && (
                       <div className="relative inline-block self-start mt-2 ml-3">
@@ -524,9 +768,10 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                             <div className="flex items-center gap-2">
                               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: getGenderColor(comment.author.gender, comment.author.customColor) }} />
                               {/* Username removed */}
-                              <span className="text-xs text-gray-400 font-mono">
-                                {new Date(comment.createdAt).toLocaleDateString('tr-TR')}
-                              </span>
+                              <div className="flex items-center gap-1.5 text-xs text-gray-400 font-mono">
+                                <Clock className="w-3 h-3 flex-shrink-0" />
+                                <span>{new Date(comment.createdAt).toLocaleDateString('tr-TR')} {new Date(comment.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
+                              </div>
                             </div>
                             
                             {isCommentAuthor && !isCommentDeleted && (
@@ -540,10 +785,10 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                             )}
                           </div>
                           
+                          {/* Only show content if it exists and is not empty */}
+                          {comment.content && comment.content.trim() && !isCommentDeleted && (
                           <p 
-                            className={`text-lg font-sans leading-relaxed ${
-                              isCommentDeleted ? 'italic text-gray-400' : 'text-gray-700 dark:text-gray-300'
-                            }`}
+                              className="text-lg font-sans leading-relaxed text-gray-700 dark:text-gray-300"
                             style={{
                               overflowWrap: 'break-word',
                               wordWrap: 'break-word',
@@ -553,8 +798,19 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                               whiteSpace: 'pre-wrap'
                             }}
                           >
-                            {isCommentDeleted ? 'This comment has been deleted.' : comment.content}
-                          </p>
+                              {comment.content}
+                            </p>
+                          )}
+                          {isCommentDeleted && (
+                            <p className="text-lg font-sans leading-relaxed italic text-gray-400">
+                              Bu yorum silindi.
+                            </p>
+                          )}
+                          {comment.audio && !isCommentDeleted && (
+                            <div className={comment.content && comment.content.trim() ? "mt-3" : ""}>
+                              <AudioPlayer audioUrl={comment.audio} />
+                            </div>
+                          )}
                           {comment.image && !isCommentDeleted && (
                             <div className="mt-3">
                               <img 

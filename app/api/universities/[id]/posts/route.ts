@@ -180,7 +180,7 @@ export async function POST(
       );
     }
 
-    const { title, content, image } = validationResult.data;
+    const { title, content, image, audio } = validationResult.data;
 
     // Sanitize input (Zod already trimmed, but we sanitize for XSS)
     const titleValidation = sanitizeAndValidate(title, 200, "Title")
@@ -191,12 +191,18 @@ export async function POST(
       )
     }
 
+    // Only validate content if it's provided and not empty
+    // If only image/audio is provided, content can be empty
+    let sanitizedContent = '';
+    if (content && content.trim().length > 0) {
     const contentValidation = sanitizeAndValidate(content, 10000, "Content")
     if (contentValidation.error) {
       return NextResponse.json(
         { error: contentValidation.error },
         { status: 400 }
       )
+      }
+      sanitizedContent = contentValidation.sanitized;
     }
 
     // Check if university exists
@@ -214,8 +220,9 @@ export async function POST(
     const post = await prisma.post.create({
       data: {
         title: titleValidation.sanitized,
-        content: contentValidation.sanitized,
+        content: sanitizedContent,
         image,
+        audio,
         authorId: session.user.id,
         universityId: resolvedParams.id,
       },

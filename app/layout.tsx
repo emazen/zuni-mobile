@@ -9,8 +9,8 @@ const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space
 const plusJakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta' })
 
 export const metadata: Metadata = {
-  title: 'Zuni - Educational Message Board',
-  description: 'A message board exclusively for educational email addresses',
+  title: 'Zuni',
+  description: 'Üniversitene özel gönderiler paylaş ve tartışmalara katıl.',
 }
 
 export default function RootLayout({
@@ -19,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="overscroll-none h-full" suppressHydrationWarning>
+    <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -167,7 +167,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.variable} ${spaceGrotesk.variable} ${plusJakarta.variable} font-sans overscroll-none h-full m-0 p-0`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} ${plusJakarta.variable} font-sans h-full m-0 p-0`} suppressHydrationWarning>
         <AuthProvider>
           <ThemeProviderWrapper>
             {children}

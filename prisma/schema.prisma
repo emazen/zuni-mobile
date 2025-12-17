@@ -40,11 +40,11 @@ model User {
   email                   String                       @unique
   password                String?
   gender                  String?
-  customColor             String?                      // Hex color code for custom gender identity
   emailVerified           DateTime?
   image                   String?
   createdAt               DateTime                     @default(now())
   updatedAt               DateTime                     @updatedAt
+  customColor             String?
   accounts                Account[]
   comments                Comment[]
   emailVerificationTokens EmailVerificationToken[]
@@ -94,11 +94,12 @@ model Post {
   universityId String
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  image        String?
+  audio        String?
   comments     Comment[]
   author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
   PostRead     PostRead[]
-  image        String?
 }
 
 model Comment {
@@ -108,9 +109,10 @@ model Comment {
   postId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  image     String?
+  audio     String?
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  image     String?
 }
 
 model UserUniversitySubscription {

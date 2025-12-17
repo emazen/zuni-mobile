@@ -13,6 +13,17 @@ interface AuthModalProps {
 export default function AuthModal({ isOpen, onClose, onSignIn, onSignUp }: AuthModalProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile on mount
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -28,7 +39,7 @@ export default function AuthModal({ isOpen, onClose, onSignIn, onSignUp }: AuthM
       // Unmount after animation completes
       const timer = setTimeout(() => {
         setIsMounted(false);
-      }, 100);
+      }, isMobile ? 200 : 100);
       return () => clearTimeout(timer);
     }
   }, [isOpen, isMounted]);
@@ -37,10 +48,10 @@ export default function AuthModal({ isOpen, onClose, onSignIn, onSignUp }: AuthM
   if (!isMounted) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className={`fixed inset-0 z-50 ${isMobile ? 'flex items-end' : 'flex items-center justify-center p-4'}`}>
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/50 transition-opacity duration-100 ease-out"
+        className={`absolute inset-0 bg-black/50 transition-opacity ease-out ${isMobile ? 'duration-200' : 'duration-100'}`}
         style={{
           opacity: isVisible ? 1 : 0,
           pointerEvents: isVisible ? 'auto' : 'none'
@@ -50,16 +61,47 @@ export default function AuthModal({ isOpen, onClose, onSignIn, onSignUp }: AuthM
       
       {/* Modal */}
       <div 
-        className="relative bg-white dark:bg-[#151515] border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] w-full max-w-sm overflow-hidden transition-all duration-100 ease-out" 
+        className={`relative bg-white dark:bg-[#151515] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] w-full overflow-hidden transition-all ease-out ${
+          isMobile ? 'max-w-full duration-200' : 'max-w-sm rounded-xl duration-100'
+        }`}
         style={{
+          maxHeight: isMobile ? '100vh' : '90vh',
+          height: isMobile ? '100vh' : 'auto',
           opacity: isVisible ? 1 : 0,
-          transform: isVisible ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(-10px)',
-          transition: 'opacity 100ms ease-out, transform 100ms ease-out'
+          transform: isVisible 
+            ? (isMobile ? 'translateY(0)' : 'scale(1) translateY(0)')
+            : (isMobile ? 'translateY(100%)' : 'scale(0.95) translateY(-10px)'),
+          transition: isMobile 
+            ? 'opacity 200ms ease-out, transform 200ms ease-out'
+            : 'opacity 100ms ease-out, transform 100ms ease-out',
+          ...(isMobile && {
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            top: 0,
+            margin: 0,
+            borderBottom: 'none',
+            borderLeft: 'none',
+            borderRight: 'none',
+            borderTop: 'none',
+            borderRadius: 0
+          })
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Drag Handle / Close Arrow - Mobile Only */}
+        {isMobile && (
+          <div 
+            className="flex justify-center pt-3 pb-2 cursor-pointer"
+            onClick={onClose}
+          >
+            <div className="w-12 h-1.5 bg-gray-400 dark:bg-gray-600 rounded-full"></div>
+          </div>
+        )}
+        
         {/* Content */}
-        <div className="p-8 text-center">
+        <div className={`text-center ${isMobile ? 'px-6 py-6 h-full' : 'p-8'} overflow-y-auto custom-scrollbar`} style={{maxHeight: isMobile ? '100vh' : '90vh'}}>
           {/* Icon */}
           <div className="mx-auto w-16 h-16 bg-[#FFE066] rounded-full border-2 border-black flex items-center justify-center mb-6 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
             <Lock className="w-8 h-8 text-black" />

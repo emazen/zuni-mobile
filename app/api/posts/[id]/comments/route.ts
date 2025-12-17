@@ -38,15 +38,21 @@ export async function POST(
       )
     }
 
-    const { content, image } = validationResult.data
+    const { content, image, audio } = validationResult.data
 
     // Sanitize input (Zod already trimmed, but we sanitize for XSS)
+    // Only validate content if it's provided and not empty
+    // If only audio/image is provided, content can be empty
+    let sanitizedContent = '';
+    if (content && content.trim().length > 0) {
     const contentValidation = sanitizeAndValidate(content, 2000, "Comment")
     if (contentValidation.error) {
       return NextResponse.json(
         { error: contentValidation.error },
         { status: 400 }
       )
+      }
+      sanitizedContent = contentValidation.sanitized;
     }
 
     const resolvedParams = await params
@@ -74,8 +80,9 @@ export async function POST(
 
     const comment = await prisma.comment.create({
       data: {
-        content: contentValidation.sanitized,
+        content: sanitizedContent,
         image,
+        audio,
         authorId: session.user.id,
         postId: resolvedParams.id,
       },
@@ -91,10 +98,19 @@ export async function POST(
     })
 
     return NextResponse.json(comment, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating comment:", error)
+    console.error("Error details:", {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      stack: error?.stack
+    })
     return NextResponse.json(
-      { error: "Failed to create comment" },
+      { 
+        error: "Failed to create comment",
+        details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      },
       { status: 500 }
     )
   }

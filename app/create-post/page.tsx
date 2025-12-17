@@ -19,11 +19,14 @@ export default function CreatePost() {
     setLoading(true)
     setError("")
 
-    if (!title.trim() || !content.trim()) {
-      setError("Please fill in all fields")
+    if (!title.trim()) {
+      setError("Title is required")
       setLoading(false)
       return
     }
+    
+    // Content is optional if image/audio is provided, but for now we'll keep it simple
+    // and allow empty content (the API will handle validation)
 
     try {
       const response = await fetch("/api/posts", {

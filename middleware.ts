@@ -34,6 +34,7 @@ export function middleware(request: NextRequest) {
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // unsafe-eval needed for Next.js
     "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Tailwind
     "img-src 'self' data: https:",
+    "media-src 'self' blob: https://kapoavjqihxgvznxjnux.supabase.co", // Allow audio/video from Supabase Storage and blob URLs
     "font-src 'self' data:",
     "connect-src 'self' https://kapoavjqihxgvznxjnux.supabase.co", // Allow Supabase
     "frame-ancestors 'self'",

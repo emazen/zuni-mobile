@@ -6,8 +6,28 @@ import { isValidEduEmail } from "./utils"
 import bcrypt from "bcryptjs"
 import { createEmailVerificationToken, sendVerificationEmail } from "./email-verification"
 
+// Validate NEXTAUTH_URL format
+const nextAuthUrl = process.env.NEXTAUTH_URL;
+if (!nextAuthUrl) {
+  console.warn('⚠️ NEXTAUTH_URL is not set. NextAuth may not work correctly.');
+} else {
+  // Validate URL format
+  try {
+    const url = new URL(nextAuthUrl);
+    if (url.pathname !== '/' && url.pathname !== '') {
+      console.warn('⚠️ NEXTAUTH_URL should not have a pathname. Remove trailing slash:', nextAuthUrl);
+    }
+    if (!url.protocol || (url.protocol !== 'https:' && url.protocol !== 'http:')) {
+      console.warn('⚠️ NEXTAUTH_URL should use http:// or https:// protocol:', nextAuthUrl);
+    }
+  } catch (e) {
+    console.error('❌ NEXTAUTH_URL is invalid:', nextAuthUrl, e);
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: "credentials",

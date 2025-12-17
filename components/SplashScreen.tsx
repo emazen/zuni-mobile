@@ -68,29 +68,14 @@ export default function SplashScreen() {
           display: flex;
           align-items: center;
           justify-content: center;
-          /* Professional standard: 2x scale on desktop for splash screens */
-          transform: scale(2.0);
+          /* Standard splash screen size: 1.5x scale for all devices */
+          transform: scale(1.5);
         }
-        
-        /* Mobile: Slightly smaller but still prominent (1.6x) */
-        @media (max-width: 640px) {
-          .splash-logo-wrapper {
-            transform: scale(1.6);
-          }
-        }
-        
-        /* Tablet: Balanced scale (1.8x) */
-        @media (min-width: 641px) and (max-width: 1024px) {
-          .splash-logo-wrapper {
-            transform: scale(1.8);
-          }
-        }
-        
-        /* Desktop: Professional standard 2x scale */
-        @media (min-width: 1025px) {
-          .splash-logo-wrapper {
-            transform: scale(2.0);
-          }
+      `}</style>
+      <style jsx global>{`
+        .splash-logo-wrapper span {
+          font-size: 1.875rem !important; /* text-3xl - force same size on all devices */
+          line-height: 2.25rem !important;
         }
       `}</style>
     </div>
