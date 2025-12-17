@@ -125,7 +125,7 @@ export default function AudioPlayer({ audioUrl, className = '' }: AudioPlayerPro
         try {
           errorInfo.errorCode = error.code;
           errorInfo.errorMessage = error.message;
-          errorInfo.errorName = error.name;
+          // MediaError doesn't have a 'name' property in TypeScript
           // Try to stringify error object
           errorInfo.errorString = JSON.stringify(error, Object.getOwnPropertyNames(error));
         } catch (e) {
