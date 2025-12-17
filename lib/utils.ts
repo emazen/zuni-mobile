@@ -6,6 +6,24 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Extract duration from audio blob using AudioContext
+ * This is the ONLY reliable way to get accurate duration from MediaRecorder blobs
+ * Timer-based duration is unreliable due to async callbacks and state timing issues
+ */
+export const getAudioDurationFromBlob = async (blob: Blob): Promise<number> => {
+  try {
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    await audioContext.close();
+    return audioBuffer.duration;
+  } catch (error) {
+    console.error('Error extracting duration from blob:', error);
+    throw error;
+  }
+};
+
+/**
  * Sanitizes user input to prevent XSS attacks
  * Removes HTML tags and dangerous content while preserving text
  * Server-side safe (no DOM required)

@@ -66,6 +66,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
   const [uploadingCommentImage, setUploadingCommentImage] = useState(false);
   const [commentAudio, setCommentAudio] = useState<Blob | null>(null);
   const [commentAudioUrl, setCommentAudioUrl] = useState<string | null>(null);
+  const [commentAudioDuration, setCommentAudioDuration] = useState<number | undefined>(undefined);
   const [uploadingCommentAudio, setUploadingCommentAudio] = useState(false);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
@@ -389,10 +390,11 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
     }
   };
 
-  const handleRecordingComplete = (audioBlob: Blob) => {
+  const handleRecordingComplete = (audioBlob: Blob, duration?: number) => {
     setCommentAudio(audioBlob);
     const url = URL.createObjectURL(audioBlob);
     setCommentAudioUrl(url);
+    setCommentAudioDuration(duration);
     setShowVoiceRecorder(false);
   };
 
@@ -711,7 +713,11 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                     
                     {commentAudioUrl && commentAudio && (
                       <div className="mt-2">
-                        <AudioPlayer audioUrl={commentAudioUrl} />
+                        <AudioPlayer 
+                          key={`${commentAudioUrl}-${commentAudioDuration}`}
+                          audioUrl={commentAudioUrl} 
+                          duration={commentAudioDuration} 
+                        />
                         <button
                           type="button"
                           onClick={() => {
@@ -808,7 +814,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                           )}
                           {comment.audio && !isCommentDeleted && (
                             <div className={comment.content && comment.content.trim() ? "mt-3" : ""}>
-                              <AudioPlayer audioUrl={comment.audio} />
+                              <AudioPlayer key={comment.audio} audioUrl={comment.audio} />
                             </div>
                           )}
                           {comment.image && !isCommentDeleted && (

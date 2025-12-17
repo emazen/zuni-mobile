@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Mic, Square, Play, Pause, Trash2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { getAudioDurationFromBlob } from '@/lib/utils';
 
 interface VoiceRecorderProps {
-  onRecordingComplete: (audioBlob: Blob) => void;
+  onRecordingComplete: (audioBlob: Blob, duration?: number) => void;
   onCancel?: () => void;
   maxDuration?: number; // in seconds
 }
@@ -31,6 +32,8 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const dataArrayRef = useRef<Uint8Array | null>(null);
+  // CRITICAL: Use ref for duration to avoid stale closure in async callbacks
+  const recordingTimeRef = useRef(0);
 
   // Don't check permission state on mount - it can be unreliable
   // Let getUserMedia handle the permission request naturally
@@ -43,24 +46,42 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
     }
   }, [isRecording, isPaused]);
 
+  // Cleanup timer when component unmounts or recording stops
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
+
   // Animate waveform during recording
   useEffect(() => {
-    if (isRecording && !isPaused && analyserRef.current) {
+    if (isRecording && !isPaused && analyserRef.current && dataArrayRef.current) {
+      console.log('Starting waveform animation');
       const animate = () => {
-        if (!analyserRef.current || !dataArrayRef.current) return;
+        if (!analyserRef.current || !dataArrayRef.current || !isRecording || isPaused) {
+          return;
+        }
         
-        // Type assertion to fix TypeScript compatibility issue with ArrayBufferLike vs ArrayBuffer
-        analyserRef.current.getByteFrequencyData(dataArrayRef.current as any);
-        const newWaveform = Array.from(dataArrayRef.current.slice(0, 20)).map(value => value / 255);
-        setWaveformData(newWaveform);
-        
-        animationFrameRef.current = requestAnimationFrame(animate);
+        try {
+          // Type assertion to fix TypeScript compatibility issue with ArrayBufferLike vs ArrayBuffer
+          analyserRef.current.getByteFrequencyData(dataArrayRef.current as any);
+          const newWaveform = Array.from(dataArrayRef.current.slice(0, 20)).map(value => value / 255);
+          setWaveformData(newWaveform);
+          
+          animationFrameRef.current = requestAnimationFrame(animate);
+        } catch (error) {
+          console.error('Error in waveform animation:', error);
+        }
       };
       
       animate();
       return () => {
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
         }
       };
     } else {
@@ -86,27 +107,79 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
       return;
     }
     
+    // Check permission state for info only (don't block getUserMedia call)
+    // Chrome may have cached denied state, but we should still try getUserMedia
+    // as user interaction can trigger permission prompt
+    try {
+      if (navigator.permissions && navigator.permissions.query) {
+        const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+        console.log('Current microphone permission status:', permissionStatus.state);
+        // Don't return early - still try getUserMedia even if status is 'denied'
+        // User interaction might allow permission prompt to appear
+      }
+    } catch (permError) {
+      // Permissions API might not be available or supported, continue anyway
+      console.log('Permissions API not available, continuing with getUserMedia...');
+    }
+    
     try {
       console.log('Requesting microphone permission...');
       console.log('Current URL:', window.location.href);
       console.log('Is secure context:', window.isSecureContext);
+      console.log('User agent:', navigator.userAgent);
+      console.log('MediaDevices available:', !!navigator.mediaDevices);
+      console.log('getUserMedia available:', !!navigator.mediaDevices?.getUserMedia);
+      
+      // Check Chrome's global microphone setting via permissions API
+      try {
+        if (navigator.permissions && navigator.permissions.query) {
+          const micPermission = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+          console.log('Microphone permission state:', micPermission.state);
+          console.log('Permission can be changed:', micPermission.state !== 'denied' || micPermission.onchange !== null);
+        }
+      } catch (permCheckError) {
+        console.log('Could not check permission state:', permCheckError);
+      }
       
       // Try with simplest audio config first
+      // Note: Chrome may require explicit user gesture, so we ensure this is called from onClick
       let stream: MediaStream;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          audio: true  // Simplest possible - no constraints
-        });
-      } catch (simpleError: any) {
-        console.log('Simple audio config failed, trying with constraints...', simpleError);
-        // If simple fails, try with constraints
+        console.log('Calling getUserMedia with audio: true...');
+        console.log('Timestamp:', Date.now());
+        console.log('Is user gesture context:', true); // We're in onClick handler
+        
+        // Force a fresh permission request by not reusing any cached state
         stream = await navigator.mediaDevices.getUserMedia({ 
           audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+            sampleRate: 44100
           }
         });
+        console.log('getUserMedia succeeded with explicit audio constraints');
+      } catch (simpleError: any) {
+        console.log('First attempt failed:', simpleError.name, simpleError.message);
+        console.log('Error details:', {
+          name: simpleError.name,
+          message: simpleError.message,
+          constraint: simpleError.constraint,
+          constraintName: simpleError.constraintName
+        });
+        
+        // Try with simplest possible config
+        try {
+          console.log('Trying with audio: true (no constraints)...');
+          stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: true
+          });
+          console.log('getUserMedia succeeded with audio: true');
+        } catch (secondError: any) {
+          console.log('Second attempt also failed:', secondError.name, secondError.message);
+          // Re-throw the error so it's caught by outer catch
+          throw secondError;
+        }
       }
       
       console.log('Microphone permission granted! Stream:', stream);
@@ -130,10 +203,16 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
       
-      // Handle different error types
+      // Handle different error types with more specific messages
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         setPermissionState('denied');
-        setPermissionError('Mikrofon erişimi reddedildi. Tarayıcı ayarlarından mikrofon iznini kontrol edin ve "Sor" olarak ayarlayın.');
+        // Check if we're on Chrome
+        const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+        if (isChrome) {
+          setPermissionError('Mikrofon erişimi reddedildi. Chrome\'da mikrofon izni hiç sorulmadı. Lütfen şunları kontrol edin:\n1. Chrome ayarlarından (chrome://settings/content/microphone) mikrofonun açık olduğundan emin olun\n2. Bu site için mikrofon iznini "Sormak" olarak ayarlayın\n3. Chrome\'u yeniden başlatın ve tekrar deneyin');
+        } else {
+          setPermissionError('Mikrofon erişimi reddedildi. Tarayıcı ayarlarından mikrofon iznini kontrol edin ve "Sor" olarak ayarlayın.');
+        }
       } else {
         setPermissionState('denied');
         setPermissionError('Mikrofon erişimi reddedildi. Tarayıcı ayarlarından mikrofon iznini kontrol edin ve "Sor" olarak ayarlayın.');
@@ -227,12 +306,13 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         // Validate that we have audio chunks
         if (audioChunksRef.current.length === 0) {
           console.error('No audio chunks recorded');
           setPermissionError('Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.');
           setIsRecording(false);
+          recordingTimeRef.current = 0;
           setRecordingTime(0);
           
           // Stop all tracks
@@ -240,8 +320,13 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
           }
-          if (audioContextRef.current) {
-            audioContextRef.current.close();
+          if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+            try {
+              audioContextRef.current.close();
+            } catch (error) {
+              console.log('AudioContext already closed:', error);
+            }
+            audioContextRef.current = null;
           }
           return;
         }
@@ -255,15 +340,23 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
         });
         
         // Create blob with proper MIME type
-        const blob = new Blob(audioChunksRef.current, { 
+        const originalBlob = new Blob(audioChunksRef.current, { 
           type: mediaRecorder.mimeType || 'audio/webm' 
         });
         
+        // Re-encode blob with codecs to ensure duration metadata is included
+        // This fixes the issue where MediaRecorder creates blobs without duration
+        const mimeType = mediaRecorder.mimeType || 'audio/webm';
+        const blobWithCodecs = mimeType.includes('webm') 
+          ? new Blob([originalBlob], { type: 'audio/webm; codecs=opus' })
+          : originalBlob;
+        
         // Validate blob
-        if (!blob || blob.size === 0) {
-          console.error('Invalid blob created:', { blob, size: blob?.size });
+        if (!blobWithCodecs || blobWithCodecs.size === 0) {
+          console.error('Invalid blob created:', { blob: blobWithCodecs, size: blobWithCodecs?.size });
           setPermissionError('Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.');
           setIsRecording(false);
+          recordingTimeRef.current = 0;
           setRecordingTime(0);
           
           // Stop all tracks
@@ -271,27 +364,52 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
           }
-          if (audioContextRef.current) {
-            audioContextRef.current.close();
+          if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+            try {
+              audioContextRef.current.close();
+            } catch (error) {
+              console.log('AudioContext already closed:', error);
+            }
+            audioContextRef.current = null;
           }
           return;
         }
         
-        setAudioBlob(blob);
-        const url = URL.createObjectURL(blob);
+        setAudioBlob(blobWithCodecs);
+        const url = URL.createObjectURL(blobWithCodecs);
         setAudioUrl(url);
-        
+
         console.log('Audio blob created successfully:', {
-          size: blob.size,
-          type: blob.type,
+          size: blobWithCodecs.size,
+          type: blobWithCodecs.type,
           url: url.substring(0, 50) + '...'
         });
         
         // Accept the recording (set it in parent component state)
         // But don't send the comment yet - wait for comment submit button
         // Call onRecordingComplete to set the audio in parent state and close VoiceRecorder
-        if (blob) {
-          onRecordingComplete(blob);
+        // CRITICAL: Extract duration from audio blob using AudioContext (authoritative source)
+        // Timer is only for UI feedback, NOT for final duration
+        if (blobWithCodecs) {
+          try {
+            const authoritativeDuration = await getAudioDurationFromBlob(blobWithCodecs);
+            const finalDuration = Math.round(authoritativeDuration);
+            
+            console.log('AUTHORITATIVE DURATION from AudioContext:', {
+              rawDuration: authoritativeDuration,
+              roundedDuration: finalDuration,
+              timerDuration: recordingTimeRef.current,
+              stateDuration: recordingTime
+            });
+            
+            onRecordingComplete(blobWithCodecs, finalDuration);
+          } catch (error) {
+            console.error('Error extracting duration from blob:', error);
+            // Fallback to timer duration if AudioContext fails
+            const fallbackDuration = recordingTimeRef.current;
+            console.log('Using fallback timer duration:', fallbackDuration);
+            onRecordingComplete(blobWithCodecs, fallbackDuration);
+          }
         }
         
         // Stop all tracks
@@ -302,9 +420,19 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
           });
           streamRef.current = null;
         }
-        if (audioContextRef.current) {
-          audioContextRef.current.close();
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+          try {
+            audioContextRef.current.close();
+          } catch (error) {
+            console.log('AudioContext already closed:', error);
+          }
+          audioContextRef.current = null;
         }
+        
+        // Reset ref and state AFTER callback completes
+        recordingTimeRef.current = 0;
+        setRecordingTime(0);
+        setIsRecording(false);
       };
 
       mediaRecorder.onerror = (event: any) => {
@@ -317,20 +445,40 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
       console.log('Starting MediaRecorder...');
       mediaRecorder.start(100); // Collect data every 100ms
       
-      setIsRecording(true);
-      setIsPaused(false);
+      // Reset both ref and state
+      recordingTimeRef.current = 0;
       setRecordingTime(0);
-
-      // Start timer
+      setIsPaused(false);
+      
+      // Start timer BEFORE setting isRecording to true
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      
+      console.log('Starting timer in startRecordingWithStream');
       timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => {
-          if (prev >= maxDuration) {
-            stopRecording();
-            return prev;
+        // Update ref first (for use in callbacks) - CRITICAL for avoiding stale closure
+        recordingTimeRef.current += 1;
+        // Update state for UI
+        setRecordingTime(recordingTimeRef.current);
+        
+        console.log('Timer tick:', recordingTimeRef.current);
+        
+        if (recordingTimeRef.current >= maxDuration) {
+          console.log('Max duration reached');
+          if (mediaRecorderRef.current) {
+            mediaRecorderRef.current.stop();
           }
-          return prev + 1;
-        });
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+        }
       }, 1000);
+      
+      // Now set recording state - this will trigger waveform animation
+      setIsRecording(true);
       
       console.log('Recording started successfully!');
     } catch (error: any) {
@@ -358,16 +506,34 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
+      // CRITICAL: stop() is async - onstop callback will fire later
+      // DO NOT reset recordingTimeRef here - it will be used in onstop callback
       mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      setIsPaused(false);
+      
+      // Stop timer but keep ref value for onstop callback
       if (timerRef.current) {
         clearInterval(timerRef.current);
+        timerRef.current = null;
       }
-      // Stop stream tracks
+      
+      // Update UI state but keep ref for callback
+      setIsPaused(false);
+      // DO NOT set setIsRecording(false) here - let onstop handle it
+      // DO NOT reset recordingTimeRef here - onstop needs it
+      
+      // Stop stream tracks (safe to do immediately)
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
+      }
+      // Close audio context (safe to do immediately)
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        try {
+          audioContextRef.current.close();
+        } catch (error) {
+          console.log('AudioContext already closed or closing:', error);
+        }
+        audioContextRef.current = null;
       }
     }
   };
@@ -386,14 +552,18 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
     if (mediaRecorderRef.current && isRecording && isPaused) {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
       timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => {
-          if (prev >= maxDuration) {
-            stopRecording();
-            return prev;
-          }
-          return prev + 1;
-        });
+        // Update ref first (for use in callbacks)
+        recordingTimeRef.current += 1;
+        // Update state for UI
+        setRecordingTime(recordingTimeRef.current);
+        
+        if (recordingTimeRef.current >= maxDuration) {
+          stopRecording();
+        }
       }, 1000);
     }
   };
@@ -421,9 +591,19 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (audioBlob) {
-      onRecordingComplete(audioBlob);
+      try {
+        // Extract authoritative duration from blob
+        const authoritativeDuration = await getAudioDurationFromBlob(audioBlob);
+        const finalDuration = Math.round(authoritativeDuration);
+        console.log('handleConfirm - AUTHORITATIVE DURATION:', finalDuration);
+        onRecordingComplete(audioBlob, finalDuration);
+      } catch (error) {
+        console.error('Error extracting duration in handleConfirm:', error);
+        // Fallback to timer duration
+        onRecordingComplete(audioBlob, recordingTimeRef.current);
+      }
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
       }
@@ -431,8 +611,9 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
   };
 
   const formatTime = (seconds: number) => {
+    if (isNaN(seconds) || seconds < 0) return '0:00';
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -525,6 +706,7 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
           <div className="flex items-center justify-between">
             <div className="text-lg font-bold text-black dark:text-white">
               {formatTime(recordingTime)} / {formatTime(maxDuration)}
+              {/* Debug: {recordingTime} seconds, isRecording: {isRecording ? 'true' : 'false'} */}
             </div>
             <div className="flex items-center gap-2">
               {isPaused ? (

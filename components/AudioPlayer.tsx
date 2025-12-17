@@ -6,15 +6,26 @@ import { Play, Pause, Volume2, AlertCircle } from 'lucide-react';
 interface AudioPlayerProps {
   audioUrl: string;
   className?: string;
+  duration?: number; // Optional: If provided, use this instead of reading from audio element
 }
 
-export default function AudioPlayer({ audioUrl, className = '' }: AudioPlayerProps) {
+export default function AudioPlayer({ audioUrl, className = '', duration: providedDuration }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // If duration is provided as prop, use it and mark as loaded
+  // This is the SINGLE SOURCE OF TRUTH for duration - never use audio.duration
+  useEffect(() => {
+    if (typeof providedDuration === 'number' && providedDuration >= 0) {
+      setDuration(providedDuration);
+      setIsLoading(false);
+      console.log('AudioPlayer: Using provided duration:', providedDuration);
+    }
+  }, [providedDuration]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -52,11 +63,18 @@ export default function AudioPlayer({ audioUrl, className = '' }: AudioPlayerPro
     }
 
     // Reset state when URL changes
-    setIsLoading(true);
+    // If providedDuration exists, don't reset duration and mark as loaded immediately
+    if (typeof providedDuration === 'number' && providedDuration >= 0) {
+      setDuration(providedDuration);
+      setIsLoading(false);
+      console.log('AudioPlayer: Setting provided duration immediately:', providedDuration);
+    } else {
+      setIsLoading(true);
+      setDuration(0);
+    }
     setError(null);
     setIsPlaying(false);
     setCurrentTime(0);
-    setDuration(0);
 
     // Clear previous source and set new one
     audio.pause();
@@ -70,12 +88,56 @@ export default function AudioPlayer({ audioUrl, className = '' }: AudioPlayerPro
       audio.load();
     }, 50);
 
-    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateTime = () => {
+      // currentTime comes from audio element (correct)
+      if (audio.currentTime !== undefined && isFinite(audio.currentTime)) {
+        setCurrentTime(audio.currentTime);
+      }
+    };
+    
+    // DO NOT update duration from audio element if providedDuration is given
+    // Duration comes from recordingTime state, not from audio.duration
     const updateDuration = () => {
-      if (audio.duration && isFinite(audio.duration)) {
+      // Only update from audio element if no providedDuration was given
+      if (typeof providedDuration !== 'number' && audio.duration && isFinite(audio.duration) && audio.duration > 0) {
         setDuration(audio.duration);
         setIsLoading(false);
-        console.log('AudioPlayer: Audio loaded, duration:', audio.duration);
+        console.log('AudioPlayer: Audio loaded, duration from element:', audio.duration);
+      } else {
+        console.log('AudioPlayer: Using provided duration, ignoring audio.duration:', audio.duration);
+      }
+    };
+    
+    // More reliable handler for loadedmetadata
+    // Only use if providedDuration is not available
+    const handleLoadedMetadata = () => {
+      // If providedDuration exists, ignore audio.duration completely
+      if (typeof providedDuration === 'number') {
+        console.log('AudioPlayer: Provided duration exists, ignoring audio.duration');
+        return;
+      }
+      
+      let duration = audio.duration;
+      
+      // Fix for Safari + Chrome: If duration is still 0, force a seek to trigger duration calculation
+      if (duration === 0 || !isFinite(duration)) {
+        console.log('AudioPlayer: Duration is 0 in handleLoadedMetadata, attempting forced seek fix');
+        audio.currentTime = 0.01;
+        const handleTimeUpdate = () => {
+          duration = audio.duration;
+          if (duration && isFinite(duration) && duration > 0) {
+            setDuration(duration);
+            setIsLoading(false);
+            console.log('AudioPlayer: Duration fixed via seek in handleLoadedMetadata, duration:', duration);
+            audio.currentTime = 0;
+            audio.removeEventListener('timeupdate', handleTimeUpdate);
+          }
+        };
+        audio.addEventListener('timeupdate', handleTimeUpdate, { once: true });
+      } else if (duration && isFinite(duration) && duration > 0) {
+        setDuration(duration);
+        setIsLoading(false);
+        console.log('AudioPlayer: Metadata loaded, duration:', duration);
       }
     };
     const handleEnded = () => {
@@ -201,7 +263,8 @@ export default function AudioPlayer({ audioUrl, className = '' }: AudioPlayerPro
     };
 
     audio.addEventListener('timeupdate', updateTime);
-    audio.addEventListener('loadedmetadata', updateDuration);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('loadedmetadata', updateDuration); // Keep both for compatibility
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
@@ -223,6 +286,7 @@ export default function AudioPlayer({ audioUrl, className = '' }: AudioPlayerPro
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('play', handlePlay);
@@ -234,7 +298,7 @@ export default function AudioPlayer({ audioUrl, className = '' }: AudioPlayerPro
       audio.removeEventListener('stalled', handleStalled);
       audio.removeEventListener('suspend', handleSuspend);
     };
-  }, [audioUrl]);
+  }, [audioUrl, providedDuration]);
 
   const togglePlay = async () => {
     const audio = audioRef.current;
@@ -288,41 +352,80 @@ export default function AudioPlayer({ audioUrl, className = '' }: AudioPlayerPro
   }
 
   return (
-    <div className={`flex items-center gap-3 p-3 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg border-2 border-black ${className}`}>
-      <audio ref={audioRef} preload="metadata" />
-      
-      <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          togglePlay();
+    <div className={`flex flex-col gap-2 p-3 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg border-2 border-black ${className}`}>
+      <audio 
+        key={audioUrl} // CRITICAL: Force remount when URL changes to ensure duration loads correctly
+        ref={audioRef} 
+        preload="metadata"
+        onLoadedMetadata={(e) => {
+          // If providedDuration exists, ignore audio.duration completely
+          // Duration comes from recordingTime state, not from audio element
+          if (typeof providedDuration === 'number') {
+            console.log('AudioPlayer: Provided duration exists, ignoring audio.duration in onLoadedMetadata');
+            return;
+          }
+          
+          const audio = e.currentTarget;
+          let duration = audio.duration;
+          
+          // Fix for Safari + Chrome: If duration is still 0, force a seek to trigger duration calculation
+          if (duration === 0 || !isFinite(duration)) {
+            console.log('AudioPlayer: Duration is 0, attempting forced seek fix');
+            audio.currentTime = 0.01;
+            const handleTimeUpdate = () => {
+              duration = audio.duration;
+              if (duration && isFinite(duration) && duration > 0) {
+                setDuration(duration);
+                setIsLoading(false);
+                console.log('AudioPlayer: Duration fixed via seek, duration:', duration);
+                audio.currentTime = 0;
+                audio.removeEventListener('timeupdate', handleTimeUpdate);
+              }
+            };
+            audio.addEventListener('timeupdate', handleTimeUpdate, { once: true });
+          } else if (duration && isFinite(duration) && duration > 0) {
+            setDuration(duration);
+            setIsLoading(false);
+            console.log('AudioPlayer: onLoadedMetadata handler, duration:', duration);
+          }
         }}
-        disabled={isLoading || !!error}
-        className="p-2 bg-white dark:bg-[#151515] border-2 border-black rounded-full hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
-        aria-label={isPlaying ? 'Duraklat' : 'Oynat'}
-      >
-        {isPlaying ? (
-          <Pause className="w-4 h-4 text-black dark:text-white" />
-        ) : (
-          <Play className="w-4 h-4 text-black dark:text-white" />
-        )}
-      </button>
+      />
+      
+      
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            togglePlay();
+          }}
+          disabled={isLoading || !!error}
+          className="p-2 bg-white dark:bg-[#151515] border-2 border-black rounded-full hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
+          aria-label={isPlaying ? 'Duraklat' : 'Oynat'}
+        >
+          {isPlaying ? (
+            <Pause className="w-4 h-4 text-black dark:text-white" />
+          ) : (
+            <Play className="w-4 h-4 text-black dark:text-white" />
+          )}
+        </button>
 
-      <div className="flex-1">
-        <div className="relative h-2 bg-gray-300 dark:bg-gray-700 rounded-full overflow-hidden">
-          <div
-            className="absolute top-0 left-0 h-full bg-red-500 transition-all duration-100"
-            style={{ width: `${progress}%` }}
-          />
+        <div className="flex-1">
+          <div className="relative h-2 bg-gray-300 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className="absolute top-0 left-0 h-full bg-red-500 transition-all duration-100"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mt-1">
+            <span>{formatTime(currentTime)}</span>
+            <span className="font-semibold">{isLoading ? '...' : formatTime(duration)}</span>
+          </div>
         </div>
-        <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mt-1">
-          <span>{formatTime(currentTime)}</span>
-          <span>{isLoading ? '...' : formatTime(duration)}</span>
-        </div>
+
+        <Volume2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
       </div>
-
-      <Volume2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
     </div>
   );
 }
