@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, MessageSquare, Trash2, Send, Clock, ChevronDown, Image as ImageIcon, X, MoreVertical, Mic } from 'lucide-react';
 import CustomSpinner from './CustomSpinner';
@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import VoiceRecorder from './VoiceRecorder';
 import AudioPlayer from './AudioPlayer';
+import { getAudioDurationFromUrl } from '@/lib/utils';
 
 interface Comment {
   id: string;
@@ -73,10 +74,54 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
   const [isDeleteMenuOpen, setIsDeleteMenuOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [enlargedImageTouchStart, setEnlargedImageTouchStart] = useState<{ x: number; y: number; touchCount: number } | null>(null);
+  const [commentDurations, setCommentDurations] = useState<Map<string, number>>(new Map());
+  const commentDurationsRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     fetchPost();
   }, [postId]);
+
+  // Extract durations for posted comments with audio
+  useEffect(() => {
+    if (!post?.comments) return;
+
+    const extractDurations = async () => {
+      // Get current durations from ref to avoid re-extracting
+      const currentDurations = commentDurationsRef.current;
+      const durations = new Map<string, number>();
+      const promises: Promise<void>[] = [];
+
+      post.comments.forEach((comment) => {
+        if (comment.audio && !currentDurations.has(comment.audio)) {
+          // Extract duration for this audio URL
+          promises.push(
+            getAudioDurationFromUrl(comment.audio)
+              .then((duration) => {
+                durations.set(comment.audio!, Math.round(duration));
+              })
+              .catch((error) => {
+                console.error(`Error extracting duration for comment ${comment.id}:`, error);
+              })
+          );
+        }
+      });
+
+      await Promise.all(promises);
+
+      if (durations.size > 0) {
+        setCommentDurations((prev) => {
+          const updated = new Map(prev);
+          durations.forEach((duration, url) => {
+            updated.set(url, duration);
+            commentDurationsRef.current.set(url, duration);
+          });
+          return updated;
+        });
+      }
+    };
+
+    extractDurations();
+  }, [post?.comments]);
 
   const fetchPost = async () => {
     if (!postId) return;
@@ -357,10 +402,22 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
       }
 
         const newComment = await response.json();
+        
+        // If new comment has audio and we have the duration, add it to durations map
+        if (newComment.audio && commentAudioDuration !== undefined) {
+          setCommentDurations((prev) => {
+            const updated = new Map(prev);
+            updated.set(newComment.audio, commentAudioDuration);
+            commentDurationsRef.current.set(newComment.audio, commentAudioDuration);
+            return updated;
+          });
+        }
+        
         setCommentContent('');
         removeCommentImage();
       setCommentAudio(null);
       setCommentAudioUrl(null);
+      setCommentAudioDuration(undefined);
       setShowVoiceRecorder(false);
         
         if (post) {
@@ -814,7 +871,11 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                           )}
                           {comment.audio && !isCommentDeleted && (
                             <div className={comment.content && comment.content.trim() ? "mt-3" : ""}>
-                              <AudioPlayer key={comment.audio} audioUrl={comment.audio} />
+                              <AudioPlayer 
+                                key={`${comment.audio}-${commentDurations.get(comment.audio)}`}
+                                audioUrl={comment.audio} 
+                                duration={commentDurations.get(comment.audio)}
+                              />
                             </div>
                           )}
                           {comment.image && !isCommentDeleted && (

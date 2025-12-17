@@ -24,6 +24,24 @@ export const getAudioDurationFromBlob = async (blob: Blob): Promise<number> => {
 };
 
 /**
+ * Extract duration from audio URL using AudioContext
+ * Fetches the audio file and extracts duration using the same reliable method
+ */
+export const getAudioDurationFromUrl = async (url: string): Promise<number> => {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch audio: ${response.statusText}`);
+    }
+    const blob = await response.blob();
+    return await getAudioDurationFromBlob(blob);
+  } catch (error) {
+    console.error('Error extracting duration from URL:', error);
+    throw error;
+  }
+};
+
+/**
  * Sanitizes user input to prevent XSS attacks
  * Removes HTML tags and dangerous content while preserving text
  * Server-side safe (no DOM required)
