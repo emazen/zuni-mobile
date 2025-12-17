@@ -49,8 +49,8 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
       const animate = () => {
         if (!analyserRef.current || !dataArrayRef.current) return;
         
-        // Type assertion to fix TypeScript compatibility issue
-        analyserRef.current.getByteFrequencyData(dataArrayRef.current as Uint8Array);
+        // Type assertion to fix TypeScript compatibility issue with ArrayBufferLike vs ArrayBuffer
+        analyserRef.current.getByteFrequencyData(dataArrayRef.current as any);
         const newWaveform = Array.from(dataArrayRef.current.slice(0, 20)).map(value => value / 255);
         setWaveformData(newWaveform);
         
