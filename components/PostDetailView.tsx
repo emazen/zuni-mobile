@@ -683,8 +683,9 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
               </div>
               
                 {/* Post Footer */}
-                <div className="px-4 sm:px-8 py-3 sm:py-4 bg-white dark:bg-[#151515] border-t-2 border-black flex items-center gap-4" style={{borderColor: 'var(--border-color)'}}>
+                <div className="px-4 sm:px-8 py-3 sm:py-4 bg-white dark:bg-[#151515] border-t-2 border-black flex items-center" style={{borderColor: 'var(--border-color)'}}>
                   <div className="flex items-center gap-2 text-xs text-gray-500 font-mono">
+                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: getGenderColor(post.author.gender, post.author.customColor) }} />
                     <Clock className="w-4 h-4 flex-shrink-0" />
                     <span>{new Date(post.createdAt).toLocaleDateString('tr-TR')} {new Date(post.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
