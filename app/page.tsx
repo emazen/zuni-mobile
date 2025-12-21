@@ -1413,7 +1413,7 @@ export default function Home() {
           ) : (showPostDetail && (postId || selectedPostId)) ? (
             <PostDetailView postId={postId || selectedPostId || ''} onGoBack={handleGoBack} onCommentAdded={handleCommentAdded} onPostDeleted={fetchData} />
           ) : (showUniversityBoard || (session && universityParam && !postId)) ? (
-            <div className={`${isMobile ? 'h-full' : 'h-full overflow-y-auto'}`}>
+            <div className={`flex-1 ${isMobile ? 'h-full' : 'overflow-y-auto'}`}>
               <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-0 sm:py-8 flex flex-col ${isMobile ? 'h-full' : 'min-h-full'}`}>
                 <div className="flex-1">
                 {/* University Posts */}
@@ -1551,7 +1551,7 @@ export default function Home() {
                        </div>
                      </div>
 
-                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4 sm:mb-0">
                      {universityPosts
                        .sort((a, b) => {
                          if (sortBy === 'newest') {
@@ -1579,10 +1579,10 @@ export default function Home() {
                    </div>
                    )}
                 </div>
-
+                
                 {/* Footer */}
                 {!universityLoading && selectedUniversity && (
-                  <footer className="w-full pt-0 pb-3 z-20 -mt-2 sm:mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
+                  <footer className="w-full pt-0 pb-3 z-20 sm:mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
                     <div className="max-w-4xl mx-auto px-6 text-center">
                       <div className="flex flex-wrap justify-center items-center gap-4 mb-1 sm:gap-6 sm:mb-0">
                         <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
