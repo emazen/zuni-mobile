@@ -921,7 +921,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
         
         {/* Footer */}
         {!loading && post && (
-          <footer className="w-full pt-0 pb-3 z-20 -mt-2 sm:mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
+          <footer className="w-full pt-0 pb-3 z-20 mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
             <div className="max-w-4xl mx-auto px-6 text-center">
               <div className="flex flex-wrap justify-center items-center gap-4 mb-1 sm:gap-6 sm:mb-0">
                 <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>

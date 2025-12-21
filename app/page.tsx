@@ -1387,7 +1387,7 @@ export default function Home() {
           <UniversitySidebar onUniversityClick={handleUniversityClick} />
         )}
         
-        <div className={`flex-1 ${isMobile ? 'overflow-y-auto h-full pb-0' : 'overflow-y-auto h-full pb-20 sm:pb-0'}`} style={{backgroundColor: 'var(--bg-primary)'}}>
+        <div className={`flex-1 ${isMobile ? 'overflow-y-auto h-full pb-0' : 'overflow-y-auto h-full'}`} style={{backgroundColor: 'var(--bg-primary)'}}>
           {/* Mobile Universities Full Page - No Sliding */}
           {isMobile && isMobileMenuOpen ? (
             <div className="h-full flex flex-col" style={{backgroundColor: 'var(--bg-primary)'}}>
@@ -1414,7 +1414,7 @@ export default function Home() {
             <PostDetailView postId={postId || selectedPostId || ''} onGoBack={handleGoBack} onCommentAdded={handleCommentAdded} onPostDeleted={fetchData} />
           ) : (showUniversityBoard || (session && universityParam && !postId)) ? (
             <div className={`flex-1 ${isMobile ? 'h-full' : 'overflow-y-auto'}`}>
-              <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-0 sm:py-8 flex flex-col ${isMobile ? 'h-full' : 'min-h-full'}`}>
+              <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-0 sm:py-8 flex flex-col ${isMobile ? 'h-full' : 'min-h-[calc(100vh-56px)]'}`}>
                 <div className="flex-1">
                 {/* University Posts */}
                 {universityLoading || !selectedUniversity ? (
@@ -1444,7 +1444,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="text-center py-12">
+                    <div className="text-center py-12 mb-6 sm:mb-0 sm:pb-12">
                       <Building2 className="h-16 w-16 mx-auto mb-4 text-black" style={{color: 'var(--text-primary)'}} />
                       <h3 className="text-xl font-black text-black mb-2" style={{color: 'var(--text-primary)'}}>Henüz gönderi yok</h3>
                       <p className="text-black font-medium mb-6" style={{color: 'var(--text-secondary)'}}>Bu üniversitede henüz hiç gönderi paylaşılmamış.</p>
@@ -1551,7 +1551,8 @@ export default function Home() {
                        </div>
                      </div>
 
-                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4 sm:mb-0">
+                     <div className="pb-6">
+                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                      {universityPosts
                        .sort((a, b) => {
                          if (sortBy === 'newest') {
@@ -1575,6 +1576,7 @@ export default function Home() {
                          showUniversityInfo={false}
                        />
                      ))}
+                       </div>
                      </div>
                    </div>
                    )}
@@ -1582,7 +1584,7 @@ export default function Home() {
                 
                 {/* Footer */}
                 {!universityLoading && selectedUniversity && (
-                  <footer className="w-full pt-0 pb-3 z-20 sm:mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
+                  <footer className="w-full pt-0 pb-3 z-20 mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
                     <div className="max-w-4xl mx-auto px-6 text-center">
                       <div className="flex flex-wrap justify-center items-center gap-4 mb-1 sm:gap-6 sm:mb-0">
                         <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
@@ -1985,7 +1987,7 @@ export default function Home() {
 
                       {/* Footer */}
                       {!loading && (
-                        <footer className="w-full pt-0 pb-3 z-20 -mt-2 sm:mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
+                        <footer className="w-full pt-0 pb-3 z-20 mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
                           <div className="max-w-4xl mx-auto px-6 text-center">
                             <div className="flex flex-wrap justify-center items-center gap-4 mb-1 sm:gap-6 sm:mb-0">
                               <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>

@@ -437,7 +437,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                 </div>
 
                 {/* Form Card */}
-                <div className="bg-white dark:bg-[#151515] border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden mb-6 sm:mb-0" style={{borderColor: 'var(--border-color)'}}>
+                <div className="bg-white dark:bg-[#151515] border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden mb-0" style={{borderColor: 'var(--border-color)'}}>
                   
                   {/* Header */}
                   <div className="px-4 sm:px-8 py-4 sm:py-6 border-b-2 border-black bg-gray-50 dark:bg-[#1a1a1a]" style={{borderColor: 'var(--border-color)'}}>
@@ -559,7 +559,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                 </div>
                 
                 {/* Footer */}
-                <footer className="w-full pt-0 pb-3 z-20 sm:mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
+                <footer className="w-full pt-0 pb-3 z-20 mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
                   <div className="max-w-4xl mx-auto px-6 text-center">
                     <div className="flex flex-wrap justify-center items-center gap-4 mb-1 sm:gap-6 sm:mb-0">
                       <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
