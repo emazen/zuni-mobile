@@ -1394,7 +1394,7 @@ export default function Home() {
               {/* Mobile Universities Header */}
               <div className="bg-white border-b-4 border-black px-4 py-4 mobile-menu-header" style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}>
                 <div className="flex items-center justify-between">
-                  <h1 className="text-xl font-black text-black" style={{color: 'var(--text-primary)'}}>Üniversiteler</h1>
+                  <h1 className="text-xl font-bold text-black" style={{color: 'var(--text-primary)'}}>Üniversiteler</h1>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="p-2 bg-white border-2 border-black brutal-shadow-sm hover:brutal-shadow"
@@ -1406,7 +1406,7 @@ export default function Home() {
               </div>
               
               {/* Mobile Universities Content - Static */}
-              <div className="flex-1 overflow-y-auto p-4 pb-20">
+              <div className="flex-1 overflow-y-auto overscroll-none p-4 pb-0">
                 <UniversitySidebar onUniversityClick={handleUniversityClick} isMobile={true} />
               </div>
             </div>
@@ -1414,7 +1414,7 @@ export default function Home() {
             <PostDetailView postId={postId || selectedPostId || ''} onGoBack={handleGoBack} onCommentAdded={handleCommentAdded} onPostDeleted={fetchData} />
           ) : (showUniversityBoard || (session && universityParam && !postId)) ? (
             <div className={`${isMobile ? 'h-full' : 'h-full overflow-y-auto'}`}>
-              <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col ${isMobile ? 'min-h-[calc(100dvh-64px)]' : 'min-h-full'}`}>
+              <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-0 sm:py-8 flex flex-col ${isMobile ? 'h-full' : 'min-h-full'}`}>
                 <div className="flex-1">
                 {/* University Posts */}
                 {universityLoading || !selectedUniversity ? (
@@ -1582,20 +1582,20 @@ export default function Home() {
 
                 {/* Footer */}
                 {!universityLoading && selectedUniversity && (
-                  <footer className="mt-8" style={{paddingBottom: 0, marginBottom: '-1rem'}}>
-                    <div className="max-w-4xl mx-auto px-6" style={{paddingBottom: 0, marginBottom: 0}}>
-                      <div className="flex flex-wrap justify-center items-center gap-6" style={{marginBottom: 0}}>
-                        <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                  <footer className="w-full pt-0 pb-3 z-20 -mt-2 sm:mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
+                    <div className="max-w-4xl mx-auto px-6 text-center">
+                      <div className="flex flex-wrap justify-center items-center gap-4 mb-1 sm:gap-6 sm:mb-0">
+                        <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
                           Hakkında
                         </a>
-                        <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                        <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
                           Hizmet Şartları
                         </a>
-                        <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                        <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
                           Gizlilik Politikası
                         </a>
                       </div>
-                      <p className="text-center text-xs font-medium" style={{color: 'var(--text-secondary)', marginBottom: 0, paddingBottom: 0}}>
+                      <p className="text-[10px] font-medium" style={{color: 'var(--text-secondary)'}}>
                         © 2025 zuni.social. Tüm hakları saklıdır.
                       </p>
                     </div>
@@ -1679,8 +1679,8 @@ export default function Home() {
                     </footer>
                   </main>
                 ) : (
-                  <div className={`flex-1 ${isMobile ? '' : 'overflow-y-auto'}`}>
-                    <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col ${isMobile ? 'min-h-[calc(100dvh-64px)]' : 'min-h-full'}`}>
+                  <div className={`flex-1 ${isMobile ? 'h-full' : 'overflow-y-auto'}`}>
+                    <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-0 sm:py-8 flex flex-col ${isMobile ? 'h-full' : 'min-h-full'}`}>
                       <div className="flex-1">
                     <div className="mb-4 mt-2">
                       {/* Modern Pill Navigation */}
@@ -1985,20 +1985,20 @@ export default function Home() {
 
                       {/* Footer */}
                       {!loading && (
-                        <footer className="mt-8" style={{paddingBottom: 0, marginBottom: '-1rem'}}>
-                          <div className="max-w-4xl mx-auto px-6" style={{paddingBottom: 0, marginBottom: 0}}>
-                            <div className="flex flex-wrap justify-center items-center gap-6" style={{marginBottom: 0}}>
-                              <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                        <footer className="w-full pt-0 pb-3 z-20 -mt-2 sm:mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
+                          <div className="max-w-4xl mx-auto px-6 text-center">
+                            <div className="flex flex-wrap justify-center items-center gap-4 mb-1 sm:gap-6 sm:mb-0">
+                              <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
                                 Hakkında
                               </a>
-                              <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                              <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
                                 Hizmet Şartları
                               </a>
-                              <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                              <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
                                 Gizlilik Politikası
                               </a>
                             </div>
-                            <p className="text-center text-xs font-medium" style={{color: 'var(--text-secondary)', marginBottom: 0, paddingBottom: 0}}>
+                            <p className="text-[10px] font-medium" style={{color: 'var(--text-secondary)'}}>
                               © 2025 zuni.social. Tüm hakları saklıdır.
                             </p>
                           </div>

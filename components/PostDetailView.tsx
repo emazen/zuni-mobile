@@ -522,7 +522,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
 
   return (
     <div className="flex-1 min-h-full bg-gray-50 dark:bg-[#121212]" style={{backgroundColor: 'var(--bg-primary)'}}>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col min-h-full">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-0 sm:py-8 flex flex-col min-h-full">
         <div className="flex-1">
         {loading ? (
           <div className="flex items-center justify-center min-h-[400px]">
@@ -707,7 +707,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                     <textarea
                       value={commentContent}
                       onChange={(e) => setCommentContent(e.target.value)}
-                          placeholder="Tartışmaya katıl..."
+                          placeholder="Yorum yaz..."
                           className="w-full p-3 bg-transparent border-none focus:ring-0 focus:outline-none resize-none text-lg font-sans placeholder:text-gray-400"
                           rows={2}
                           maxLength={2000}
@@ -921,20 +921,20 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
         
         {/* Footer */}
         {!loading && post && (
-          <footer className="mt-8" style={{paddingBottom: 0, marginBottom: '-1rem'}}>
-            <div style={{paddingBottom: 0, marginBottom: 0}}>
-              <div className="flex flex-wrap justify-center items-center gap-6" style={{marginBottom: 0}}>
-                <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+          <footer className="w-full pt-0 pb-3 z-20 -mt-2 sm:mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
+            <div className="max-w-4xl mx-auto px-6 text-center">
+              <div className="flex flex-wrap justify-center items-center gap-4 mb-1 sm:gap-6 sm:mb-0">
+                <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
                   Hakkında
                 </a>
-                <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
                   Hizmet Şartları
                 </a>
-                <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
                   Gizlilik Politikası
                 </a>
               </div>
-              <p className="text-center text-xs font-medium" style={{color: 'var(--text-secondary)', marginBottom: 0, paddingBottom: 0}}>
+              <p className="text-[10px] font-medium" style={{color: 'var(--text-secondary)'}}>
                 © 2025 zuni.social. Tüm hakları saklıdır.
               </p>
             </div>

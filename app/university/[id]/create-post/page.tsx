@@ -42,7 +42,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
-  
+
 
   // Fetch university immediately when component mounts or params change
   useEffect(() => {
@@ -415,8 +415,8 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
               </div>
             </div>
           ) : (
-            <div className="h-full overflow-y-auto overscroll-none bg-gray-50 dark:bg-[#121212]" style={{backgroundColor: 'var(--bg-primary)'}}>
-              <div className={`max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col ${isMobile ? 'min-h-[calc(100dvh-64px)]' : 'min-h-full'}`}>
+            <div className={`${isMobile ? 'h-full' : 'h-full'} overflow-y-auto overscroll-none bg-gray-50 dark:bg-[#121212]`} style={{backgroundColor: 'var(--bg-primary)'}}>
+              <div className={`max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-0 sm:py-8 flex flex-col ${isMobile ? 'h-full' : 'min-h-full'}`}>
                 <div className="flex-1">
                 {/* Back Button & Title */}
                 <div className="mb-6 flex items-center justify-between">
@@ -437,7 +437,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                 </div>
 
                 {/* Form Card */}
-                <div className="bg-white dark:bg-[#151515] border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden" style={{borderColor: 'var(--border-color)'}}>
+                <div className="bg-white dark:bg-[#151515] border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden mb-6 sm:mb-0" style={{borderColor: 'var(--border-color)'}}>
                   
                   {/* Header */}
                   <div className="px-4 sm:px-8 py-4 sm:py-6 border-b-2 border-black bg-gray-50 dark:bg-[#1a1a1a]" style={{borderColor: 'var(--border-color)'}}>
@@ -526,7 +526,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                         )}
                     </div>
 
-                      <div className="flex flex-row items-center justify-between sm:justify-end pt-4 gap-3 sm:gap-4">
+                      <div className="flex flex-row items-center justify-between sm:justify-end pt-4 gap-3 sm:gap-4 mb-0">
                         <button
                           type="button"
                           onClick={handleGoBack}
@@ -559,20 +559,20 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                 </div>
                 
                 {/* Footer */}
-                <footer className="mt-8" style={{paddingBottom: 0, marginBottom: '-1rem'}}>
-                  <div className="max-w-4xl mx-auto px-6" style={{paddingBottom: 0, marginBottom: 0}}>
-                    <div className="flex flex-wrap justify-center items-center gap-6" style={{marginBottom: 0}}>
-                      <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                <footer className="w-full pt-0 pb-3 z-20 sm:mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
+                  <div className="max-w-4xl mx-auto px-6 text-center">
+                    <div className="flex flex-wrap justify-center items-center gap-4 mb-1 sm:gap-6 sm:mb-0">
+                      <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
                         Hakkında
                       </a>
-                      <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                      <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
                         Hizmet Şartları
                       </a>
-                      <a href="#" className="text-xs font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
+                      <a href="#" className="text-[10px] font-semibold hover:underline" style={{color: 'var(--text-secondary)'}}>
                         Gizlilik Politikası
                       </a>
                     </div>
-                    <p className="text-center text-xs font-medium" style={{color: 'var(--text-secondary)', marginBottom: 0, paddingBottom: 0}}>
+                    <p className="text-[10px] font-medium" style={{color: 'var(--text-secondary)'}}>
                       © 2025 zuni.social. Tüm hakları saklıdır.
                     </p>
                   </div>

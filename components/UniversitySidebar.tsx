@@ -276,7 +276,7 @@ export default function UniversitySidebar({ onUniversityClick, isMobile = false 
       </div>
 
       {/* University List */}
-      <div className="flex-1 overflow-y-auto transition-opacity duration-300 ease-in-out">
+      <div className={`flex-1 overflow-y-auto transition-opacity duration-300 ease-in-out ${isMobile ? 'min-h-0' : ''}`}>
         <div className="p-2">
         {loading ? (
           <div className="animate-pulse space-y-3">
