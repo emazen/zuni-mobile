@@ -332,14 +332,14 @@ export default function Home() {
           postText = postText.substring(0, maxLength - 3) + '...'
         }
         
-        document.title = `Zuni - ${postText}`
+        document.title = `Zuni - ${postText}`.trim()
       } else {
         document.title = 'Zuni'
       }
     }
     // Priority 2: University board
     else if (showUniversityBoard && selectedUniversity) {
-      document.title = `Zuni - ${selectedUniversity.name}`
+      document.title = `Zuni - ${selectedUniversity.name}`.trim()
     }
     // Default
     else {

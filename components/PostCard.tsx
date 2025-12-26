@@ -49,8 +49,8 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
   const { data: session } = useSession()
   const router = useRouter()
   const titleLineClamp = 2
-  // Keep audio cards aligned: limit content preview to 2 lines when audio exists
-  const contentLineClamp = post.audio ? 2 : (showUniversityInfo ? 2 : 3)
+  // Keep content preview consistent across all contexts
+  const contentLineClamp = 2
   const [audioDuration, setAudioDuration] = useState<number | undefined>(undefined)
 
   // Extract audio duration when post has audio
@@ -154,7 +154,7 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
           </div>
       
           {/* Title & Content */}
-          <div className={`${post.audio ? 'mb-1' : 'mb-4'} flex gap-4 min-h-0`}>
+          <div className={`${post.audio ? 'mb-2' : 'mb-4'} flex gap-4 min-h-0`}>
             <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
               <h3 
                 className="font-display font-bold text-2xl leading-tight mb-2 text-black dark:text-white group-hover:text-pink-500 transition-colors"
@@ -192,9 +192,9 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
             )}
         </div>
 
-          {/* Audio Player - Slightly below center for better visual weight balance */}
+          {/* Audio Player - Consistent positioning across all contexts */}
           {post.audio && (
-            <div className="flex-1 flex flex-col justify-center mb-2 w-full pt-2" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-2 w-full pt-2" onClick={(e) => e.stopPropagation()}>
               <AudioPlayer 
                 key={`${post.audio}-${audioDuration}`}
                 audioUrl={post.audio} 
