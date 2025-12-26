@@ -226,7 +226,7 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
                 duration={audioDuration}
                 className={
                   (post.image || (post.content && post.content.trim().length > 0))
-                    ? "p-1 gap-0.5 text-[9px] min-h-[32px] [&>div>button]:p-0.5 [&>div>button]:h-5 [&>div>button]:w-5 [&>div>button]:border [&>div>button]:border-[1px] [&>div>button]:inline-flex [&>div>button]:items-center [&>div>button]:justify-center [&>div>button>svg]:w-3 [&>div>button>svg]:h-3 [&>div>div>div]:h-1 [&>div>div>div>div]:h-1 [&>div>div>div.flex]:text-[8px]"
+                    ? "p-1 gap-0.5 text-[9px] min-h-[32px] [&>div>button]:p-0.5 [&>div>button]:h-5 [&>div>button]:w-5 [&>div>button]:border [&>div>button]:border-[1px] [&>div>button]:inline-flex [&>div>button]:items-center [&>div>button]:justify-center [&>div>button>svg]:w-3 [&>div>button>svg]:h-3 [&>div>div>div]:h-1 [&>div>div>div>div]:h-1 [&>div>div>div.flex]:text-[8px] [&>div>div>button:last-child]:!border-0 [&>div>div>button:last-child]:!border-none [&>div>div>button:last-child]:outline-none [&>div>div>button:last-child]:ring-0 [&>div>div>button:last-child]:shadow-none [&>div>div>div:last-child]:border-0 [&>div>div>div:last-child]:border-none [&>div>div>div:last-child>button]:!border-0 [&>div>div>div:last-child>button]:!border-none"
                     : "p-5 gap-3 text-sm w-full min-h-[80px] [&>div>button]:p-3 [&>div>div>div]:h-3 [&>div>div>div>div]:h-3 [&>div>div>div.flex]:text-sm"
                 }
                 showVolumeControl={false}

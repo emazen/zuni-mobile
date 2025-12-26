@@ -367,6 +367,16 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
     }, 300);
   };
 
+  const handleVolumeTouch = (e: React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (showVolumeSlider) {
+      toggleMute();
+    } else {
+      setShowVolumeSlider(true);
+    }
+  };
+
   // Clear any pending timeout on unmount
   useEffect(() => {
     return () => {
@@ -476,9 +486,10 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
 
         {showVolumeControl ? (
           <div 
-            className="relative flex items-center"
+            className="relative flex items-center border-0"
             onMouseEnter={handleVolumeEnter}
             onMouseLeave={handleVolumeLeave}
+            onTouchStart={handleVolumeEnter}
           >
             <button
               type="button"
@@ -487,7 +498,17 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
                 e.stopPropagation();
                 toggleMute();
               }}
-              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors flex-shrink-0"
+              onTouchStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!showVolumeSlider) {
+                  setShowVolumeSlider(true);
+                } else {
+                  toggleMute();
+                }
+              }}
+              className="p-1 rounded flex-shrink-0 border-0 outline-none focus:outline-none focus:ring-0 shadow-none !border-0 touch-manipulation"
+              style={{ border: 'none', boxShadow: 'none', touchAction: 'manipulation' }}
               aria-label={volume > 0 ? 'Sesi kapat' : 'Sesi aç'}
             >
               {volume === 0 ? (
@@ -502,6 +523,8 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
                 onClick={(e) => e.stopPropagation()}
                 onMouseEnter={handleVolumeEnter}
                 onMouseLeave={handleVolumeLeave}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
               >
                 <input
                   type="range"
@@ -510,10 +533,14 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
                   step="0.01"
                   value={volume}
                   onChange={handleVolumeChange}
+                  onInput={handleVolumeChange}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-28 h-3 bg-gray-300 dark:bg-gray-700 rounded-full appearance-none cursor-pointer"
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchMove={(e) => e.stopPropagation()}
+                  className="w-28 h-3 bg-gray-300 dark:bg-gray-700 rounded-full appearance-none cursor-pointer touch-manipulation"
                   style={{
                     WebkitAppearance: 'none',
+                    touchAction: 'manipulation',
                     background: `linear-gradient(to right, #ef4444 0%, #ef4444 ${volume * 100}%, rgb(209 213 219) ${volume * 100}%, rgb(209 213 219) 100%)`
                   }}
                   aria-label="Ses seviyesi"
@@ -529,7 +556,13 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
               e.stopPropagation();
               toggleMute();
             }}
-            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors flex-shrink-0"
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleMute();
+            }}
+            className="p-1 rounded flex-shrink-0 border-0 outline-none focus:outline-none focus:ring-0 shadow-none !border-0 touch-manipulation"
+            style={{ border: 'none', boxShadow: 'none', touchAction: 'manipulation' }}
             aria-label={volume > 0 ? 'Sesi kapat' : 'Sesi aç'}
           >
             {volume === 0 ? (
