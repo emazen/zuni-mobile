@@ -107,7 +107,7 @@ export default function CreatePost() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="brutal-input w-full text-sm sm:text-base"
-                placeholder="What's your post about?"
+                placeholder="Bir başlık yaz..."
                 maxLength={200}
               />
               <p className="mt-2 text-xs sm:text-sm font-semibold text-black" style={{color: 'var(--text-primary)'}}>

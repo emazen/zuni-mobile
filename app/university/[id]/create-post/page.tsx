@@ -620,7 +620,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                   {/* Header */}
                   <div className="px-4 sm:px-8 py-4 sm:py-6 border-b-2 border-black bg-gray-50 dark:bg-[#1a1a1a]" style={{borderColor: 'var(--border-color)'}}>
                     <h1 className="font-display font-bold text-xl sm:text-3xl text-black dark:text-white mb-1">Yeni Gönderi</h1>
-                    <p className="font-sans text-gray-500 text-xs sm:text-sm">Düşüncelerini, sorularını veya tartışmalarını paylaş.</p>
+                    <p className="font-sans text-gray-500 text-xs sm:text-sm">Düşüncelerini, sorularını veya fikirlerini paylaş.</p>
               </div>
 
                   <div className="p-4 sm:p-8">
@@ -634,7 +634,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                         id="title"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                          placeholder="Etkileyici bir başlık yaz..."
+                          placeholder="Bir başlık yaz..."
                           className="w-full px-4 py-3 bg-white dark:bg-[#121212] border-2 border-black rounded-lg font-sans text-base sm:text-lg focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 placeholder:text-gray-400"
                           style={{borderColor: 'var(--border-color)'}}
                         maxLength={200}

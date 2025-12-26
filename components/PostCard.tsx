@@ -49,8 +49,8 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
   const { data: session } = useSession()
   const router = useRouter()
   const titleLineClamp = 2
-  // Keep content preview consistent across all contexts
-  const contentLineClamp = 2
+  // Main screen (showUniversityInfo true) + audio: shorten content to 1 line
+  const contentLineClamp = post.audio && showUniversityInfo ? 1 : 2
   const [audioDuration, setAudioDuration] = useState<number | undefined>(undefined)
 
   // Extract audio duration when post has audio
@@ -154,10 +154,24 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
           </div>
       
           {/* Title & Content */}
-          <div className={`${post.audio ? 'mb-2' : 'mb-4'} flex gap-4 min-h-0`}>
+          <div className={`${
+            post.audio && !post.image && (!post.content || !post.content.trim().length)
+              ? 'mb-0'
+              : post.audio
+              ? 'mb-2'
+              : 'mb-4'
+          } flex gap-4 min-h-0 ${
+            post.audio && !post.image && (!post.content || !post.content.trim().length)
+              ? ''
+              : 'flex-1'
+          }`}>
             <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
               <h3 
-                className="font-display font-bold text-2xl leading-tight mb-2 text-black dark:text-white group-hover:text-pink-500 transition-colors"
+                className={`font-display font-bold text-2xl leading-tight ${
+                  post.audio && !post.image && (!post.content || !post.content.trim().length)
+                    ? 'mb-0'
+                    : 'mb-2'
+                } text-black dark:text-white group-hover:text-pink-500 transition-colors`}
                 style={{
               display: '-webkit-box',
                   WebkitLineClamp: titleLineClamp,
@@ -168,18 +182,20 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
               >
                 {post.title}
               </h3>
-              <p 
-                className="font-sans text-lg text-gray-600 dark:text-gray-300 leading-relaxed break-words"
-                style={{
-              display: '-webkit-box',
-                  WebkitLineClamp: contentLineClamp,
-              WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}
-              >
-                {post.content}
-            </p>
+              {!(post.audio && !post.image && (!post.content || !post.content.trim().length)) && (
+                <p 
+                  className="font-sans text-lg text-gray-600 dark:text-gray-300 leading-relaxed break-words"
+                  style={{
+                display: '-webkit-box',
+                    WebkitLineClamp: contentLineClamp,
+                WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                >
+                  {post.content}
+              </p>
+              )}
             </div>
             {post.image && (
               <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 relative bg-gray-100 dark:bg-gray-900">
@@ -192,10 +208,16 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
             )}
         </div>
 
-          {/* Audio Player - Smaller horizontally when image is present */}
+          {/* Audio Player - Smaller when image is present, compact when text is present */}
           {post.audio && (
             <div 
-              className={`mb-2 w-full pt-2 ${post.image ? 'max-w-[calc(100%-7rem)]' : ''}`} 
+              className={`mb-2 w-full ${
+                !post.image && (!post.content || !post.content.trim().length)
+                  ? 'pt-6 flex justify-center'
+                  : 'pt-2'
+              } ${
+                post.image ? 'max-w-[calc(100%-7rem)]' : ''
+              }`} 
               onClick={(e) => e.stopPropagation()}
             >
               <AudioPlayer 
@@ -203,8 +225,8 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
                 audioUrl={post.audio} 
                 duration={audioDuration}
                 className={
-                  post.image
-                    ? "p-2 gap-1.5 text-xs min-h-[50px] [&>div>button]:p-1.5 [&>div>button]:h-7 [&>div>button]:w-7 [&>div>div>div]:h-2 [&>div>div>div>div]:h-2 [&>div>div>div.flex]:text-[10px]"
+                  (post.image || (post.content && post.content.trim().length > 0))
+                    ? "p-1 gap-0.5 text-[9px] min-h-[32px] [&>div>button]:p-0.5 [&>div>button]:h-5 [&>div>button]:w-5 [&>div>button]:border [&>div>button]:border-[1px] [&>div>button]:inline-flex [&>div>button]:items-center [&>div>button]:justify-center [&>div>button>svg]:w-3 [&>div>button>svg]:h-3 [&>div>div>div]:h-1 [&>div>div>div>div]:h-1 [&>div>div>div.flex]:text-[8px]"
                     : "p-5 gap-3 text-sm w-full min-h-[80px] [&>div>button]:p-3 [&>div>div>div]:h-3 [&>div>div>div>div]:h-3 [&>div>div>div.flex]:text-sm"
                 }
                 showVolumeControl={false}

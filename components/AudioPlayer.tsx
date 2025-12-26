@@ -451,13 +451,13 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
             togglePlay();
           }}
           disabled={isLoading || !!error}
-          className="p-2 bg-white dark:bg-[#151515] border-2 border-black rounded-full hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
+          className="p-2 bg-white dark:bg-[#151515] border-2 border-black rounded-full hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 inline-flex items-center justify-center"
           aria-label={isPlaying ? 'Duraklat' : 'Oynat'}
         >
           {isPlaying ? (
-            <Pause className="w-4 h-4 text-black dark:text-white" />
+            <Pause className="w-4 h-4 text-black dark:text-white block" />
           ) : (
-            <Play className="w-4 h-4 text-black dark:text-white" />
+            <Play className="w-4 h-4 text-black dark:text-white block" />
           )}
         </button>
 
