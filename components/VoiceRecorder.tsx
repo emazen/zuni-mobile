@@ -677,6 +677,7 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
             </div>
           )}
           <button
+            type="button"
             onClick={startRecording}
             disabled={permissionState === 'checking'}
             className="w-full py-4 bg-red-500 text-white font-bold border-2 border-black rounded-lg hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -711,6 +712,7 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
             <div className="flex items-center gap-2">
               {isPaused ? (
                 <button
+                  type="button"
                   onClick={resumeRecording}
                   className="p-2 bg-green-500 text-white border-2 border-black rounded-full hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
                 >
@@ -718,6 +720,7 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
                 </button>
               ) : (
                 <button
+                  type="button"
                   onClick={pauseRecording}
                   className="p-2 bg-yellow-500 text-white border-2 border-black rounded-full hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
                 >
@@ -725,6 +728,7 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel, maxDurati
                 </button>
               )}
               <button
+                type="button"
                 onClick={stopRecording}
                 className="p-2 bg-red-500 text-white border-2 border-black rounded-full hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
               >

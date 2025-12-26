@@ -192,14 +192,21 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
             )}
         </div>
 
-          {/* Audio Player - Consistent positioning across all contexts */}
+          {/* Audio Player - Smaller horizontally when image is present */}
           {post.audio && (
-            <div className="mb-2 w-full pt-2" onClick={(e) => e.stopPropagation()}>
+            <div 
+              className={`mb-2 w-full pt-2 ${post.image ? 'max-w-[calc(100%-7rem)]' : ''}`} 
+              onClick={(e) => e.stopPropagation()}
+            >
               <AudioPlayer 
                 key={`${post.audio}-${audioDuration}`}
                 audioUrl={post.audio} 
                 duration={audioDuration}
-                className="p-5 gap-3 text-sm w-full min-h-[80px] [&>div>button]:p-3 [&>div>div>div]:h-3 [&>div>div>div>div]:h-3 [&>div>div>div.flex]:text-sm"
+                className={
+                  post.image
+                    ? "p-2 gap-1.5 text-xs min-h-[50px] [&>div>button]:p-1.5 [&>div>button]:h-7 [&>div>button]:w-7 [&>div>div>div]:h-2 [&>div>div>div>div]:h-2 [&>div>div>div.flex]:text-[10px]"
+                    : "p-5 gap-3 text-sm w-full min-h-[80px] [&>div>button]:p-3 [&>div>div>div]:h-3 [&>div>div>div>div]:h-3 [&>div>div>div.flex]:text-sm"
+                }
                 showVolumeControl={false}
               />
             </div>
