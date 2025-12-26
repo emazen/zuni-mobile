@@ -4,6 +4,9 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Clock, TrendingUp, Image as ImageIcon } from "lucide-react"
+import AudioPlayer from "./AudioPlayer"
+import { useEffect, useState } from "react"
+import { getAudioDurationFromUrl } from "@/lib/utils"
 
 interface Post {
   id: string
@@ -30,6 +33,7 @@ interface Post {
   isTrending?: boolean
   latestCommentTimestamp?: string | null
   image?: string | null
+  audio?: string | null
 }
 
 interface PostCardProps {
@@ -45,7 +49,25 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
   const { data: session } = useSession()
   const router = useRouter()
   const titleLineClamp = 2
-  const contentLineClamp = showUniversityInfo ? 2 : 3
+  // Keep audio cards aligned: limit content preview to 2 lines when audio exists
+  const contentLineClamp = post.audio ? 2 : (showUniversityInfo ? 2 : 3)
+  const [audioDuration, setAudioDuration] = useState<number | undefined>(undefined)
+
+  // Extract audio duration when post has audio
+  useEffect(() => {
+    if (!post.audio) return
+
+    const extractDuration = async () => {
+      try {
+        const duration = await getAudioDurationFromUrl(post.audio!)
+        setAudioDuration(Math.round(duration))
+      } catch (error) {
+        console.error('Error extracting audio duration:', error)
+      }
+    }
+
+    extractDuration()
+  }, [post.audio])
   
   const handlePostClick = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -132,7 +154,7 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
           </div>
       
           {/* Title & Content */}
-          <div className="flex-1 mb-4 flex gap-4 min-h-0">
+          <div className={`${post.audio ? 'mb-1' : 'mb-4'} flex gap-4 min-h-0`}>
             <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
               <h3 
                 className="font-display font-bold text-2xl leading-tight mb-2 text-black dark:text-white group-hover:text-pink-500 transition-colors"
@@ -169,6 +191,19 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
               </div>
             )}
         </div>
+
+          {/* Audio Player - Slightly below center for better visual weight balance */}
+          {post.audio && (
+            <div className="flex-1 flex flex-col justify-center mb-2 w-full pt-2" onClick={(e) => e.stopPropagation()}>
+              <AudioPlayer 
+                key={`${post.audio}-${audioDuration}`}
+                audioUrl={post.audio} 
+                duration={audioDuration}
+                className="p-5 gap-3 text-sm w-full min-h-[80px] [&>div>button]:p-3 [&>div>div>div]:h-3 [&>div>div>div>div]:h-3 [&>div>div>div.flex]:text-sm"
+                showVolumeControl={false}
+              />
+            </div>
+          )}
         
           {/* Footer Row */}
           <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">

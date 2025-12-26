@@ -11,6 +11,9 @@ const plusJakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-ja
 export const metadata: Metadata = {
   title: 'Zuni',
   description: 'Üniversitene özel gönderiler paylaş ve tartışmalara katıl.',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({

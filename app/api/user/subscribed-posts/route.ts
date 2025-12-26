@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.email) {
+    if (!session?.user?.email || !session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -30,10 +30,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Get posts from subscribed universities with limit and optimized includes
+    // Exclude posts where the current user is the author
     const posts = await prisma.post.findMany({
       where: {
         universityId: {
           in: subscribedUniversityIds
+        },
+        authorId: {
+          not: session.user.id // Exclude user's own posts
         }
       },
       include: {
@@ -75,6 +79,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Get trending status in a separate optimized query
+    // Exclude comments from post authors - only count comments from other users
     const trendingPosts = await prisma.post.findMany({
       where: {
         id: {
@@ -90,27 +95,27 @@ export async function GET(request: NextRequest) {
       },
       select: {
         id: true,
-        _count: {
-          select: {
-            comments: {
-              where: {
-                createdAt: {
-                  gte: new Date(Date.now() - 48 * 60 * 60 * 1000),
-                }
-              }
-            }
-          }
-        }
+        authorId: true, // Need authorId to exclude post author's comments
       }
     });
 
-    // Create a map for quick trending lookup
-    const trendingMap = new Map(
-      trendingPosts.map(post => [
-        post.id, 
-        post._count.comments >= 10
-      ])
-    );
+    // For each post, count comments from OTHER users (not the post author)
+    const trendingMap = new Map<string, boolean>()
+    for (const post of trendingPosts) {
+      const commentCount = await prisma.comment.count({
+        where: {
+          postId: post.id,
+          createdAt: {
+            gte: new Date(Date.now() - 48 * 60 * 60 * 1000),
+          },
+          // Exclude comments from the post author
+          authorId: {
+            not: post.authorId
+          }
+        }
+      })
+      trendingMap.set(post.id, commentCount >= 10)
+    }
 
     // Add trending status and most recent comment timestamp (excluding user's own comments)
     const postsWithTrending = posts.map(post => {

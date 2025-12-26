@@ -5,7 +5,7 @@ import { use } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Send, User, LogOut, Menu, X, Building2, Moon, Sun, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Send, User, LogOut, Menu, X, Building2, Moon, Sun, Image as ImageIcon, Mic } from 'lucide-react';
 import CustomSpinner from '@/components/CustomSpinner';
 import SplashScreen from '@/components/SplashScreen';
 import UniversitySidebar from '@/components/UniversitySidebar';
@@ -13,6 +13,8 @@ import ThemeToggle from '@/components/ThemeToggle';
 import Logo from '@/components/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabaseClient';
+import VoiceRecorder from '@/components/VoiceRecorder';
+import AudioPlayer from '@/components/AudioPlayer';
 
 interface University {
   id: string;
@@ -42,6 +44,11 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [audioFile, setAudioFile] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioDuration, setAudioDuration] = useState<number | undefined>(undefined);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
 
 
   // Fetch university immediately when component mounts or params change
@@ -122,6 +129,167 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
     setImagePreview(null);
   };
 
+  const removeAudio = () => {
+    setAudioFile(null);
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+      setAudioUrl(null);
+    }
+    setAudioDuration(undefined);
+  };
+
+  const uploadAudio = async (audioBlob: Blob): Promise<string | null> => {
+    try {
+      setUploadingAudio(true);
+      
+      // Validate blob
+      if (!audioBlob || audioBlob.size === 0) {
+        alert('Geçersiz ses kaydı. Lütfen tekrar deneyin.');
+        return null;
+      }
+      
+      // Check file size (max 10MB for audio)
+      if (audioBlob.size > 10 * 1024 * 1024) {
+        alert('Ses kaydı 10MB\'dan küçük olmalıdır.');
+        return null;
+      }
+      
+      // Determine file extension and MIME type
+      const originalMimeType = audioBlob.type || 'audio/webm';
+      let fileExt = 'webm';
+      let uploadMimeType: string | undefined = 'audio/webm';
+      
+      if (originalMimeType.includes('webm')) {
+        fileExt = 'webm';
+        uploadMimeType = 'audio/webm';
+      } else if (originalMimeType.includes('mp3') || originalMimeType.includes('mpeg')) {
+        fileExt = 'mp3';
+        uploadMimeType = 'audio/mpeg';
+      } else if (originalMimeType.includes('mp4') || originalMimeType.includes('m4a')) {
+        fileExt = 'm4a';
+        uploadMimeType = 'video/mp4';
+      } else {
+        fileExt = 'webm';
+        uploadMimeType = 'audio/webm';
+      }
+      
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = `posts/audio/${fileName}`;
+
+      console.log('Uploading audio:', {
+        size: audioBlob.size,
+        originalType: originalMimeType,
+        uploadType: uploadMimeType,
+        fileExt,
+        filePath
+      });
+
+      // Upload strategies (try multiple approaches if first fails)
+      let uploadError: any = null;
+      let uploadSuccess = false;
+
+      // Strategy 1: Upload with determined MIME type
+      const { error: error1 } = await supabase.storage
+        .from('uploads')
+        .upload(filePath, audioBlob, {
+          contentType: uploadMimeType,
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (!error1) {
+        uploadSuccess = true;
+      } else {
+        uploadError = error1;
+        console.log('Upload strategy 1 failed:', error1.message);
+        
+        // Strategy 2: For mp4, try without contentType
+        if (originalMimeType.includes('mp4') || originalMimeType.includes('m4a')) {
+          console.log('Trying upload without contentType...');
+          const { error: error2 } = await supabase.storage
+            .from('uploads')
+            .upload(filePath, audioBlob, {
+              cacheControl: '3600',
+              upsert: false
+            });
+          
+          if (!error2) {
+            uploadSuccess = true;
+            uploadError = null;
+          } else {
+            uploadError = error2;
+            console.log('Upload strategy 2 failed:', error2.message);
+          }
+        }
+        
+        // Strategy 3: Try as audio/mpeg
+        if (!uploadSuccess && !originalMimeType.includes('mp4')) {
+          console.log('Trying upload as audio/mpeg...');
+          const { error: error3 } = await supabase.storage
+            .from('uploads')
+            .upload(filePath, audioBlob, {
+              contentType: 'audio/mpeg',
+              cacheControl: '3600',
+              upsert: false
+            });
+          
+          if (!error3) {
+            uploadSuccess = true;
+            uploadError = null;
+          } else {
+            uploadError = error3;
+            console.log('Upload strategy 3 failed:', error3.message);
+          }
+        }
+      }
+
+      if (!uploadSuccess && uploadError) {
+        console.error('All upload strategies failed:', uploadError);
+        throw new Error(
+          uploadError.message || 
+          `Yükleme başarısız oldu. Hata kodu: ${uploadError.statusCode || uploadError.error || 'Bilinmeyen'}`
+        );
+      }
+
+      // Get public URL
+      const { data } = supabase.storage
+        .from('uploads')
+        .getPublicUrl(filePath);
+
+      if (!data?.publicUrl) {
+        throw new Error('Dosya yüklendi ancak URL alınamadı.');
+      }
+
+      console.log('Audio uploaded successfully:', data.publicUrl);
+      return data.publicUrl;
+    } catch (error: any) {
+      console.error('Error uploading audio to Supabase:', error);
+      const errorMessage = error?.message || 'Bilinmeyen hata';
+      alert(`Ses kaydı yüklenirken bir hata oluştu: ${errorMessage}. Lütfen tekrar deneyin.`);
+      return null;
+    } finally {
+      setUploadingAudio(false);
+    }
+  };
+
+  const handleRecordingComplete = (audioBlob: Blob, duration?: number) => {
+    setAudioFile(audioBlob);
+    const url = URL.createObjectURL(audioBlob);
+    setAudioUrl(url);
+    setAudioDuration(duration);
+    setShowVoiceRecorder(false);
+  };
+
+  const handleCancelRecording = () => {
+    setShowVoiceRecorder(false);
+    setAudioFile(null);
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+      setAudioUrl(null);
+    }
+    setAudioDuration(undefined);
+  };
+
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
       setUploadingImage(true);
@@ -160,8 +328,8 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
       return;
     }
     
-    if (!content.trim() && !imageFile) {
-      alert('Lütfen içerik veya resim ekleyin');
+    if (!content.trim() && !imageFile && !audioFile) {
+      alert('Lütfen içerik, resim veya ses kaydı ekleyin');
       return;
     }
 
@@ -177,6 +345,15 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
         }
       }
 
+      let audioUrl = null;
+      if (audioFile) {
+        audioUrl = await uploadAudio(audioFile);
+        if (!audioUrl) {
+          setLoading(false);
+          return;
+        }
+      }
+
       const response = await fetch(`/api/universities/${resolvedParams.id}/posts`, {
         method: 'POST',
         headers: {
@@ -186,6 +363,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
           title: title.trim(),
           content: content.trim() || '',
           image: imageUrl,
+          audio: audioUrl,
         }),
       });
 
@@ -485,7 +663,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                         maxLength={5000}
                       />
                         <div className="flex justify-between mt-1.5">
-                          <div>
+                          <div className="flex items-center gap-3">
                             <input
                               type="file"
                               id="image-upload"
@@ -501,11 +679,50 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                               <ImageIcon className="w-4 h-4" />
                               {imageFile ? 'Resim Değiştir' : 'Resim Ekle'}
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
+                              className={`text-xs font-bold flex items-center gap-1 transition-colors ${
+                                showVoiceRecorder || audioFile
+                                  ? 'text-red-500 hover:text-red-600'
+                                  : 'text-gray-500 hover:text-black dark:hover:text-white'
+                              }`}
+                            >
+                              <Mic className="w-4 h-4" />
+                              {audioFile ? 'Ses Kaydı Değiştir' : 'Ses Kaydı Ekle'}
+                            </button>
                           </div>
                           <span className={`text-xs font-bold ${content.length > 4800 ? 'text-red-500' : 'text-gray-400'}`}>
                             {content.length}/5000
                           </span>
                         </div>
+
+                        {showVoiceRecorder && !audioFile && (
+                          <div className="mt-2">
+                            <VoiceRecorder
+                              onRecordingComplete={handleRecordingComplete}
+                              onCancel={handleCancelRecording}
+                              maxDuration={120}
+                            />
+                          </div>
+                        )}
+
+                        {audioUrl && audioFile && (
+                          <div className="mt-4">
+                            <AudioPlayer 
+                              key={`${audioUrl}-${audioDuration}`}
+                              audioUrl={audioUrl} 
+                              duration={audioDuration} 
+                            />
+                            <button
+                              type="button"
+                              onClick={removeAudio}
+                              className="mt-2 text-xs text-red-500 hover:text-red-600"
+                            >
+                              Ses Kaydını Sil
+                            </button>
+                          </div>
+                        )}
 
                         {imagePreview && (
                           <div className="mt-4 relative inline-block">
@@ -537,10 +754,10 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                       
                       <button
                         type="submit"
-                        disabled={loading || !title.trim() || (!content.trim() && imageFile === null)}
+                        disabled={loading || !title.trim() || (!content.trim() && imageFile === null && audioFile === null)}
                           className="group relative px-6 sm:px-8 py-2.5 sm:py-3 bg-black dark:bg-white text-white dark:text-black font-bold text-sm sm:text-base rounded-lg border-2 border-black disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden flex-1 sm:flex-none"
                           style={{borderColor: 'var(--border-color)'}}
-                          title={!title.trim() ? 'Başlık gereklidir' : (!content.trim() && imageFile === null) ? 'İçerik veya resim gereklidir' : ''}
+                          title={!title.trim() ? 'Başlık gereklidir' : (!content.trim() && imageFile === null && audioFile === null) ? 'İçerik, resim veya ses kaydı gereklidir' : ''}
                       >
                           <div className="absolute inset-0 w-full h-full bg-pink-500 translate-y-full group-hover:translate-y-0 transition-transform duration-200 ease-out" />
                           <div className="relative flex items-center justify-center gap-2 group-hover:text-white">

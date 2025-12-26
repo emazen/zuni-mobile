@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { MessageSquare, LogOut, User, GraduationCap, Star, BookOpen, Plus, Menu, X, Send, Calendar, TrendingUp, Building2, Moon, Sun, ArrowUpDown, Clock, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import CustomSpinner from "@/components/CustomSpinner"
 import Link from "next/link"
@@ -248,6 +248,53 @@ export default function Home() {
     return posts.slice(start, start + postsPerSlide)
   }
 
+  // Sort user posts: 
+  // 1. New commented posts first (by latest comment timestamp)
+  // 2. Commented but seen posts (by view timestamp, most recently viewed first)
+  // 3. Posts with no activity (by creation time, newest first)
+  const sortedUserPosts = useMemo(() => {
+    if (!userActivity?.userPosts) return []
+    
+    return [...userActivity.userPosts].sort((a, b) => {
+      const aViewTimestamp = postViewTimestamps.get(a.id)
+      const bViewTimestamp = postViewTimestamps.get(b.id)
+      
+      // Check if posts have new comments (comments after last view)
+      const aHasNewComments = a.latestCommentTimestamp && 
+        (!aViewTimestamp || new Date(a.latestCommentTimestamp) > new Date(aViewTimestamp))
+      const bHasNewComments = b.latestCommentTimestamp && 
+        (!bViewTimestamp || new Date(b.latestCommentTimestamp) > new Date(bViewTimestamp))
+      
+      // Check if posts have any comments (activity)
+      const aHasComments = !!a.latestCommentTimestamp
+      const bHasComments = !!b.latestCommentTimestamp
+      
+      // Posts with new comments come first
+      if (aHasNewComments && !bHasNewComments) return -1
+      if (!aHasNewComments && bHasNewComments) return 1
+      
+      // If both have new comments, sort by latest comment timestamp (newest first)
+      if (aHasNewComments && bHasNewComments) {
+        return new Date(b.latestCommentTimestamp!).getTime() - new Date(a.latestCommentTimestamp!).getTime()
+      }
+      
+      // If neither has new comments, check if they have activity (comments)
+      // Posts with activity (commented but seen) come before posts with no activity
+      if (aHasComments && !bHasComments) return -1
+      if (!aHasComments && bHasComments) return 1
+      
+      // If both have activity (commented but seen), sort by view timestamp (most recently viewed first)
+      if (aHasComments && bHasComments) {
+        const aViewTime = aViewTimestamp ? new Date(aViewTimestamp).getTime() : 0
+        const bViewTime = bViewTimestamp ? new Date(bViewTimestamp).getTime() : 0
+        return bViewTime - aViewTime
+      }
+      
+      // If neither has activity, sort by creation date (newest first)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    })
+  }, [userActivity?.userPosts, postViewTimestamps])
+
   // Reset carousel index when userActivity changes
   useEffect(() => {
     if (userActivity) {
@@ -255,6 +302,50 @@ export default function Home() {
       setCommentedPostsIndex(0)
     }
   }, [userActivity?.userPosts.length, userActivity?.postsWithUserComments.length])
+
+  // Update browser tab title when viewing a university board or post detail
+  useEffect(() => {
+    // Priority 1: Post detail
+    if (showPostDetail && (postId || selectedPostId)) {
+      const allPostsList = [...posts, ...allPosts, ...(universityPosts || [])]
+      const currentPostId = postId || selectedPostId
+      const post = allPostsList.find(p => p.id === currentPostId)
+      
+      if (post) {
+        // Format: "Zuni - Post Title and Text"
+        // Truncate if total length exceeds ~60 characters (typical browser tab max)
+        const maxLength = 60
+        let postText = post.title
+        
+        // Add content preview if title is short enough
+        if (post.content && postText.length < maxLength - 10) {
+          const contentPreview = post.content.trim().substring(0, maxLength - postText.length - 3)
+          if (contentPreview.length < post.content.trim().length) {
+            postText = `${postText} ${contentPreview}...`
+          } else {
+            postText = `${postText} ${contentPreview}`
+          }
+        }
+        
+        // Truncate if still too long
+        if (postText.length > maxLength) {
+          postText = postText.substring(0, maxLength - 3) + '...'
+        }
+        
+        document.title = `Zuni - ${postText}`
+      } else {
+        document.title = 'Zuni'
+      }
+    }
+    // Priority 2: University board
+    else if (showUniversityBoard && selectedUniversity) {
+      document.title = `Zuni - ${selectedUniversity.name}`
+    }
+    // Default
+    else {
+      document.title = 'Zuni'
+    }
+  }, [showPostDetail, postId, selectedPostId, posts, allPosts, universityPosts, showUniversityBoard, selectedUniversity])
 
   // Control splash screen minimum display time
   useEffect(() => {
@@ -525,6 +616,7 @@ export default function Home() {
       fetchData()
     } else {
       setLoading(false)
+      setUniversityLoading(false)
     }
   }, [session, status, router])
 
@@ -1412,12 +1504,44 @@ export default function Home() {
             </div>
           ) : (showPostDetail && (postId || selectedPostId)) ? (
             <PostDetailView postId={postId || selectedPostId || ''} onGoBack={handleGoBack} onCommentAdded={handleCommentAdded} onPostDeleted={fetchData} />
-          ) : (showUniversityBoard || (session && universityParam && !postId)) ? (
+          ) : (showUniversityBoard || (universityParam && !postId)) ? (
             <div className={`flex-1 ${isMobile ? 'h-full' : 'overflow-y-auto'}`}>
               <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-0 sm:py-8 flex flex-col ${isMobile ? 'h-full' : 'min-h-[calc(100vh-56px)]'}`}>
                 <div className="flex-1">
                 {/* University Posts */}
-                {universityLoading || !selectedUniversity ? (
+                {universityLoading ? (
+                  <div className="flex items-center justify-center min-h-[400px]">
+                    <CustomSpinner size="lg" />
+                  </div>
+                ) : !session ? (
+                  <div className="max-w-4xl mx-auto">
+                    <div className="text-center py-12 rounded-xl border-2 border-black bg-white dark:bg-[#151515] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" style={{borderColor: 'var(--border-color)'}}>
+                      <Building2 className="h-12 w-12 mx-auto text-black dark:text-white mb-4" />
+                      <h2 className="text-2xl font-display font-bold text-black dark:text-white mb-2">Giriş Yapın</h2>
+                      <p className="text-base font-sans text-gray-600 dark:text-gray-300 mb-6">Bu üniversite panosunu görmek için giriş yapmanız gerekiyor.</p>
+                      <div className="flex gap-4 justify-center">
+                        <button 
+                          onClick={() => {
+                            setAuthModalMode('signin');
+                            setShowAuthModalCombined(true);
+                          }}
+                          className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black font-bold rounded-lg border-2 border-black hover:-translate-y-0.5 transition-transform"
+                        >
+                          Giriş Yap
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setAuthModalMode('signup');
+                            setShowAuthModalCombined(true);
+                          }}
+                          className="px-6 py-2 bg-white dark:bg-black text-black dark:text-white font-bold rounded-lg border-2 border-black hover:-translate-y-0.5 transition-transform"
+                        >
+                          Kayıt Ol
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : !selectedUniversity ? (
                   <div className="flex items-center justify-center min-h-[400px]">
                     <CustomSpinner size="lg" />
                   </div>
@@ -1756,14 +1880,14 @@ export default function Home() {
                         {userActivity.userPosts.length > 0 && (
                           <div className="mb-6">
                             <h3 className="text-2xl font-display font-bold text-black mb-4 flex items-center" style={{color: 'var(--text-primary)'}}>
-                              <BookOpen className="h-6 w-6 mr-3 text-black" style={{color: 'var(--text-primary)'}} />
+                              <BookOpen className="h-6 w-6 mr-3 text-yellow-500" />
                               Gönderiler ({userActivity.userPosts.length})
                             </h3>
                             <div>
                               {/* Carousel Container */}
-                              <div className="mb-6 min-h-[280px] lg:min-h-[560px]">
+                              <div className="mb-6">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                  {getVisiblePosts(userActivity.userPosts, myPostsIndex).map((post) => (
+                                  {getVisiblePosts(sortedUserPosts, myPostsIndex).map((post) => (
                        <PostCard 
                          key={post.id} 
                          post={post} 
@@ -1778,11 +1902,11 @@ export default function Home() {
                               </div>
                               
                               {/* Navigation Controls */}
-                              {getTotalSlides(userActivity.userPosts) > 1 && (
+                              {getTotalSlides(sortedUserPosts) > 1 && (
                                 <div className="flex items-center justify-center gap-6">
                                   {/* Previous Arrow */}
                                   <button
-                                    onClick={() => goToPrevSlide(myPostsIndex, userActivity.userPosts, setMyPostsIndex)}
+                                    onClick={() => goToPrevSlide(myPostsIndex, sortedUserPosts, setMyPostsIndex)}
                                     className="bg-white border-2 border-black brutal-shadow-sm p-2.5 hover:brutal-shadow transition-all flex items-center justify-center"
                                     style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', width: '40px', height: '40px'}}
                                   >
@@ -1791,7 +1915,7 @@ export default function Home() {
                                   
                                   {/* Dots Indicator */}
                                   <div className="flex items-center gap-2 min-w-[100px] justify-center">
-                                    {Array.from({ length: getTotalSlides(userActivity.userPosts) }).map((_, index) => (
+                                    {Array.from({ length: getTotalSlides(sortedUserPosts) }).map((_, index) => (
                                       <button
                                         key={index}
                                         onClick={() => goToSlide(index, setMyPostsIndex)}
@@ -1811,7 +1935,7 @@ export default function Home() {
                                   
                                   {/* Next Arrow */}
                                   <button
-                                    onClick={() => goToNextSlide(myPostsIndex, userActivity.userPosts, setMyPostsIndex)}
+                                    onClick={() => goToNextSlide(myPostsIndex, sortedUserPosts, setMyPostsIndex)}
                                     className="bg-white border-2 border-black brutal-shadow-sm p-2.5 hover:brutal-shadow transition-all flex items-center justify-center"
                                     style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', width: '40px', height: '40px'}}
                                   >
@@ -1827,12 +1951,12 @@ export default function Home() {
                         {userActivity.postsWithUserComments.length > 0 && (
                           <div className="mb-6">
                             <h3 className="text-2xl font-display font-bold text-black mb-4 flex items-center" style={{color: 'var(--text-primary)'}}>
-                              <MessageSquare className="h-5 w-5 mr-2 text-black" style={{color: 'var(--text-primary)'}} />
+                              <MessageSquare className="h-5 w-5 mr-2 text-yellow-500" />
                               Yorumlar ({userActivity.postsWithUserComments.length})
                             </h3>
                             <div>
                               {/* Carousel Container */}
-                              <div className="mb-6 min-h-[280px] lg:min-h-[560px]">
+                              <div className="mb-6">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                   {getVisiblePosts(userActivity.postsWithUserComments, commentedPostsIndex).map((post) => (
                        <PostCard 

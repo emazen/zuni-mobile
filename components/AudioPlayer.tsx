@@ -1,20 +1,24 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Volume2, AlertCircle } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, AlertCircle } from 'lucide-react';
 
 interface AudioPlayerProps {
   audioUrl: string;
   className?: string;
   duration?: number; // Optional: If provided, use this instead of reading from audio element
+  showVolumeControl?: boolean; // allow hiding slider (e.g., on post cards)
 }
 
-export default function AudioPlayer({ audioUrl, className = '', duration: providedDuration }: AudioPlayerProps) {
+export default function AudioPlayer({ audioUrl, className = '', duration: providedDuration, showVolumeControl = true }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [volume, setVolume] = useState(1.0);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const volumeHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // If duration is provided as prop, use it and mark as loaded
@@ -326,6 +330,52 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  // Update audio volume when volume state changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+  };
+
+  const toggleMute = () => {
+    if (volume > 0) {
+      setVolume(0);
+    } else {
+      setVolume(1.0);
+    }
+  };
+
+  const handleVolumeEnter = () => {
+    if (volumeHideTimeout.current) {
+      clearTimeout(volumeHideTimeout.current);
+      volumeHideTimeout.current = null;
+    }
+    setShowVolumeSlider(true);
+  };
+
+  const handleVolumeLeave = () => {
+    if (volumeHideTimeout.current) {
+      clearTimeout(volumeHideTimeout.current);
+    }
+    volumeHideTimeout.current = setTimeout(() => {
+      setShowVolumeSlider(false);
+    }, 300);
+  };
+
+  // Clear any pending timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (volumeHideTimeout.current) {
+        clearTimeout(volumeHideTimeout.current);
+      }
+    };
+  }, []);
+
   // Show error state
   if (error) {
     return (
@@ -424,7 +474,71 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
           </div>
         </div>
 
-        <Volume2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+        {showVolumeControl ? (
+          <div 
+            className="relative flex items-center"
+            onMouseEnter={handleVolumeEnter}
+            onMouseLeave={handleVolumeLeave}
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMute();
+              }}
+              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors flex-shrink-0"
+              aria-label={volume > 0 ? 'Sesi kapat' : 'Sesi aç'}
+            >
+              {volume === 0 ? (
+                <VolumeX className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              ) : (
+                <Volume2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              )}
+            </button>
+            {showVolumeSlider && (
+              <div 
+                className="absolute right-0 bottom-full mb-3 z-50 flex items-center justify-center"
+                onClick={(e) => e.stopPropagation()}
+                onMouseEnter={handleVolumeEnter}
+                onMouseLeave={handleVolumeLeave}
+              >
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={volume}
+                  onChange={handleVolumeChange}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-28 h-3 bg-gray-300 dark:bg-gray-700 rounded-full appearance-none cursor-pointer"
+                  style={{
+                    WebkitAppearance: 'none',
+                    background: `linear-gradient(to right, #ef4444 0%, #ef4444 ${volume * 100}%, rgb(209 213 219) ${volume * 100}%, rgb(209 213 219) 100%)`
+                  }}
+                  aria-label="Ses seviyesi"
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleMute();
+            }}
+            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors flex-shrink-0"
+            aria-label={volume > 0 ? 'Sesi kapat' : 'Sesi aç'}
+          >
+            {volume === 0 ? (
+              <VolumeX className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            ) : (
+              <Volume2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

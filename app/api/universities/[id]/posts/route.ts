@@ -82,6 +82,7 @@ export async function GET(
     });
 
     // Calculate trending status based on comment count in last 48 hours
+    // Exclude comments from post authors - only count comments from other users
     const trendingPostIds = await prisma.post.findMany({
       where: {
         universityId: resolvedParams.id,
@@ -95,23 +96,27 @@ export async function GET(
       },
       select: {
         id: true,
-        _count: {
-          select: {
-            comments: {
-              where: {
-                createdAt: {
-                  gte: new Date(Date.now() - 48 * 60 * 60 * 1000),
-                }
-              }
-            }
-          }
-        }
+        authorId: true, // Need authorId to exclude post author's comments
       }
     })
 
-    const trendingMap = new Map(
-      trendingPostIds.map(post => [post.id, post._count.comments >= 10])
-    )
+    // For each post, count comments from OTHER users (not the post author)
+    const trendingMap = new Map<string, boolean>()
+    for (const post of trendingPostIds) {
+      const commentCount = await prisma.comment.count({
+        where: {
+          postId: post.id,
+          createdAt: {
+            gte: new Date(Date.now() - 48 * 60 * 60 * 1000),
+          },
+          // Exclude comments from the post author
+          authorId: {
+            not: post.authorId
+          }
+        }
+      })
+      trendingMap.set(post.id, commentCount >= 10)
+    }
 
     // Add trending status and most recent comment timestamp (excluding user's own comments)
     const postsWithTrending = posts.map(post => {

@@ -44,6 +44,7 @@ interface Post {
     comments: number;
   };
   image?: string | null;
+  audio?: string | null;
 }
 
 interface PostDetailViewProps {
@@ -76,6 +77,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
   const [enlargedImageTouchStart, setEnlargedImageTouchStart] = useState<{ x: number; y: number; touchCount: number } | null>(null);
   const [commentDurations, setCommentDurations] = useState<Map<string, number>>(new Map());
   const commentDurationsRef = useRef<Map<string, number>>(new Map());
+  const [postAudioDuration, setPostAudioDuration] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     fetchPost();
@@ -122,6 +124,22 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
 
     extractDurations();
   }, [post?.comments]);
+
+  // Extract duration for post audio
+  useEffect(() => {
+    if (!post?.audio) return;
+
+    const extractPostAudioDuration = async () => {
+      try {
+        const duration = await getAudioDurationFromUrl(post.audio!);
+        setPostAudioDuration(Math.round(duration));
+      } catch (error) {
+        console.error('Error extracting post audio duration:', error);
+      }
+    };
+
+    extractPostAudioDuration();
+  }, [post?.audio]);
 
   const fetchPost = async () => {
     if (!postId) return;
@@ -676,6 +694,16 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                             }
                             setTouchStart(null)
                           }}
+                        />
+                      </div>
+                    )}
+                    {post.audio && (
+                      <div className="mt-4">
+                        <AudioPlayer 
+                          key={`${post.audio}-${postAudioDuration}`}
+                          audioUrl={post.audio} 
+                          duration={postAudioDuration}
+                          className="p-5 gap-3 text-sm w-full min-h-[80px] [&>div>button]:p-3 [&>div>div>div]:h-3 [&>div>div>div>div]:h-3 [&>div>div>div.flex]:text-sm"
                         />
                       </div>
                     )}
