@@ -349,12 +349,14 @@ export default function Home() {
 
   // Control splash screen minimum display time
   useEffect(() => {
+    // On initial load, show splash screen even if postId or universityParam exists (refresh case)
+    // But if navigating programmatically (state change), don't show splash
     const timer = setTimeout(() => {
       setShowSplash(false)
     }, 1500) // Show splash for at least 1.5 seconds
 
     return () => clearTimeout(timer)
-  }, [])
+  }, []) // Only run on mount, not on postId/universityParam changes
 
   // Sync postSource with URL parameters when they change (handles navigation without refresh)
   // Note: Initial values are set synchronously in useState initialization above
@@ -655,8 +657,9 @@ export default function Home() {
     // Only handle university redirect if:
     // 1. There's a university parameter in URL
     // 2. We're not showing a post detail view
-    // 3. We haven't already loaded the university board data (avoid duplicate loads)
-    if (universityIdFromUrl && !postId) {
+    // 3. We're not navigating back (prevents state conflicts)
+    // 4. We haven't already loaded the university board data (avoid duplicate loads)
+    if (universityIdFromUrl && !postId && !isNavigatingBack) {
       if (showUniversityBoard && universityLoading && selectedUniversity?.id !== universityIdFromUrl) {
         // We're showing university board but need to load different university
         // Load data directly
@@ -729,10 +732,14 @@ export default function Home() {
           }
           loadUniversityData()
         } else {
-          setShowUniversityBoard(true)
-          if (!selectedUniversity || selectedUniversity.id !== universityIdFromUrl) {
-            setUniversityLoading(true)
-            handleUniversityClick(universityIdFromUrl)
+          // Don't call handleUniversityClick if we're navigating back
+          // This prevents duplicate loads and state conflicts
+          if (!isNavigatingBack) {
+            setShowUniversityBoard(true)
+            if (!selectedUniversity || selectedUniversity.id !== universityIdFromUrl) {
+              setUniversityLoading(true)
+              handleUniversityClick(universityIdFromUrl)
+            }
           }
         }
       }
@@ -881,14 +888,16 @@ export default function Home() {
     setSelectedPostId(postId)
     setShowPostDetail(true)
     
-    // Update URL immediately for proper navigation
+    // Update URL using router.replace with scroll: false to prevent page reload
+    // State is already updated above, so this just updates the URL
     // CRITICAL: Include university parameter if opened from university board
-    // This ensures refresh works correctly - we can restore postSource from URL
-    if (source === 'university' && universityIdToStore) {
-      router.push(`/?post=${postId}&university=${universityIdToStore}`)
-    } else {
-      router.push(`/?post=${postId}`)
-    }
+    const newUrl = source === 'university' && universityIdToStore
+      ? `/?post=${postId}&university=${universityIdToStore}`
+      : `/?post=${postId}`
+    
+    // Use router.replace with scroll: false to update URL without full page reload
+    // Since state is already updated, this should be seamless
+    router.replace(newUrl, { scroll: false })
     
     // Mark post as viewed and save to localStorage
     setViewedPosts(prev => {
@@ -1086,54 +1095,10 @@ export default function Home() {
         // 2. We have a university ID from function param (post data), state, or URL (refresh case)
         const targetUniversityId = urlUniversityId
         if (targetUniversityId) {
-          // Always set university board state immediately (before navigation)
-          // This ensures UI updates immediately
-          setShowUniversityBoard(true)
-          
-          // URL post param already cleared above, now set university param
-          // Navigate immediately - don't wait for data loading
-          const targetUrl = shouldRefresh 
-            ? `/?university=${targetUniversityId}&refresh=true`
-            : `/?university=${targetUniversityId}`
-          router.replace(targetUrl)
-          
-          // Load data in background (non-blocking)
-          // Don't wait for this - navigation happens immediately above
-          if (selectedUniversity?.id !== targetUniversityId) {
-            setUniversityLoading(true)
-            
-            // Use the handleUniversityClick function logic directly to ensure consistent data loading
-            // but modified to not navigate again
-            Promise.all([
-              fetch(`/api/universities/${targetUniversityId}`),
-              fetch(`/api/universities/${targetUniversityId}/posts`)
-            ]).then(([universityResponse, postsResponse]) => {
-              if (universityResponse.ok && postsResponse.ok) {
-                return Promise.all([universityResponse.json(), postsResponse.json()])
-              } else {
-                throw new Error('Failed to fetch university data')
-              }
-            }).then(([university, posts]) => {
-              setSelectedUniversity({
-                id: university.id,
-                name: university.name,
-                shortName: university.shortName,
-                city: university.city,
-                type: university.type
-              })
-              setUniversityPosts(posts)
-              setUniversityLoading(false)
-            }).catch((error) => {
-              console.error('Error loading university data:', error)
-              setUniversityLoading(false)
-            })
-          }
-          
-          // Clear the navigating flag after navigation completes
-          // Use a longer delay to allow the URL change to trigger useEffect
-          setTimeout(() => {
-            setIsNavigatingBack(false)
-          }, 200)
+          // Use handleUniversityClick to ensure consistent behavior
+          // This handles all state clearing, URL updates, and data loading properly
+          // It also prevents race conditions with proper URL checking
+          handleUniversityClick(targetUniversityId)
         } else {
           // Fallback: if we don't have university ID, go to main page
           setShowUniversityBoard(false)
@@ -1238,23 +1203,26 @@ export default function Home() {
     // Set navigation flag to prevent useEffect interference
     setIsNavigatingBack(true)
 
-    // Clear post detail state immediately (before async operations)
+    // Clear ALL state immediately (before async operations)
+    // This prevents old state from being used when rapidly clicking different universities
     setShowUniversityBoard(true)
     setShowPostDetail(false)
     setSelectedPostId(null)
     setPostSource(null)
     setPostSourceUniversityId(null)
+    // Clear selectedUniversity to prevent old data from showing
+    setSelectedUniversity(null)
+    setUniversityPosts([])
     setUniversityLoading(true)
     
-    // Only navigate if URL doesn't already have this university parameter
-    // This prevents clearing URL on refresh
-    const currentUrl = new URL(window.location.href)
-    const currentUniParam = currentUrl.searchParams.get('university')
-    const hasPostParam = currentUrl.searchParams.has('post')
+    // Update URL immediately to prevent old state from reloading
+    // Use window.history to update URL without triggering full page reload
+    const newUrl = `/?university=${universityId}`
+    window.history.replaceState({}, '', newUrl)
     
-    if (currentUniParam !== universityId || hasPostParam) {
-      router.replace(`/?university=${universityId}`)
-    }
+    // Also update Next.js router state (but don't trigger navigation)
+    // This ensures searchParams updates correctly
+    router.replace(newUrl, { scroll: false })
     
     try {
       console.log(`🎯 Fetching university data for ID: ${universityId}`)
@@ -1275,14 +1243,25 @@ export default function Home() {
         console.log('✅ University data:', university)
         console.log('✅ Posts data:', posts.length, 'posts')
         
-        setSelectedUniversity({
-          id: university.id,
-          name: university.name,
-          shortName: university.shortName,
-          city: university.city,
-          type: university.type
-        })
-        setUniversityPosts(posts)
+        // Check current URL to ensure we're still loading the same university
+        // This prevents old data from overwriting new data when rapidly clicking
+        const currentUrlParams = new URLSearchParams(window.location.search)
+        const currentUniId = currentUrlParams.get('university')
+        
+        // Only set university data if URL still matches the university we're loading
+        // This prevents race conditions when rapidly clicking different universities
+        if (currentUniId === universityId && university.id === universityId) {
+          setSelectedUniversity({
+            id: university.id,
+            name: university.name,
+            shortName: university.shortName,
+            city: university.city,
+            type: university.type
+          })
+          setUniversityPosts(posts)
+        } else {
+          console.log('⚠️ Ignoring stale university data:', university.id, 'expected:', universityId, 'current URL:', currentUniId)
+        }
       } else {
         // Get error details
         const universityError = universityResponse.ok ? null : await universityResponse.text()
@@ -1303,10 +1282,11 @@ export default function Home() {
     } finally {
       setUniversityLoading(false)
       setIsRedirecting(false) // Clear redirecting state when done
-      // Clear navigation flag after a delay
+      // Clear navigation flag after a delay to prevent useEffect from reloading old state
+      // This ensures the new university data is fully loaded before allowing useEffect to run
       setTimeout(() => {
         setIsNavigatingBack(false)
-      }, 100)
+      }, 500)
     }
   }
 
@@ -1338,7 +1318,15 @@ export default function Home() {
 
 
 
-  if (status === "loading" || isRedirecting || showSplash || isAuthenticating) {
+  // Show splash screen on initial load or when session is loading
+  // But don't show when navigating programmatically to post details (state change)
+  // Allow splash on refresh when postId exists in URL (initial load with post detail)
+  if (status === "loading" || isRedirecting || isAuthenticating) {
+    return <SplashScreen />
+  }
+  
+  // Show splash screen on initial load (even if postId exists - refresh case)
+  if (showSplash) {
     return <SplashScreen />
   }
 
@@ -1503,7 +1491,7 @@ export default function Home() {
               </div>
             </div>
           ) : (showPostDetail && (postId || selectedPostId)) ? (
-            <PostDetailView postId={postId || selectedPostId || ''} onGoBack={handleGoBack} onCommentAdded={handleCommentAdded} onPostDeleted={fetchData} />
+            <PostDetailView postId={postId || selectedPostId || ''} onGoBack={handleGoBack} onCommentAdded={handleCommentAdded} onPostDeleted={fetchData} onUniversityClick={handleUniversityClick} />
           ) : (showUniversityBoard || (universityParam && !postId)) ? (
             <div className={`flex-1 ${isMobile ? 'h-full' : 'overflow-y-auto'}`}>
               <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-0 sm:py-8 flex flex-col ${isMobile ? 'h-full' : 'min-h-[calc(100vh-56px)]'}`}>

@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Clock, TrendingUp, Image as ImageIcon } from "lucide-react"
@@ -118,10 +117,9 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
 
   return (
     <div className="relative group h-full">
-      <Link 
-        href={`/?post=${post.id}`}
+      <div 
         onClick={handlePostClick}
-        className="block h-full"
+        className="block h-full cursor-pointer"
       >
         <div className="relative h-[260px] bg-white dark:bg-[#151515] border-2 border-black dark:border-gray-700 rounded-xl transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] flex flex-col p-4 overflow-visible">
           
@@ -266,7 +264,7 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
             )}
           </div>
         </div>
-      </Link>
+      </div>
     </div>
   )
 }

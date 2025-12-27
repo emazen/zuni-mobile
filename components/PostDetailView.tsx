@@ -52,9 +52,10 @@ interface PostDetailViewProps {
   onGoBack: (universityId?: string) => void;
   onCommentAdded?: () => void;
   onPostDeleted?: () => void;
+  onUniversityClick?: (universityId: string) => void;
 }
 
-export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPostDeleted }: PostDetailViewProps) {
+export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPostDeleted, onUniversityClick }: PostDetailViewProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const [post, setPost] = useState<Post | null>(null);
@@ -579,7 +580,11 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                     e.preventDefault()
                     e.stopPropagation()
                     if (post?.university?.id) {
-                      router.push(`/?university=${post.university.id}`)
+                      if (onUniversityClick) {
+                        onUniversityClick(post.university.id)
+                      } else {
+                        router.push(`/?university=${post.university.id}`)
+                      }
                     }
                   }}
                   className="px-3 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-full border border-gray-200 dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"

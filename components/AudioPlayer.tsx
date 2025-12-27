@@ -18,8 +18,19 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
   const [error, setError] = useState<string | null>(null);
   const [volume, setVolume] = useState(1.0);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const volumeHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Detect mobile on mount
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // If duration is provided as prop, use it and mark as loaded
   // This is the SINGLE SOURCE OF TRUTH for duration - never use audio.duration
@@ -484,12 +495,11 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
           </div>
         </div>
 
-        {showVolumeControl ? (
+        {showVolumeControl && !isMobile ? (
           <div 
             className="relative flex items-center border-0"
             onMouseEnter={handleVolumeEnter}
             onMouseLeave={handleVolumeLeave}
-            onTouchStart={handleVolumeEnter}
           >
             <button
               type="button"
@@ -498,17 +508,8 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
                 e.stopPropagation();
                 toggleMute();
               }}
-              onTouchStart={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!showVolumeSlider) {
-                  setShowVolumeSlider(true);
-                } else {
-                  toggleMute();
-                }
-              }}
-              className="p-1 rounded flex-shrink-0 border-0 outline-none focus:outline-none focus:ring-0 shadow-none !border-0 touch-manipulation"
-              style={{ border: 'none', boxShadow: 'none', touchAction: 'manipulation' }}
+              className="p-1 rounded flex-shrink-0 border-0 outline-none focus:outline-none focus:ring-0 shadow-none !border-0"
+              style={{ border: 'none', boxShadow: 'none' }}
               aria-label={volume > 0 ? 'Sesi kapat' : 'Sesi aç'}
             >
               {volume === 0 ? (
@@ -523,8 +524,6 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
                 onClick={(e) => e.stopPropagation()}
                 onMouseEnter={handleVolumeEnter}
                 onMouseLeave={handleVolumeLeave}
-                onTouchStart={(e) => e.stopPropagation()}
-                onTouchMove={(e) => e.stopPropagation()}
               >
                 <input
                   type="range"
@@ -533,14 +532,10 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
                   step="0.01"
                   value={volume}
                   onChange={handleVolumeChange}
-                  onInput={handleVolumeChange}
                   onClick={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  onTouchMove={(e) => e.stopPropagation()}
-                  className="w-28 h-3 bg-gray-300 dark:bg-gray-700 rounded-full appearance-none cursor-pointer touch-manipulation"
+                  className="w-28 h-3 bg-gray-300 dark:bg-gray-700 rounded-full appearance-none cursor-pointer"
                   style={{
                     WebkitAppearance: 'none',
-                    touchAction: 'manipulation',
                     background: `linear-gradient(to right, #ef4444 0%, #ef4444 ${volume * 100}%, rgb(209 213 219) ${volume * 100}%, rgb(209 213 219) 100%)`
                   }}
                   aria-label="Ses seviyesi"
