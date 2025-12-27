@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { MessageSquare, LogOut, User, GraduationCap, Star, BookOpen, Plus, Menu, X, Send, Calendar, TrendingUp, Building2, Moon, Sun, ArrowUpDown, Clock, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import CustomSpinner from "@/components/CustomSpinner"
 import Link from "next/link"
@@ -216,6 +216,12 @@ export default function Home() {
     }
     return false
   })
+  // Track the latest requested university ID to prevent race conditions
+  const latestUniversityRequestRef = useRef<string | null>(null)
+  // AbortController to cancel previous requests when a new one is initiated
+  const abortControllerRef = useRef<AbortController | null>(null)
+  // Track if a request is currently in progress to prevent duplicate requests
+  const isRequestInProgressRef = useRef<boolean>(false)
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [showSplash, setShowSplash] = useState(true)
   const [showAuthModal, setShowAuthModal] = useState(false)
@@ -1200,6 +1206,25 @@ export default function Home() {
       return
     }
 
+    // Prevent duplicate requests for the same university
+    if (isRequestInProgressRef.current && latestUniversityRequestRef.current === universityId) {
+      console.log('⚠️ Request already in progress for this university, ignoring duplicate click')
+      return
+    }
+
+    // Cancel any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    // Create new AbortController for this request
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
+    // Track this as the latest request
+    latestUniversityRequestRef.current = universityId
+    isRequestInProgressRef.current = true
+
     // Set navigation flag to prevent useEffect interference
     setIsNavigatingBack(true)
 
@@ -1227,11 +1252,18 @@ export default function Home() {
     try {
       console.log(`🎯 Fetching university data for ID: ${universityId}`)
       
-      // Fetch university info and posts
+      // Fetch university info and posts with abort signal
       const [universityResponse, postsResponse] = await Promise.all([
-        fetch(`/api/universities/${universityId}`),
-        fetch(`/api/universities/${universityId}/posts`)
+        fetch(`/api/universities/${universityId}`, { signal: abortController.signal }),
+        fetch(`/api/universities/${universityId}/posts`, { signal: abortController.signal })
       ])
+      
+      // Check if this is still the latest request (user might have clicked another university)
+      if (latestUniversityRequestRef.current !== universityId) {
+        console.log('⚠️ Ignoring stale response - newer request in progress')
+        isRequestInProgressRef.current = false
+        return
+      }
       
       console.log('📊 University response status:', universityResponse.status)
       console.log('📊 Posts response status:', postsResponse.status)
@@ -1240,29 +1272,31 @@ export default function Home() {
         const university = await universityResponse.json()
         const posts = await postsResponse.json()
         
+        // Double-check this is still the latest request before setting state
+        if (latestUniversityRequestRef.current !== universityId) {
+          console.log('⚠️ Ignoring stale data - newer request completed first')
+          isRequestInProgressRef.current = false
+          return
+        }
+        
         console.log('✅ University data:', university)
         console.log('✅ Posts data:', posts.length, 'posts')
         
-        // Check current URL to ensure we're still loading the same university
-        // This prevents old data from overwriting new data when rapidly clicking
-        const currentUrlParams = new URLSearchParams(window.location.search)
-        const currentUniId = currentUrlParams.get('university')
-        
-        // Only set university data if URL still matches the university we're loading
-        // This prevents race conditions when rapidly clicking different universities
-        if (currentUniId === universityId && university.id === universityId) {
-          setSelectedUniversity({
-            id: university.id,
-            name: university.name,
-            shortName: university.shortName,
-            city: university.city,
-            type: university.type
-          })
-          setUniversityPosts(posts)
-        } else {
-          console.log('⚠️ Ignoring stale university data:', university.id, 'expected:', universityId, 'current URL:', currentUniId)
-        }
+        setSelectedUniversity({
+          id: university.id,
+          name: university.name,
+          shortName: university.shortName,
+          city: university.city,
+          type: university.type
+        })
+        setUniversityPosts(posts)
       } else {
+        // Only handle error if this is still the latest request
+        if (latestUniversityRequestRef.current !== universityId) {
+          isRequestInProgressRef.current = false
+          return
+        }
+        
         // Get error details
         const universityError = universityResponse.ok ? null : await universityResponse.text()
         const postsError = postsResponse.ok ? null : await postsResponse.text()
@@ -1276,17 +1310,46 @@ export default function Home() {
         })
         setShowUniversityBoard(false)
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Ignore abort errors (expected when canceling previous requests)
+      if (error.name === 'AbortError') {
+        console.log('🛑 Request aborted for university:', universityId)
+        // Don't clear loading state here - the new request will handle it
+        // But clear the in-progress flag if this was the latest request
+        if (latestUniversityRequestRef.current === universityId) {
+          isRequestInProgressRef.current = false
+        }
+        return
+      }
+      
+      // Only handle error if this is still the latest request
+      if (latestUniversityRequestRef.current !== universityId) {
+        isRequestInProgressRef.current = false
+        return
+      }
+      
       console.error('💥 Error fetching university data:', error)
       setShowUniversityBoard(false)
     } finally {
-      setUniversityLoading(false)
-      setIsRedirecting(false) // Clear redirecting state when done
-      // Clear navigation flag after a delay to prevent useEffect from reloading old state
-      // This ensures the new university data is fully loaded before allowing useEffect to run
-      setTimeout(() => {
-        setIsNavigatingBack(false)
-      }, 500)
+      // Always clear the in-progress flag
+      if (latestUniversityRequestRef.current === universityId) {
+        isRequestInProgressRef.current = false
+      }
+      
+      // Only update loading state if this is still the latest request
+      if (latestUniversityRequestRef.current === universityId) {
+        setUniversityLoading(false)
+        setIsRedirecting(false) // Clear redirecting state when done
+        // Clear navigation flag after a delay to prevent useEffect from reloading old state
+        // This ensures the new university data is fully loaded before allowing useEffect to run
+        setTimeout(() => {
+          setIsNavigatingBack(false)
+        }, 500)
+      } else {
+        // If this is not the latest request, still clear loading to prevent endless loading
+        // This handles the case where a request completes but is superseded
+        setUniversityLoading(false)
+      }
     }
   }
 
