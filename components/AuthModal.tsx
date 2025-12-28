@@ -15,11 +15,12 @@ export default function AuthModal({ isOpen, onClose, onSignIn, onSignUp }: AuthM
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile on mount
+  // Detect mobile on mount - use immediate check for consistency
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
     }
+    // Check immediately for consistent initial state
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
@@ -28,18 +29,20 @@ export default function AuthModal({ isOpen, onClose, onSignIn, onSignUp }: AuthM
   useEffect(() => {
     if (isOpen) {
       setIsMounted(true);
-      // Small delay to ensure the component renders in closed state first, then animates open
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-      }, 10);
-      return () => clearTimeout(timer);
+      // Use requestAnimationFrame for consistent timing across environments
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
     } else if (isMounted) {
       // Start closing animation
       setIsVisible(false);
-      // Unmount after animation completes
+      // Unmount after animation completes - use consistent timing
+      const animationDuration = typeof window !== 'undefined' && window.innerWidth < 768 ? 200 : 100;
       const timer = setTimeout(() => {
         setIsMounted(false);
-      }, isMobile ? 200 : 100);
+      }, animationDuration);
       return () => clearTimeout(timer);
     }
   }, [isOpen, isMounted]);
@@ -47,11 +50,15 @@ export default function AuthModal({ isOpen, onClose, onSignIn, onSignUp }: AuthM
   // Keep modal mounted during closing animation
   if (!isMounted) return null;
 
+  // Get mobile state directly for consistent rendering (fallback to state if window check fails)
+  const mobileCheck = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+  const effectiveIsMobile = isMobile || mobileCheck;
+
   return (
-    <div className={`fixed inset-0 z-50 ${isMobile ? 'flex items-end' : 'flex items-center justify-center p-4'}`}>
+    <div className={`fixed inset-0 z-50 ${effectiveIsMobile ? 'flex items-end' : 'flex items-center justify-center p-4'}`}>
       {/* Backdrop */}
       <div 
-        className={`absolute inset-0 bg-black/50 transition-opacity ease-out ${isMobile ? 'duration-200' : 'duration-100'}`}
+        className={`absolute inset-0 bg-black/50 transition-opacity ease-out ${effectiveIsMobile ? 'duration-200' : 'duration-100'}`}
         style={{
           opacity: isVisible ? 1 : 0,
           pointerEvents: isVisible ? 'auto' : 'none'
@@ -62,19 +69,19 @@ export default function AuthModal({ isOpen, onClose, onSignIn, onSignUp }: AuthM
       {/* Modal */}
       <div 
         className={`relative bg-white dark:bg-[#151515] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] w-full overflow-hidden transition-all ease-out ${
-          isMobile ? 'max-w-full duration-200' : 'max-w-sm rounded-xl duration-100'
+          effectiveIsMobile ? 'max-w-full duration-200' : 'max-w-sm rounded-xl duration-100'
         }`}
         style={{
-          maxHeight: isMobile ? '100vh' : '90vh',
-          height: isMobile ? '100vh' : 'auto',
+          maxHeight: effectiveIsMobile ? '100vh' : '90vh',
+          height: effectiveIsMobile ? '100vh' : 'auto',
           opacity: isVisible ? 1 : 0,
           transform: isVisible 
-            ? (isMobile ? 'translateY(0)' : 'scale(1) translateY(0)')
-            : (isMobile ? 'translateY(100%)' : 'scale(0.95) translateY(-10px)'),
-          transition: isMobile 
+            ? (effectiveIsMobile ? 'translateY(0)' : 'scale(1) translateY(0)')
+            : (effectiveIsMobile ? 'translateY(100%)' : 'scale(0.95) translateY(-10px)'),
+          transition: effectiveIsMobile 
             ? 'opacity 200ms ease-out, transform 200ms ease-out'
             : 'opacity 100ms ease-out, transform 100ms ease-out',
-          ...(isMobile && {
+          ...(effectiveIsMobile && {
             position: 'fixed',
             bottom: 0,
             left: 0,
@@ -91,7 +98,7 @@ export default function AuthModal({ isOpen, onClose, onSignIn, onSignUp }: AuthM
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drag Handle / Close Arrow - Mobile Only */}
-        {isMobile && (
+        {effectiveIsMobile && (
           <div 
             className="flex justify-center pt-3 pb-2 cursor-pointer"
             onClick={onClose}
@@ -101,7 +108,7 @@ export default function AuthModal({ isOpen, onClose, onSignIn, onSignUp }: AuthM
         )}
         
         {/* Content */}
-        <div className={`text-center ${isMobile ? 'px-6 py-6 h-full' : 'p-8'} overflow-y-auto custom-scrollbar`} style={{maxHeight: isMobile ? '100vh' : '90vh'}}>
+        <div className={`text-center ${effectiveIsMobile ? 'px-6 py-6 h-full' : 'p-8'} overflow-y-auto custom-scrollbar`} style={{maxHeight: effectiveIsMobile ? '100vh' : '90vh'}}>
           {/* Icon */}
           <div className="mx-auto w-16 h-16 bg-[#FFE066] rounded-full border-2 border-black flex items-center justify-center mb-6 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
             <Lock className="w-8 h-8 text-black" />
