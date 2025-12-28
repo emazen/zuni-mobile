@@ -32,7 +32,7 @@ export default function AuthModal({ isOpen, onClose, onSignIn, onSignUp }: AuthM
       // Use requestAnimationFrame for consistent timing across environments
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          setIsVisible(true);
+        setIsVisible(true);
         });
       });
     } else if (isMounted) {

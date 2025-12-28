@@ -1369,9 +1369,6 @@ export default function Home() {
     // Clear URL parameters explicitly to prevent useEffect from re-triggering
     window.history.replaceState({}, '', '/')
     
-    // Use router.replace for proper navigation
-    router.replace('/')
-    
     // Clear the navigating flag after a short delay
     setTimeout(() => {
       setIsNavigatingBack(false)
