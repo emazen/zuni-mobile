@@ -1931,7 +1931,7 @@ export default function Home() {
                         {userActivity.userPosts.length > 0 && (
                           <div className="mb-6">
                             <h3 className="text-2xl font-display font-bold text-black mb-4 flex items-center" style={{color: 'var(--text-primary)'}}>
-                              <BookOpen className="h-6 w-6 mr-3 text-yellow-500" />
+                              <BookOpen className="h-6 w-6 mr-3 text-gray-400 dark:text-gray-500" />
                               Gönderiler ({userActivity.userPosts.length})
                             </h3>
                             <div>
@@ -2002,7 +2002,7 @@ export default function Home() {
                         {userActivity.postsWithUserComments.length > 0 && (
                           <div className="mb-6">
                             <h3 className="text-2xl font-display font-bold text-black mb-4 flex items-center" style={{color: 'var(--text-primary)'}}>
-                              <MessageSquare className="h-5 w-5 mr-2 text-yellow-500" />
+                              <MessageSquare className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" />
                               Yorumlar ({userActivity.postsWithUserComments.length})
                             </h3>
                             <div>
@@ -2098,7 +2098,7 @@ export default function Home() {
                     ) : (
                       <div className="pt-6 pb-6">
                         <h3 className="text-2xl font-display font-bold text-black mb-4 flex items-center" style={{color: 'var(--text-primary)'}}>
-                          <Star className="h-6 w-6 mr-3 text-yellow-500" />
+                          <Star className="h-6 w-6 mr-3 text-gray-400 dark:text-gray-500" />
                           Abonelikler ({posts.length})
                         </h3>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
