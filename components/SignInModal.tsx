@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { signIn } from "next-auth/react"
+import { ShieldCheck, Sparkles } from "lucide-react"
 
 interface SignInModalProps {
   isOpen: boolean;
@@ -58,6 +59,22 @@ export default function SignInModal({ isOpen, onClose, onSwitchToSignUp }: SignI
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-8">
+          {/* Header Section */}
+          <div className="text-center mb-8 flex flex-col items-center">
+            {/* Logo Icon (Yellow Ball) */}
+            <div className="flex justify-center mb-4">
+              <div className="h-12 w-12 bg-[#FFE066] border-4 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] animate-bounce-subtle relative">
+                <div className="absolute top-1.5 left-1.5 w-2 h-2 bg-white/40 rounded-full"></div>
+              </div>
+            </div>
+            <h2 className="text-2xl font-black text-black dark:text-white mb-2 leading-tight text-center">
+              Tekrar Hoş Geldin!
+            </h2>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 max-w-[280px] leading-relaxed text-center">
+              Kampüsteki son gelişmeleri kaçırma, hemen giriş yap.
+            </p>
+          </div>
+
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="px-4 py-3 rounded-lg text-sm font-bold" style={{backgroundColor: 'var(--brutal-red)', border: '4px solid var(--border-color)', color: '#fff'}}>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { ShieldCheck, Sparkles } from "lucide-react"
 
 interface AuthModalCombinedProps {
   isOpen: boolean;
@@ -297,8 +298,50 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
         )}
         
         <div className={`overflow-y-auto custom-scrollbar ${isMobile ? 'px-6 py-6 h-full' : 'p-8'}`} style={{maxHeight: isMobile ? '100vh' : '90vh'}}>
+          <div className={`text-center flex flex-col items-center ${mode === 'signup' ? 'mb-4' : 'mb-8'}`}>
+            {/* Logo Icon (Yellow Ball) */}
+            <div className={`flex justify-center ${mode === 'signup' ? 'mb-2' : 'mb-4'}`}>
+              <div className="h-12 w-12 bg-[#FFE066] border-4 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] animate-bounce-subtle relative">
+                <div className="absolute top-1.5 left-1.5 w-2 h-2 bg-white/40 rounded-full"></div>
+              </div>
+            </div>
+            
+            {mode === 'signin' ? (
+              <div className="flex flex-col items-center">
+                <h2 className="text-2xl font-black text-black dark:text-white mb-2 leading-tight text-center">
+                  Tekrar Hoş Geldin!
+                </h2>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 max-w-[280px] leading-relaxed text-center">
+                  Kampüsteki son gelişmeleri kaçırma, hemen giriş yap.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <h2 className="text-2xl font-black text-black dark:text-white mb-2 leading-tight text-center" style={{ fontFeatureSettings: '"liga" 1, "kern" 1', textRendering: 'optimizeLegibility' }}>
+                  Zuni'ye Katıl!
+                </h2>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 max-w-[280px] leading-relaxed text-center">
+                  Üniversiteli arkadaşlarınla anonim ve güvenli bir şekilde fikirlerini özgürce paylaş.
+                </p>
+                
+                {/* Enhanced Trust Signals for Sign Up */}
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-center justify-center gap-2 py-1.5 px-3 bg-green-50 dark:bg-green-900/20 border-2 border-green-500/30 rounded-lg">
+                    <ShieldCheck className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                    <span className="text-[10px] font-bold text-green-700 dark:text-green-300 uppercase tracking-wider text-center">
+                      SADECE .EDU E-POSTASIYLA DOĞRULANMIŞ ÖĞRENCİLER
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-tighter text-center">
+                    🔒 KİMLİĞİN HER ZAMAN GİZLİ TUTULUR • VERİLERİN ASLA PAYLAŞILMAZ
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Toggle Switch */}
-          <div className="mb-6">
+          <div className={mode === 'signup' ? 'mb-4' : 'mb-6'}>
             <div className="relative flex border-2 border-black rounded-lg overflow-hidden bg-white dark:bg-[#1a1a1a]">
               {/* Animated background slider */}
               <div 
@@ -410,7 +453,6 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
               </form>
             </div>
 
-            {/* Sign Up Form */}
             <div 
               ref={signUpFormRef}
               className={`w-full ${
@@ -423,16 +465,16 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
                 minHeight: isMobile ? 'calc(100vh - 200px)' : 'auto'
               }}
             >
-              <form className="space-y-4" onSubmit={handleSignUp}>
+              <form className="space-y-2.5" onSubmit={handleSignUp}>
               {signUpError && (
                 <div className="px-4 py-3 rounded border-2 border-black bg-red-500 text-white text-sm font-bold mb-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                   {signUpError}
                 </div>
               )}
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-2.5">
                 <div>
-                  <label htmlFor="username" className="block text-xs font-bold mb-2 text-black dark:text-white">
+                  <label htmlFor="username" className="block text-xs font-bold mb-1 text-black dark:text-white">
                     Kullanıcı adı
                   </label>
                   <input
@@ -449,7 +491,7 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
                 </div>
 
                 <div>
-                  <label htmlFor="signup-email" className="block text-xs font-bold mb-2 text-black dark:text-white">
+                  <label htmlFor="signup-email" className="block text-xs font-bold mb-1 text-black dark:text-white">
                     .edu E-postası
                   </label>
                   <input
@@ -466,19 +508,19 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
               </div>
 
               <div>
-                <label className="block text-xs font-bold mb-2 text-black dark:text-white">
+                <label className="block text-xs font-bold mb-1 text-black dark:text-white">
                   Cinsiyet kimliği
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setGender("male")}
-                    className={`p-2 transition-all rounded flex flex-col items-center justify-center bg-white dark:bg-[#1a1a1a]`}
+                    className={`p-2 transition-all rounded flex flex-col items-center justify-center bg-white dark:bg-[#1a1a1a] relative`}
                     style={{
-                      borderWidth: gender === "male" ? '4px' : '2px',
+                      borderWidth: gender === "male" ? '2px' : '2px',
                       borderStyle: 'solid',
                       borderColor: 'black', // Always black border
-                      boxShadow: gender === "male" ? '4px 4px 0px 0px rgba(0,0,0,1)' : 'none',
+                      boxShadow: gender === "male" ? '2px 2px 0px 0px rgba(0,0,0,1)' : 'none',
                       transform: gender === "male" ? 'translateY(-2px)' : 'none'
                     }}
                   >
@@ -489,12 +531,12 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
                   <button
                     type="button"
                     onClick={() => setGender("female")}
-                    className={`p-2 transition-all rounded flex flex-col items-center justify-center bg-white dark:bg-[#1a1a1a]`}
+                    className={`p-2 transition-all rounded flex flex-col items-center justify-center bg-white dark:bg-[#1a1a1a] relative`}
                     style={{
-                      borderWidth: gender === "female" ? '4px' : '2px',
+                      borderWidth: gender === "female" ? '2px' : '2px',
                       borderStyle: 'solid',
                       borderColor: 'black',
-                      boxShadow: gender === "female" ? '4px 4px 0px 0px rgba(0,0,0,1)' : 'none',
+                      boxShadow: gender === "female" ? '2px 2px 0px 0px rgba(0,0,0,1)' : 'none',
                       transform: gender === "female" ? 'translateY(-2px)' : 'none'
                     }}
                   >
@@ -508,12 +550,12 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
                       setGender("custom")
                       setShowColorPicker(true)
                     }}
-                    className={`p-2 transition-all rounded flex flex-col items-center justify-center bg-white dark:bg-[#1a1a1a]`}
+                    className={`p-2 transition-all rounded flex flex-col items-center justify-center bg-white dark:bg-[#1a1a1a] relative`}
                     style={{
-                      borderWidth: gender === "custom" ? '4px' : '2px',
+                      borderWidth: gender === "custom" ? '2px' : '2px',
                       borderStyle: 'solid',
                       borderColor: 'black',
-                      boxShadow: gender === "custom" ? '4px 4px 0px 0px rgba(0,0,0,1)' : 'none',
+                      boxShadow: gender === "custom" ? '2px 2px 0px 0px rgba(0,0,0,1)' : 'none',
                       transform: gender === "custom" ? 'translateY(-2px)' : 'none'
                     }}
                   >
@@ -550,9 +592,9 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label htmlFor="signup-password" className="block text-xs font-bold mb-2 text-black dark:text-white">
+                  <label htmlFor="signup-password" className="block text-xs font-bold mb-1 text-black dark:text-white">
                     Şifre
                   </label>
                   <input
@@ -568,7 +610,7 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-xs font-bold mb-2 text-black dark:text-white">
+                  <label htmlFor="confirmPassword" className="block text-xs font-bold mb-1 text-black dark:text-white">
                     Şifre tekrar
                   </label>
                   <input

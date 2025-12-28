@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { ShieldCheck, Sparkles } from "lucide-react"
 
 interface SignUpModalProps {
   isOpen: boolean;
@@ -122,6 +123,35 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-8">
+          {/* Header Section */}
+          <div className="text-center mb-8 flex flex-col items-center">
+            {/* Logo Icon (Yellow Ball) */}
+            <div className="flex justify-center mb-4">
+              <div className="h-12 w-12 bg-[#FFE066] border-4 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] animate-bounce-subtle relative">
+                <div className="absolute top-1.5 left-1.5 w-2 h-2 bg-white/40 rounded-full"></div>
+              </div>
+            </div>
+            <h2 className="text-2xl font-black text-black dark:text-white mb-2 leading-tight" style={{ fontFeatureSettings: '"liga" 1, "kern" 1', textRendering: 'optimizeLegibility' }}>
+              Zuni'ye Katıl!
+            </h2>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 max-w-[280px] leading-relaxed">
+              Üniversiteli arkadaşlarınla anonim ve güvenli bir şekilde fikirlerini özgürce paylaş.
+            </p>
+            
+            {/* Enhanced Trust Signals for Sign Up */}
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-center gap-2 py-2 px-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-500/30 rounded-lg">
+                <ShieldCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <span className="text-[10px] font-bold text-green-700 dark:text-green-300 uppercase tracking-wider text-center">
+                  SADECE .EDU E-POSTASIYLA DOĞRULANMIŞ ÖĞRENCİLER
+                </span>
+              </div>
+              <p className="text-[9px] text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-tighter text-center">
+                🔒 KİMLİĞİN HER ZAMAN GİZLİ TUTULUR • VERİLERİN ASLA PAYLAŞILMAZ
+              </p>
+            </div>
+          </div>
+
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="px-4 py-3 rounded-lg text-sm font-bold" style={{backgroundColor: 'var(--brutal-red)', border: '4px solid var(--border-color)', color: '#fff'}}>
@@ -157,14 +187,12 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
                 <button
                   type="button"
                   onClick={() => setGender("male")}
-                  className={`p-3 brutal-border transition-all ${
-                    gender === "male"
-                      ? "brutal-shadow-sm"
-                      : ""
-                  }`}
+                  className={`p-3 brutal-border transition-all relative`}
                   style={{
                     backgroundColor: gender === "male" ? 'var(--brutal-blue)' : 'var(--bg-secondary)',
-                    color: gender === "male" ? '#000' : 'var(--text-primary)'
+                    color: gender === "male" ? '#000' : 'var(--text-primary)',
+                    borderWidth: '2px',
+                    boxShadow: gender === "male" ? '2px 2px 0px 0px rgba(0,0,0,1)' : 'none'
                   }}
                 >
                   <div className="text-center">
@@ -176,14 +204,12 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
                 <button
                   type="button"
                   onClick={() => setGender("female")}
-                  className={`p-3 brutal-border transition-all ${
-                    gender === "female"
-                      ? "brutal-shadow-sm"
-                      : ""
-                  }`}
+                  className={`p-3 brutal-border transition-all relative`}
                   style={{
                     backgroundColor: gender === "female" ? 'var(--brutal-pink)' : 'var(--bg-secondary)',
-                    color: gender === "female" ? '#000' : 'var(--text-primary)'
+                    color: gender === "female" ? '#000' : 'var(--text-primary)',
+                    borderWidth: '2px',
+                    boxShadow: gender === "female" ? '2px 2px 0px 0px rgba(0,0,0,1)' : 'none'
                   }}
                 >
                   <div className="text-center">
@@ -198,14 +224,12 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
                     setGender("custom")
                     setShowColorPicker(true)
                   }}
-                  className={`p-3 brutal-border transition-all ${
-                    gender === "custom"
-                      ? "brutal-shadow-sm"
-                      : ""
-                  }`}
+                  className={`p-3 brutal-border transition-all relative`}
                   style={{
                     backgroundColor: gender === "custom" ? 'var(--brutal-purple)' : 'var(--bg-secondary)',
-                    color: gender === "custom" ? '#000' : 'var(--text-primary)'
+                    color: gender === "custom" ? '#000' : 'var(--text-primary)',
+                    borderWidth: '2px',
+                    boxShadow: gender === "custom" ? '2px 2px 0px 0px rgba(0,0,0,1)' : 'none'
                   }}
                 >
                   <div className="text-center">

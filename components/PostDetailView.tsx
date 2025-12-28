@@ -537,6 +537,29 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
     }
   };
 
+  const getRelativeTime = (dateString: string) => {
+    const now = new Date()
+    const date = new Date(dateString)
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    
+    if (diffInSeconds < 60) {
+      return `${diffInSeconds}s önce`
+    }
+    
+    const diffInMinutes = Math.floor(diffInSeconds / 60)
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes}d önce`
+    }
+    
+    const diffInHours = Math.floor(diffInMinutes / 60)
+    if (diffInHours < 24) {
+      return `${diffInHours}g önce`
+    }
+    
+    const diffInDays = Math.floor(diffInHours / 24)
+    return `${diffInDays}gün önce`
+  };
+
   const isAuthor = session?.user?.id === post?.authorId;
 
   return (
@@ -583,7 +606,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                       if (onUniversityClick) {
                         onUniversityClick(post.university.id)
                       } else {
-                        router.push(`/?university=${post.university.id}`)
+                      router.push(`/?university=${post.university.id}`)
                       }
                     }
                   }}
@@ -867,7 +890,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                               {/* Username removed */}
                               <div className="flex items-center gap-1.5 text-xs text-gray-400 font-mono">
                                 <Clock className="w-3 h-3 flex-shrink-0" />
-                                <span>{new Date(comment.createdAt).toLocaleDateString('tr-TR')} {new Date(comment.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                <span>{getRelativeTime(comment.createdAt)}</span>
                               </div>
                             </div>
                             

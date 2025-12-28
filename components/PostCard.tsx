@@ -7,6 +7,9 @@ import AudioPlayer from "./AudioPlayer"
 import { useEffect, useState } from "react"
 import { getAudioDurationFromUrl } from "@/lib/utils"
 
+// Cache for audio durations to prevent re-fetching on carousel navigation
+const audioDurationCache = new Map<string, number>()
+
 interface Post {
   id: string
   title: string
@@ -52,14 +55,24 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
   const contentLineClamp = post.audio && showUniversityInfo ? 1 : 2
   const [audioDuration, setAudioDuration] = useState<number | undefined>(undefined)
 
-  // Extract audio duration when post has audio
+  // Extract audio duration when post has audio (with cache to prevent re-fetching)
   useEffect(() => {
     if (!post.audio) return
+
+    // Check cache first
+    const cachedDuration = audioDurationCache.get(post.audio)
+    if (cachedDuration !== undefined) {
+      setAudioDuration(cachedDuration)
+      return
+    }
 
     const extractDuration = async () => {
       try {
         const duration = await getAudioDurationFromUrl(post.audio!)
-        setAudioDuration(Math.round(duration))
+        const roundedDuration = Math.round(duration)
+        // Cache the duration
+        audioDurationCache.set(post.audio!, roundedDuration)
+        setAudioDuration(roundedDuration)
       } catch (error) {
         console.error('Error extracting audio duration:', error)
       }
@@ -113,6 +126,29 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
     }
   }
 
+  const getRelativeTime = (dateString: string) => {
+    const now = new Date()
+    const date = new Date(dateString)
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    
+    if (diffInSeconds < 60) {
+      return `${diffInSeconds}s önce`
+    }
+    
+    const diffInMinutes = Math.floor(diffInSeconds / 60)
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes}d önce`
+    }
+    
+    const diffInHours = Math.floor(diffInMinutes / 60)
+    if (diffInHours < 24) {
+      return `${diffInHours}g önce`
+    }
+    
+    const diffInDays = Math.floor(diffInHours / 24)
+    return `${diffInDays}gün önce`
+  }
+
   const isNew = hasNewMessages(post)
 
   return (
@@ -158,16 +194,16 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
               : post.audio
               ? 'mb-2'
               : 'mb-4'
-          } flex gap-4 min-h-0 ${
+          } flex gap-4 ${
             post.audio && !post.image && (!post.content || !post.content.trim().length)
               ? ''
               : 'flex-1'
-          }`}>
+          } min-h-0 relative z-10`}>
             <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
               <h3 
                 className={`font-display font-bold text-2xl leading-tight ${
                   post.audio && !post.image && (!post.content || !post.content.trim().length)
-                    ? 'mb-0'
+                    ? 'mb-4'
                     : 'mb-2'
                 } text-black dark:text-white group-hover:text-pink-500 transition-colors`}
                 style={{
@@ -181,18 +217,18 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
                 {post.title}
               </h3>
               {!(post.audio && !post.image && (!post.content || !post.content.trim().length)) && (
-                <p 
-                  className="font-sans text-lg text-gray-600 dark:text-gray-300 leading-relaxed break-words"
-                  style={{
-                display: '-webkit-box',
-                    WebkitLineClamp: contentLineClamp,
-                WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}
-                >
-                  {post.content}
-              </p>
+              <p 
+                className="font-sans text-lg text-gray-600 dark:text-gray-300 leading-relaxed break-words"
+                style={{
+              display: '-webkit-box',
+                  WebkitLineClamp: contentLineClamp,
+              WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
+                {post.content}
+            </p>
               )}
             </div>
             {post.image && (
@@ -209,9 +245,9 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
           {/* Audio Player - Smaller when image is present, compact when text is present */}
           {post.audio && (
             <div 
-              className={`mb-2 w-full ${
+              className={`mb-2 w-full flex-shrink-0 relative z-0 ${
                 !post.image && (!post.content || !post.content.trim().length)
-                  ? 'pt-6 flex justify-center'
+                  ? 'pt-5 flex justify-center'
                   : 'pt-2'
               } ${
                 post.image ? 'max-w-[calc(100%-7rem)]' : ''
@@ -225,7 +261,7 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
                 className={
                   (post.image || (post.content && post.content.trim().length > 0))
                     ? "p-1 gap-0.5 text-[9px] min-h-[32px] [&>div>button]:p-0.5 [&>div>button]:h-5 [&>div>button]:w-5 [&>div>button]:border [&>div>button]:border-[1px] [&>div>button]:inline-flex [&>div>button]:items-center [&>div>button]:justify-center [&>div>button>svg]:w-3 [&>div>button>svg]:h-3 [&>div>div>div]:h-1 [&>div>div>div>div]:h-1 [&>div>div>div.flex]:text-[8px] [&>div>div>button:last-child]:!border-0 [&>div>div>button:last-child]:!border-none [&>div>div>button:last-child]:outline-none [&>div>div>button:last-child]:ring-0 [&>div>div>button:last-child]:shadow-none [&>div>div>div:last-child]:border-0 [&>div>div>div:last-child]:border-none [&>div>div>div:last-child>button]:!border-0 [&>div>div>div:last-child>button]:!border-none"
-                    : "p-5 gap-3 text-sm w-full min-h-[80px] [&>div>button]:p-3 [&>div>div>div]:h-3 [&>div>div>div>div]:h-3 [&>div>div>div.flex]:text-sm"
+                    : "p-4.5 gap-3 text-base min-h-[75px] w-full [&>div>button]:p-3 [&>div>button]:h-9.5 [&>div>button]:w-9.5 [&>div>button]:border [&>div>button]:border-[1.5px] [&>div>button]:inline-flex [&>div>button]:items-center [&>div>button]:justify-center [&>div>button>svg]:w-5 [&>div>button>svg]:h-5 [&>div>div>div]:h-3 [&>div>div>div>div]:h-3 [&>div>div>div.flex]:text-xs [&>div>div>button:last-child]:!border-0 [&>div>div>button:last-child]:!border-none [&>div>div>button:last-child]:outline-none [&>div>div>button:last-child]:ring-0 [&>div>div>button:last-child]:shadow-none [&>div>div>div:last-child]:border-0 [&>div>div>div:last-child]:border-none [&>div>div>div:last-child>button]:!border-0 [&>div>div>div:last-child>button]:!border-none"
                 }
                 showVolumeControl={false}
               />
@@ -233,33 +269,21 @@ export default function PostCard({ post, viewedPosts, postViewTimestamps, userJu
           )}
         
           {/* Footer Row */}
-          <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800 mt-auto flex-shrink-0">
             {showUniversityInfo && post.university ? (
               <>
-                <span className="text-sm font-bold px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300">
+                <span className="text-xs font-bold px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300">
                   {post.university.name}
                 </span>
                 <div className="flex items-center gap-1.5 text-gray-400 text-xs font-medium">
                   <Clock className="w-3.5 h-3.5" />
-                  <span>{new Date(post.createdAt).toLocaleString('tr-TR', { 
-                    year: 'numeric', 
-                    month: 'numeric', 
-                    day: 'numeric', 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                  })}</span>
+                  <span>{getRelativeTime(post.createdAt)}</span>
                 </div>
               </>
             ) : (
               <div className="flex items-center gap-1.5 text-gray-400 text-xs font-medium">
                 <Clock className="w-3.5 h-3.5" />
-                <span>{new Date(post.createdAt).toLocaleString('tr-TR', { 
-                  year: 'numeric', 
-                  month: 'numeric', 
-                  day: 'numeric', 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}</span>
+                <span>{getRelativeTime(post.createdAt)}</span>
               </div>
             )}
           </div>

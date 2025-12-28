@@ -103,16 +103,16 @@ export async function GET(request: NextRequest) {
     const trendingMap = new Map<string, boolean>()
     for (const post of trendingPosts) {
       const commentCount = await prisma.comment.count({
-        where: {
+              where: {
           postId: post.id,
-          createdAt: {
-            gte: new Date(Date.now() - 48 * 60 * 60 * 1000),
+                createdAt: {
+                  gte: new Date(Date.now() - 48 * 60 * 60 * 1000),
           },
           // Exclude comments from the post author
           authorId: {
             not: post.authorId
-          }
         }
+      }
       })
       trendingMap.set(post.id, commentCount >= 10)
     }
