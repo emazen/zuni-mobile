@@ -100,6 +100,8 @@ model Post {
   author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
   PostRead     PostRead[]
+
+  @@index([universityId, createdAt])
 }
 
 model Comment {
@@ -113,6 +115,9 @@ model Comment {
   audio     String?
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@index([postId, authorId, createdAt])
 }
 
 model UserUniversitySubscription {

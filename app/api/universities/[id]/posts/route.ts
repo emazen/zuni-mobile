@@ -30,10 +30,38 @@ export async function GET(
       )
     }
     
-    // Check if university exists
-    const university = await prisma.university.findUnique({
-      where: { id: resolvedParams.id },
-    });
+    // OPTIMIZED: Run university check and posts query in parallel
+    const [university, posts] = await Promise.all([
+      prisma.university.findUnique({
+        where: { id: resolvedParams.id },
+      }),
+      prisma.post.findMany({
+        where: { universityId: resolvedParams.id },
+        include: {
+          author: {
+            select: {
+              gender: true,
+              customColor: true,
+            },
+          },
+          university: {
+            select: {
+              id: true,
+              name: true,
+              shortName: true,
+            },
+          },
+          _count: {
+            select: {
+              comments: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      })
+    ]);
 
     if (!university) {
       return NextResponse.json(
@@ -42,94 +70,74 @@ export async function GET(
       );
     }
 
-    const posts = await prisma.post.findMany({
-      where: { universityId: resolvedParams.id },
-      include: {
-        author: {
-          select: {
-            // name and email removed
-            gender: true,
-            customColor: true,
-          },
-        },
-        university: {
-          select: {
-            id: true,
-            name: true,
-            shortName: true,
-          },
-        },
-        _count: {
-          select: {
-            comments: true,
-          },
-        },
-        comments: {
-          select: {
-            id: true,
-            createdAt: true,
-            authorId: true, // Need authorId to exclude user's own comments
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-          take: 10, // Get more comments to find the latest one NOT by current user
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    // OPTIMIZED: Create post author map from posts we already fetched
+    const postAuthorMap = new Map<string, string>()
+    posts.forEach(post => {
+      postAuthorMap.set(post.id, post.authorId)
+    })
 
-    // Calculate trending status based on comment count in last 48 hours
-    // Exclude comments from post authors - only count comments from other users
-    const trendingPostIds = await prisma.post.findMany({
-      where: {
-        universityId: resolvedParams.id,
-        comments: {
-          some: {
-            createdAt: {
-              gte: new Date(Date.now() - 48 * 60 * 60 * 1000), // Last 48 hours
-            }
-          }
+    const postIds = posts.map(p => p.id)
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
+
+    // OPTIMIZED: Fetch trending comments and latest comments in parallel
+    const [recentComments, allLatestComments] = await Promise.all([
+      // All comments from last 48 hours for trending calculation
+      postIds.length > 0 ? prisma.comment.findMany({
+        where: {
+          postId: { in: postIds },
+          createdAt: { gte: fortyEightHoursAgo },
+        },
+        select: {
+          postId: true,
+          authorId: true,
         }
-      },
-      select: {
-        id: true,
-        authorId: true, // Need authorId to exclude post author's comments
+      }) : [],
+      // All comments NOT from current user, ordered by date (we'll group by postId in JS)
+      postIds.length > 0 ? prisma.comment.findMany({
+        where: {
+          postId: { in: postIds },
+          authorId: { not: session.user.id },
+        },
+        select: {
+          postId: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }) : []
+    ])
+    
+    // Group comments by postId and get the latest one per post
+    const latestCommentMap = new Map<string, Date>()
+    allLatestComments.forEach(comment => {
+      if (!latestCommentMap.has(comment.postId)) {
+        latestCommentMap.set(comment.postId, comment.createdAt)
       }
     })
 
-    // For each post, count comments from OTHER users (not the post author)
+    // Count comments per post for trending, excluding comments from post authors
+    const commentCountMap = new Map<string, number>()
+    recentComments.forEach(comment => {
+      const postAuthorId = postAuthorMap.get(comment.postId)
+      if (postAuthorId && comment.authorId !== postAuthorId) {
+        const currentCount = commentCountMap.get(comment.postId) || 0
+        commentCountMap.set(comment.postId, currentCount + 1)
+      }
+    })
+
+    // Create trending map
     const trendingMap = new Map<string, boolean>()
-    for (const post of trendingPostIds) {
-      const commentCount = await prisma.comment.count({
-              where: {
-          postId: post.id,
-                createdAt: {
-                  gte: new Date(Date.now() - 48 * 60 * 60 * 1000),
-          },
-          // Exclude comments from the post author
-          authorId: {
-            not: post.authorId
-        }
-      }
+    commentCountMap.forEach((count, postId) => {
+      trendingMap.set(postId, count >= 10)
     })
-      trendingMap.set(post.id, commentCount >= 10)
-    }
 
-    // Add trending status and most recent comment timestamp (excluding user's own comments)
-    const postsWithTrending = posts.map(post => {
-      // Find the latest comment that's NOT from the current user
-      const latestCommentByOthers = post.comments.find(
-        comment => comment.authorId !== session.user.id
-      )
-      return {
-        ...post,
-        isTrending: trendingMap.get(post.id) || false,
-        latestCommentTimestamp: latestCommentByOthers?.createdAt || null,
-      }
-    });
+    // Add trending status and most recent comment timestamp
+    const postsWithTrending = posts.map(post => ({
+      ...post,
+      isTrending: trendingMap.get(post.id) || false,
+      latestCommentTimestamp: latestCommentMap.get(post.id) || null,
+    }));
 
     return NextResponse.json(postsWithTrending);
   } catch (error) {
