@@ -359,7 +359,7 @@ export default function Home() {
     // But if navigating programmatically (state change), don't show splash
     const timer = setTimeout(() => {
       setShowSplash(false)
-    }, 1500) // Show splash for at least 1.5 seconds
+    }, 1000) // Show splash for at least 1 second
 
     return () => clearTimeout(timer)
   }, []) // Only run on mount, not on postId/universityParam changes

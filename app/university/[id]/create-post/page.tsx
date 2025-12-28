@@ -576,7 +576,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
               {/* Mobile Universities Header */}
               <div className="bg-white border-b-4 border-black px-4 py-4 mobile-menu-header" style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}>
                 <div className="flex items-center justify-between">
-                  <h1 className="text-xl font-black text-black" style={{color: 'var(--text-primary)'}}>Üniversiteler</h1>
+                  <h1 className="text-xl font-bold text-black" style={{color: 'var(--text-primary)'}}>Üniversiteler</h1>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="p-2 bg-white border-2 border-black brutal-shadow-sm hover:brutal-shadow"
@@ -588,7 +588,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
               </div>
               
               {/* Mobile Universities Content - Static */}
-              <div className="flex-1 overflow-y-auto overscroll-none p-4 pb-20">
+              <div className="flex-1 overflow-y-auto overscroll-none p-4 pb-0">
                 <UniversitySidebar onUniversityClick={handleUniversityClick} isMobile={true} />
               </div>
             </div>

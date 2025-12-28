@@ -491,7 +491,9 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
           </div>
           <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mt-1">
             <span>{formatTime(currentTime)}</span>
-            <span className="font-semibold">{isLoading ? '...' : formatTime(duration)}</span>
+            <span className="font-semibold">
+              {isLoading || (duration === 0 && (providedDuration === undefined || providedDuration === null)) ? '...' : formatTime(duration)}
+            </span>
           </div>
         </div>
 
