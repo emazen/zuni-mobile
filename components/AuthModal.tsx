@@ -72,8 +72,8 @@ export default function AuthModal({ isOpen, onClose, onSignIn, onSignUp }: AuthM
             ? (isMobile ? 'translateY(0)' : 'scale(1) translateY(0)')
             : (isMobile ? 'translateY(100%)' : 'scale(0.95) translateY(-10px)'),
           transition: isMobile 
-            ? 'opacity 200ms ease-out, transform 200ms ease-out, height 0.2s ease-out'
-            : 'opacity 100ms ease-out, transform 100ms ease-out, height 0.2s ease-out',
+            ? 'opacity 200ms ease-out, transform 200ms ease-out'
+            : 'opacity 100ms ease-out, transform 100ms ease-out',
           ...(isMobile && {
             position: 'fixed',
             bottom: 0,

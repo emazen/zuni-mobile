@@ -105,10 +105,9 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
   useEffect(() => {
     if (!isOpen || containerHeight === 'auto') return
     
-    // Only animate when switching modes, not on initial mount
+    // Enable animation for subsequent mode changes
     if (!shouldAnimate) {
       setShouldAnimate(true)
-      return
     }
     
     const updateHeight = () => {
@@ -342,17 +341,18 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
 
           {/* Toggle Switch */}
           <div className={mode === 'signup' ? 'mb-4' : 'mb-6'}>
-            <div className="relative flex border-2 border-black rounded-lg overflow-hidden bg-white dark:bg-[#1a1a1a]">
+            <div className="relative flex border-2 border-black rounded-lg overflow-hidden bg-white dark:bg-[#1a1a1a] transition-all duration-300">
               {/* Animated background slider */}
               <div 
-                className="absolute top-0 bottom-0 w-1/2 transition-all duration-300 ease-in-out border-r-2 border-black"
+                className="absolute top-0 bottom-0 w-1/2 transition-all duration-300 ease-in-out"
                 style={{
                   left: mode === 'signin' ? '0%' : '50%',
                   backgroundColor: '#FFE066',
                   zIndex: 0,
                   borderColor: mode === 'signin' ? 'black' : 'transparent',
                   borderRightWidth: mode === 'signin' ? '2px' : '0px',
-                  borderLeftWidth: mode === 'signup' ? '2px' : '0px'
+                  borderLeftWidth: mode === 'signup' ? '2px' : '0px',
+                  transition: 'left 300ms ease-in-out, border-color 300ms ease-in-out, border-right-width 300ms ease-in-out, border-left-width 300ms ease-in-out'
                 }}
               />
               
