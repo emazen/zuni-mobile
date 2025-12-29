@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const trendingWindowStart = new Date(Date.now() - 48 * 60 * 60 * 1000); // last 48 hours
+
     // Get user's subscribed universities with optimized query
     const userSubscriptions = await prisma.userUniversitySubscription.findMany({
       where: {
@@ -78,43 +80,20 @@ export async function GET(request: NextRequest) {
       take: 50 // Limit to 50 most recent posts for better performance
     });
 
-    // Get trending status in a separate optimized query
-    // Exclude comments from post authors - only count comments from other users
-    const trendingPosts = await prisma.post.findMany({
+    // Calculate trending status based on comment count in last 48 hours.
+    // NOTE: This uses a single grouped query for performance.
+    const commentCountsLast48h = await prisma.comment.groupBy({
+      by: ['postId'],
       where: {
-        id: {
-          in: posts.map(p => p.id)
-        },
-        comments: {
-          some: {
-            createdAt: {
-              gte: new Date(Date.now() - 48 * 60 * 60 * 1000), // Last 48 hours
-            }
-          }
-        }
+        postId: { in: posts.map(p => p.id) },
+        createdAt: { gte: trendingWindowStart },
       },
-      select: {
-        id: true,
-        authorId: true, // Need authorId to exclude post author's comments
-      }
-    });
+      _count: { _all: true },
+    })
 
-    // For each post, count comments from OTHER users (not the post author)
-    const trendingMap = new Map<string, boolean>()
-    for (const post of trendingPosts) {
-      const commentCount = await prisma.comment.count({
-              where: {
-          postId: post.id,
-                createdAt: {
-                  gte: new Date(Date.now() - 48 * 60 * 60 * 1000),
-          },
-          // Exclude comments from the post author
-          authorId: {
-            not: post.authorId
-        }
-      }
-      })
-      trendingMap.set(post.id, commentCount >= 10)
+    const trendingCountMap = new Map<string, number>()
+    for (const row of commentCountsLast48h) {
+      trendingCountMap.set(row.postId, row._count._all)
     }
 
     // Add trending status and most recent comment timestamp (excluding user's own comments)
@@ -125,7 +104,7 @@ export async function GET(request: NextRequest) {
       )
       return {
         ...post,
-        isTrending: trendingMap.get(post.id) || false,
+        isTrending: (trendingCountMap.get(post.id) || 0) >= 10,
         latestCommentTimestamp: latestCommentByOthers?.createdAt || null,
       }
     });

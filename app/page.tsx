@@ -76,23 +76,24 @@ export default function Home() {
   const searchParams = useSearchParams()
   const { theme, effectiveTheme, toggleTheme } = useTheme()
   const [posts, setPosts] = useState<Post[]>([])
+  const [subscribedPostsLoaded, setSubscribedPostsLoaded] = useState(false)
   const [allPosts, setAllPosts] = useState<Post[]>([])
+  const [allPostsLoaded, setAllPostsLoaded] = useState(false)
   const [userActivity, setUserActivity] = useState<UserActivity | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'my-activity' | 'subscribed' | 'trending'>('my-activity')
+  const [activeTab, setActiveTab] = useState<'my-activity' | 'subscribed' | 'trending'>(() => {
+    if (typeof window === 'undefined') return 'my-activity'
+    const savedActiveTab = localStorage.getItem('activeTab')
+    if (savedActiveTab && ['my-activity', 'subscribed', 'trending'].includes(savedActiveTab)) {
+      return savedActiveTab as 'my-activity' | 'subscribed' | 'trending'
+    }
+    return 'my-activity'
+  })
   
   // Get post ID and university ID from URL parameters
   const postId = searchParams.get('post')
   const universityParam = searchParams.get('university')
   const refreshParam = searchParams.get('refresh')
-
-  // Load active tab from localStorage on component mount
-  useEffect(() => {
-    const savedActiveTab = localStorage.getItem('activeTab')
-    if (savedActiveTab && ['my-activity', 'subscribed', 'trending'].includes(savedActiveTab)) {
-      setActiveTab(savedActiveTab as 'my-activity' | 'subscribed' | 'trending')
-    }
-  }, [])
 
   // Handle refresh parameter - refresh data when coming back from post deletion
   useEffect(() => {
@@ -184,6 +185,8 @@ export default function Home() {
     }
     return null
   })
+  // Track which tab user was on when opening a post (for back navigation)
+  const [postSourceTab, setPostSourceTab] = useState<'my-activity' | 'subscribed' | 'trending' | null>(null)
   const [isNavigatingBack, setIsNavigatingBack] = useState(false) // Flag to prevent useEffect from re-triggering
   const [viewedPosts, setViewedPosts] = useState<Set<string>>(new Set())
   const [postViewTimestamps, setPostViewTimestamps] = useState<Map<string, string>>(new Map())
@@ -475,6 +478,7 @@ export default function Home() {
     setSelectedPostId(null)
     setPostSource(null)
     setPostSourceUniversityId(null)
+    setPostSourceTab(null)
     setSelectedUniversity(cached.university)
     setUniversityPosts(cached.posts || [])
     setUniversityPostsLoaded(prev => ({ ...prev, [universityId]: true }))
@@ -925,15 +929,6 @@ export default function Home() {
       // Keep tab title constant
       setBaseTabTitle()
       
-      // Don't handle navigation if session is still loading
-      // This prevents false "need to login" popups
-      if (status === 'loading') {
-        setTimeout(() => {
-          setIsNavigatingBack(false)
-        }, 100)
-        return
-      }
-      
       if (path === '/') {
         if (postParam) {
           // Going back to a post detail view
@@ -953,8 +948,8 @@ export default function Home() {
           setShowPostDetail(false)
           setSelectedPostId(null)
           
-          // Only call handleUniversityClick if session is ready (not loading)
-          // This prevents false "need to login" popups
+          // Handle university board restoration
+          // Only show auth modal if we're sure user is unauthenticated (not loading)
           if (status === 'authenticated' && session) {
             if (universityParam !== selectedUniversity?.id) {
               // Different university - load it
@@ -971,7 +966,8 @@ export default function Home() {
             // User is not authenticated - show auth modal
             setShowAuthModal(true)
           }
-          // If status is still loading, do nothing (already handled above)
+          // If status is still loading, restore state but don't load data yet
+          // The useEffect will handle loading when session is ready
         } else {
           // Going back to main page
           // Only update state, don't trigger full reload
@@ -981,25 +977,41 @@ export default function Home() {
         setSelectedUniversity(null)
         setUniversityPosts([])
         setUniversityPostsLoaded({})
-        setPostSource(null)
-        setPostSourceUniversityId(null)
-          
-          // Refresh posts data only (mobile app-like feeling - no full reload)
-          // Don't show loading state to prevent UI flash
-          if (session) {
-            fetchData(false).catch(error => {
-              console.log('Data refresh failed on back to main:', error)
-            })
+        
+          // Restore the tab user was on when they opened the post
+          // If postSourceTab is set, restore it; otherwise default to "Aktiviteler"
+          if (postSourceTab) {
+            setActiveTab(postSourceTab)
+            localStorage.setItem('activeTab', postSourceTab)
+          } else {
+            // Only reset to "Aktiviteler" if we don't have a stored tab
+            setActiveTab('my-activity')
+            localStorage.setItem('activeTab', 'my-activity')
           }
+          
+          setPostSource(null)
+          setPostSourceUniversityId(null)
+          setPostSourceTab(null)
+          
+          // Don't refresh posts data when going back to prevent reordering
+          // Posts are already loaded and visible
         }
       } else if (path.startsWith('/university/')) {
         const universityId = path.split('/')[2]
-        // Only call handleUniversityClick if session is ready (not loading)
-        if (universityId && universityId !== selectedUniversity?.id && status === 'authenticated' && session) {
-          handleUniversityClick(universityId)
-        } else if (status === 'unauthenticated') {
-          // User is not authenticated - show auth modal
-          setShowAuthModal(true)
+        // Restore university board state
+        if (universityId) {
+          setShowUniversityBoard(true)
+          setShowPostDetail(false)
+          setSelectedPostId(null)
+          
+          // Only load data if session is ready
+          if (universityId !== selectedUniversity?.id && status === 'authenticated' && session) {
+            handleUniversityClick(universityId)
+          } else if (status === 'unauthenticated') {
+            // User is not authenticated - show auth modal
+            setShowAuthModal(true)
+          }
+          // If status is still loading, state is restored and useEffect will handle loading
         }
       }
       
@@ -1011,7 +1023,7 @@ export default function Home() {
 
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [selectedUniversity, status, session])
+  }, [selectedUniversity, status, session, postSourceTab])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -1050,6 +1062,40 @@ export default function Home() {
     }
   }, [sortBy, universityPosts])
 
+  const fetchSubscribedPosts = async () => {
+    if (!session) return
+    try {
+      const res = await fetch("/api/user/subscribed-posts")
+      if (res.ok) {
+        const data = await res.json()
+        setPosts(data)
+      } else {
+        console.error('fetchSubscribedPosts: Failed', res.status)
+      }
+    } catch (e) {
+      console.error('fetchSubscribedPosts: Error', e)
+    } finally {
+      setSubscribedPostsLoaded(true)
+    }
+  }
+
+  const fetchAllPosts = async () => {
+    if (!session) return
+    try {
+      const res = await fetch("/api/posts")
+      if (res.ok) {
+        const data = await res.json()
+        setAllPosts(data)
+      } else {
+        console.error('fetchAllPosts: Failed', res.status)
+      }
+    } catch (e) {
+      console.error('fetchAllPosts: Error', e)
+    } finally {
+      setAllPostsLoaded(true)
+    }
+  }
+
   const fetchData = async (showLoading = false) => {
     try {
       if (showLoading) {
@@ -1072,32 +1118,19 @@ export default function Home() {
         console.error('fetchData: Error loading user activity', error)
       })
       
-      // Fetch other data in parallel (non-blocking)
-      const [subscribedResponse, allPostsResponse] = await Promise.all([
-        fetch("/api/user/subscribed-posts"),
-        fetch("/api/posts"),
-      ])
-
-      // Posts from subscribed universities
-      if (subscribedResponse.ok) {
-        const subscribedData = await subscribedResponse.json()
-        setPosts(subscribedData)
-        console.log('fetchData: Subscribed posts updated')
-      } else {
-        console.error('fetchData: Failed to load subscribed posts', subscribedResponse.status)
+      // Only fetch the active tab’s dataset on initial refresh to maximize speed.
+      // Other tabs will lazy-load when the user switches to them.
+      const promises: Promise<any>[] = [activityPromise]
+      if (activeTab === 'subscribed') {
+        setSubscribedPostsLoaded(false)
+        promises.push(fetchSubscribedPosts())
+      }
+      if (activeTab === 'trending') {
+        setAllPostsLoaded(false)
+        promises.push(fetchAllPosts())
       }
 
-      // All posts for trending section
-      if (allPostsResponse.ok) {
-        const allPostsData = await allPostsResponse.json()
-        setAllPosts(allPostsData)
-        console.log('fetchData: All posts updated')
-      } else {
-        console.error('fetchData: Failed to load all posts', allPostsResponse.status)
-      }
-      
-      // Wait for all to complete (but userActivity already rendered)
-      await Promise.all([activityPromise])
+      await Promise.all(promises)
       
       // If we're currently viewing a university board, also fetch its posts
       if (selectedUniversity) {
@@ -1117,6 +1150,20 @@ export default function Home() {
     }
   }
 
+  // Lazy-load tab data when user switches tabs (don’t refetch if already loaded)
+  useEffect(() => {
+    if (!session || status !== 'authenticated') return
+    if (activeTab === 'subscribed' && !subscribedPostsLoaded) {
+      setSubscribedPostsLoaded(false)
+      fetchSubscribedPosts()
+    }
+    if (activeTab === 'trending' && !allPostsLoaded) {
+      setAllPostsLoaded(false)
+      fetchAllPosts()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, session, status])
+
   const handleSignOut = async () => {
     const { signOut } = await import("next-auth/react")
     const callbackUrl = typeof window !== 'undefined' ? `${window.location.origin}/` : "/"
@@ -1129,6 +1176,14 @@ export default function Home() {
     // If we're showing a university board, source is 'university'
     const source = showUniversityBoard ? 'university' : 'main'
     setPostSource(source)
+    
+    // Store the current active tab so we can restore it when going back
+    if (source === 'main') {
+      setPostSourceTab(activeTab)
+    } else {
+      // If from university board, no tab to restore (will go back to university board)
+      setPostSourceTab(null)
+    }
     
     // If we're on a university board, store the university ID for back navigation
     let universityIdToStore = null
@@ -1410,6 +1465,7 @@ export default function Home() {
     setSelectedPostId(null)
     setPostSource(null)
     setPostSourceUniversityId(null)
+    setPostSourceTab(null)
     setUniversityPosts([])
     setUniversityPostsLoaded(prev => ({ ...prev, [universityId]: false }))
     setUniversityLoading(true)
@@ -1563,6 +1619,11 @@ export default function Home() {
     setUniversityPosts([])
     setPostSource(null)
     setPostSourceUniversityId(null)
+    setPostSourceTab(null)
+    
+    // Reset to "Aktiviteler" tab (main/default tab)
+    setActiveTab('my-activity')
+    localStorage.setItem('activeTab', 'my-activity')
     
     // Update URL without triggering navigation/reload
     // Use replaceState to avoid creating new history entry when clicking logo
@@ -2281,7 +2342,9 @@ export default function Home() {
 
                     {activeTab === 'subscribed' && (
                       <>
-                    {posts.length === 0 ? (
+                    {!subscribedPostsLoaded ? (
+                      <PostListSkeleton />
+                    ) : posts.length === 0 ? (
                       <div className="text-center py-10 font-sans">
                         <Star className="h-10 w-10 mx-auto mb-3 opacity-80" style={{color: 'var(--text-secondary)'}} />
                         <h3 className="text-lg font-semibold tracking-tight" style={{color: 'var(--text-secondary)'}}>
@@ -2317,7 +2380,9 @@ export default function Home() {
 
                     {activeTab === 'trending' && (
                       <>
-                        {allPosts.filter(post => post.isTrending).length === 0 ? (
+                        {!allPostsLoaded ? (
+                          <PostListSkeleton />
+                        ) : allPosts.filter(post => post.isTrending).length === 0 ? (
                           <div className="text-center py-10 font-sans">
                             <TrendingUp className="h-10 w-10 mx-auto mb-3 opacity-80" style={{color: 'var(--text-secondary)'}} />
                             <h3 className="text-lg font-semibold tracking-tight" style={{color: 'var(--text-secondary)'}}>
