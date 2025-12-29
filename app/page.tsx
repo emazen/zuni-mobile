@@ -1404,10 +1404,9 @@ export default function Home() {
     setUniversityPosts([])
     setUniversityLoading(true)
     
-    // Update URL using pushState to create history entry for back navigation
-    // This allows two-finger swipe back gesture to work properly
+    // Update URL using router.push to create history entry for back navigation
+    // (Don't also call window.history.pushState — it can create duplicate entries)
     const newUrl = `/?university=${universityId}`
-    window.history.pushState({}, '', newUrl)
     
     // Also update Next.js router state (but don't trigger navigation)
     // This ensures searchParams updates correctly
