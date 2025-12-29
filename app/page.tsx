@@ -390,7 +390,7 @@ export default function Home() {
     const loads = uniqueUrls.map(
       url =>
         new Promise<void>(resolve => {
-          const img = new Image()
+          const img = new window.Image()
           img.onload = () => resolve()
           img.onerror = () => resolve()
           img.src = url
