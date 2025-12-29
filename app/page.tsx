@@ -829,6 +829,15 @@ export default function Home() {
       // Set navigating back flag to prevent useEffect from interfering
       setIsNavigatingBack(true)
       
+      // Don't handle navigation if session is still loading
+      // This prevents false "need to login" popups
+      if (status === 'loading') {
+        setTimeout(() => {
+          setIsNavigatingBack(false)
+        }, 100)
+        return
+      }
+      
       if (path === '/') {
         if (postParam) {
           // Going back to a post detail view
@@ -848,17 +857,25 @@ export default function Home() {
           setShowPostDetail(false)
           setSelectedPostId(null)
           
-          if (universityParam !== selectedUniversity?.id) {
-            // Different university - load it
-            handleUniversityClick(universityParam)
-          } else if (selectedUniversity) {
-            // Same university - just ensure board is visible
-            // Don't reload data to prevent posts from reordering
-            setUniversityLoading(false)
-          } else {
-            // University not loaded - load it
-            handleUniversityClick(universityParam)
+          // Only call handleUniversityClick if session is ready (not loading)
+          // This prevents false "need to login" popups
+          if (status === 'authenticated' && session) {
+            if (universityParam !== selectedUniversity?.id) {
+              // Different university - load it
+              handleUniversityClick(universityParam)
+            } else if (selectedUniversity) {
+              // Same university - just ensure board is visible
+              // Don't reload data to prevent posts from reordering
+              setUniversityLoading(false)
+            } else {
+              // University not loaded - load it
+              handleUniversityClick(universityParam)
+            }
+          } else if (status === 'unauthenticated') {
+            // User is not authenticated - show auth modal
+            setShowAuthModal(true)
           }
+          // If status is still loading, do nothing (already handled above)
         } else {
           // Going back to main page
           // Only update state, don't trigger full reload
@@ -880,8 +897,12 @@ export default function Home() {
         }
       } else if (path.startsWith('/university/')) {
         const universityId = path.split('/')[2]
-        if (universityId && universityId !== selectedUniversity?.id) {
+        // Only call handleUniversityClick if session is ready (not loading)
+        if (universityId && universityId !== selectedUniversity?.id && status === 'authenticated' && session) {
           handleUniversityClick(universityId)
+        } else if (status === 'unauthenticated') {
+          // User is not authenticated - show auth modal
+          setShowAuthModal(true)
         }
       }
       
@@ -893,7 +914,7 @@ export default function Home() {
 
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [selectedUniversity])
+  }, [selectedUniversity, status, session])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -1234,8 +1255,14 @@ export default function Home() {
       setIsMobileMenuOpen(false)
     }
 
+    // Check if session is still loading - wait for it
+    if (status === 'loading') {
+      return
+    }
+
     // Check if user is authenticated - show modal if not
-    if (!session) {
+    // Only check after session status is resolved
+    if (status === 'unauthenticated' || !session) {
       setShowAuthModal(true)
       return
     }
