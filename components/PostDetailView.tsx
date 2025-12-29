@@ -589,7 +589,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
 
   return (
     <div className="flex-1 min-h-full bg-gray-50 dark:bg-[#121212]" style={{backgroundColor: 'var(--bg-primary)'}}>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-0 sm:py-8 flex flex-col min-h-full">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-0 sm:py-8 flex flex-col min-h-[calc(100vh-56px)] sm:min-h-[calc(100dvh-56px)]">
         <div className="flex-1">
         {loading ? (
           <div className="flex items-center justify-center min-h-[400px]">
@@ -775,15 +775,9 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
 
             {/* Comments Section */}
               <div className="space-y-6" data-comments-section>
-              {commentsLoading ? (
-                <div className="flex items-center justify-center py-10">
-                  {/* Yellow bouncing ball loader (same as auth modals) */}
-                  <div className="h-12 w-12 bg-[#FFE066] border-4 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] animate-bounce-subtle relative">
-                    <div className="absolute top-1.5 left-1.5 w-2 h-2 bg-white/40 rounded-full"></div>
-                  </div>
-                </div>
-              ) : (
-                <>
+              <div className="relative">
+                {/* Reserve layout space to prevent footer shift; keep content invisible while loading */}
+                <div className={`${commentsLoading ? 'invisible pointer-events-none select-none' : ''} space-y-6`}>
                   <h3 className="font-display font-bold text-xl text-black dark:text-white flex items-center gap-2">
                     Yorumlar 
                     <span className="px-2 py-0.5 bg-gray-200 dark:bg-gray-800 rounded-full text-sm">{commentCount}</span>
@@ -1000,8 +994,17 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                     })
                 )}
               </div>
-                </>
-              )}
+                </div>
+
+                {commentsLoading && (
+                  <div className="absolute left-0 right-0 top-0 flex items-center justify-center py-10 z-10">
+                    {/* Yellow bouncing ball loader (same as auth modals) */}
+                    <div className="h-12 w-12 bg-[#FFE066] border-4 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] animate-bounce-subtle relative">
+                      <div className="absolute top-1.5 left-1.5 w-2 h-2 bg-white/40 rounded-full"></div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ) : (

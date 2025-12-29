@@ -205,6 +205,7 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<'newest' | 'popular'>('newest')
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [universityPosts, setUniversityPosts] = useState<Post[]>([])
+  const [universityPostsLoaded, setUniversityPostsLoaded] = useState<Record<string, boolean>>({})
   // Initialize universityLoading based on URL parameter to show loading state immediately on refresh
   const [universityLoading, setUniversityLoading] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -476,6 +477,7 @@ export default function Home() {
     setPostSourceUniversityId(null)
     setSelectedUniversity(cached.university)
     setUniversityPosts(cached.posts || [])
+    setUniversityPostsLoaded(prev => ({ ...prev, [universityId]: true }))
     setUniversityLoading(false)
     return true
   }
@@ -537,7 +539,13 @@ export default function Home() {
         .map((p: any) => p.image as string)
       await preloadImages(firstImageUrls, 1200)
 
+      // If user switched boards mid-refresh, don't overwrite the visible board.
+      if (latestUniversityRequestRef.current && latestUniversityRequestRef.current !== universityId) {
+        return
+      }
+
       setUniversityPosts(posts)
+      setUniversityPostsLoaded(prev => ({ ...prev, [universityId]: true }))
 
       // Update cache when we have both uni + posts (uni might have been set above)
       if (uniObjForCache?.id === universityId) {
@@ -972,6 +980,7 @@ export default function Home() {
         setSelectedPostId(null)
         setSelectedUniversity(null)
         setUniversityPosts([])
+        setUniversityPostsLoaded({})
         setPostSource(null)
         setPostSourceUniversityId(null)
           
@@ -1402,6 +1411,7 @@ export default function Home() {
     setPostSource(null)
     setPostSourceUniversityId(null)
     setUniversityPosts([])
+    setUniversityPostsLoaded(prev => ({ ...prev, [universityId]: false }))
     setUniversityLoading(true)
     
     // Update URL using router.push to create history entry for back navigation
@@ -1461,7 +1471,16 @@ export default function Home() {
           .map((p: any) => p.image as string)
         await preloadImages(firstImageUrls, 1200)
 
+        // User may have clicked another university while we were preloading images.
+        // Guard against stale responses overwriting the current board.
+        if (latestUniversityRequestRef.current !== universityId) {
+          console.log('⚠️ Skipping stale university posts update after preload')
+          isRequestInProgressRef.current = false
+          return
+        }
+
         setUniversityPosts(posts)
+        setUniversityPostsLoaded(prev => ({ ...prev, [universityId]: true }))
         writeUniversityBoardCache(universityId, {
           id: university.id,
           name: university.name,
@@ -1778,6 +1797,10 @@ export default function Home() {
                     </div>
                   </div>
                 ) : !selectedUniversity ? (
+                  <div className="flex items-center justify-center min-h-[400px]">
+                    <CustomSpinner size="lg" />
+                  </div>
+                ) : universityPosts.length === 0 && !universityPostsLoaded[selectedUniversity.id] ? (
                   <div className="flex items-center justify-center min-h-[400px]">
                     <CustomSpinner size="lg" />
                   </div>
