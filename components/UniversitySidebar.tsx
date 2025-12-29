@@ -339,14 +339,12 @@ export default function UniversitySidebar({ onUniversityClick, isMobile = false 
               {filteredUniversities.map((university) => (
                 <div
                   key={university.id}
-                  className="block p-4 border-2 border-black bg-white brutal-shadow-sm hover:brutal-shadow transition-all duration-150 group"
+                  className="block p-4 border-2 border-black bg-white brutal-shadow-sm hover:brutal-shadow transition-all duration-150 group cursor-pointer"
                   style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}
+                  onClick={() => onUniversityClick ? onUniversityClick(university.id) : window.location.href = `${window.location.origin}/university/${university.id}`}
                 >
                   <div className="flex items-start justify-between">
-                    <button
-                      onClick={() => onUniversityClick ? onUniversityClick(university.id) : window.location.href = `${window.location.origin}/university/${university.id}`}
-                      className="flex-1 min-w-0 text-left"
-                    >
+                    <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-semibold text-black group-hover:text-pink-600 transition-colors truncate" style={{color: 'var(--text-primary)'}}>
                         {university.name}
                       </h3>
@@ -360,8 +358,8 @@ export default function UniversitySidebar({ onUniversityClick, isMobile = false 
                           {university.type === 'public' ? 'Devlet' : 'Vakıf'}
                         </span>
                       </div>
-                    </button>
-                    <div className="flex items-center gap-3 ml-2">
+                    </div>
+                    <div className="flex items-center gap-3 ml-2" onClick={(e) => e.stopPropagation()}>
                       <span className="text-xs text-black font-semibold font-mono" style={{color: 'var(--text-primary)'}}>
                         {university.shortName}
                       </span>
@@ -369,6 +367,7 @@ export default function UniversitySidebar({ onUniversityClick, isMobile = false 
                         <button
                           onClick={(e) => {
                             e.preventDefault();
+                            e.stopPropagation();
                             toggleSubscription(university.id, university.isSubscribed || false);
                           }}
                           disabled={subscribing === university.id}

@@ -1240,6 +1240,12 @@ export default function Home() {
       return
     }
 
+    // If already showing this university board, don't reload
+    if (showUniversityBoard && selectedUniversity?.id === universityId && !universityLoading) {
+      console.log('✅ Already showing this university board, skipping reload')
+      return
+    }
+
     // Prevent duplicate requests for the same university
     if (isRequestInProgressRef.current && latestUniversityRequestRef.current === universityId) {
       console.log('⚠️ Request already in progress for this university, ignoring duplicate click')
