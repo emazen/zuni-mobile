@@ -97,7 +97,7 @@ export default function Home() {
   // Handle refresh parameter - refresh data when coming back from post deletion
   useEffect(() => {
     if (refreshParam) {
-      fetchData()
+      fetchData(false) // Don't show loading on refresh
       // If there's a university parameter in URL, refresh university posts too
       const urlParams = new URLSearchParams(window.location.search)
       const uniParam = urlParams.get('university')
@@ -256,50 +256,107 @@ export default function Home() {
 
   // Sort user posts: 
   // 1. New commented posts first (by latest comment timestamp)
-  // 2. Commented but seen posts (by view timestamp, most recently viewed first)
+  // 2. Commented but seen posts (by latest comment timestamp, not view timestamp)
   // 3. Posts with no activity (by creation time, newest first)
+  // OPTIMIZED: Pre-compute timestamps to avoid repeated Date parsing
   const sortedUserPosts = useMemo(() => {
     if (!userActivity?.userPosts) return []
     
-    return [...userActivity.userPosts].sort((a, b) => {
-      const aViewTimestamp = postViewTimestamps.get(a.id)
-      const bViewTimestamp = postViewTimestamps.get(b.id)
+    // Pre-compute all timestamps once
+    const postsWithTimestamps = userActivity.userPosts.map(post => {
+      const viewTimestamp = postViewTimestamps.get(post.id)
+      const viewTime = viewTimestamp ? new Date(viewTimestamp).getTime() : 0
+      const latestCommentTime = post.latestCommentTimestamp ? new Date(post.latestCommentTimestamp).getTime() : 0
+      const createdAtTime = new Date(post.createdAt).getTime()
+      const hasNewComments = post.latestCommentTimestamp && (!viewTimestamp || latestCommentTime > viewTime)
+      const hasComments = !!post.latestCommentTimestamp
       
-      // Check if posts have new comments (comments after last view)
-      const aHasNewComments = a.latestCommentTimestamp && 
-        (!aViewTimestamp || new Date(a.latestCommentTimestamp) > new Date(aViewTimestamp))
-      const bHasNewComments = b.latestCommentTimestamp && 
-        (!bViewTimestamp || new Date(b.latestCommentTimestamp) > new Date(bViewTimestamp))
-      
-      // Check if posts have any comments (activity)
-      const aHasComments = !!a.latestCommentTimestamp
-      const bHasComments = !!b.latestCommentTimestamp
-      
+      return {
+        post,
+        viewTime,
+        latestCommentTime,
+        createdAtTime,
+        hasNewComments,
+        hasComments
+      }
+    })
+    
+    return postsWithTimestamps.sort((a, b) => {
       // Posts with new comments come first
-      if (aHasNewComments && !bHasNewComments) return -1
-      if (!aHasNewComments && bHasNewComments) return 1
+      if (a.hasNewComments && !b.hasNewComments) return -1
+      if (!a.hasNewComments && b.hasNewComments) return 1
       
       // If both have new comments, sort by latest comment timestamp (newest first)
-      if (aHasNewComments && bHasNewComments) {
-        return new Date(b.latestCommentTimestamp!).getTime() - new Date(a.latestCommentTimestamp!).getTime()
+      if (a.hasNewComments && b.hasNewComments) {
+        return b.latestCommentTime - a.latestCommentTime
       }
       
       // If neither has new comments, check if they have activity (comments)
       // Posts with activity (commented but seen) come before posts with no activity
-      if (aHasComments && !bHasComments) return -1
-      if (!aHasComments && bHasComments) return 1
+      if (a.hasComments && !b.hasComments) return -1
+      if (!a.hasComments && b.hasComments) return 1
       
-      // If both have activity (commented but seen), sort by view timestamp (most recently viewed first)
-      if (aHasComments && bHasComments) {
-        const aViewTime = aViewTimestamp ? new Date(aViewTimestamp).getTime() : 0
-        const bViewTime = bViewTimestamp ? new Date(bViewTimestamp).getTime() : 0
-        return bViewTime - aViewTime
+      // If both have activity (commented but seen), sort by latest comment timestamp (newest first)
+      if (a.hasComments && b.hasComments) {
+        return b.latestCommentTime - a.latestCommentTime
       }
       
       // If neither has activity, sort by creation date (newest first)
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    })
+      return b.createdAtTime - a.createdAtTime
+    }).map(item => item.post)
   }, [userActivity?.userPosts, postViewTimestamps])
+
+  // Sort posts with user comments using the same ordering system
+  // 1. New commented posts first (by latest comment timestamp)
+  // 2. Commented but seen posts (by latest comment timestamp, not view timestamp)
+  // 3. Posts with no activity (by creation time, newest first)
+  // OPTIMIZED: Pre-compute timestamps to avoid repeated Date parsing
+  const sortedCommentedPosts = useMemo(() => {
+    if (!userActivity?.postsWithUserComments) return []
+    
+    // Pre-compute all timestamps once
+    const postsWithTimestamps = userActivity.postsWithUserComments.map(post => {
+      const viewTimestamp = postViewTimestamps.get(post.id)
+      const viewTime = viewTimestamp ? new Date(viewTimestamp).getTime() : 0
+      const latestCommentTime = post.latestCommentTimestamp ? new Date(post.latestCommentTimestamp).getTime() : 0
+      const createdAtTime = new Date(post.createdAt).getTime()
+      const hasNewComments = post.latestCommentTimestamp && (!viewTimestamp || latestCommentTime > viewTime)
+      const hasComments = !!post.latestCommentTimestamp
+      
+      return {
+        post,
+        viewTime,
+        latestCommentTime,
+        createdAtTime,
+        hasNewComments,
+        hasComments
+      }
+    })
+    
+    return postsWithTimestamps.sort((a, b) => {
+      // Posts with new comments come first
+      if (a.hasNewComments && !b.hasNewComments) return -1
+      if (!a.hasNewComments && b.hasNewComments) return 1
+      
+      // If both have new comments, sort by latest comment timestamp (newest first)
+      if (a.hasNewComments && b.hasNewComments) {
+        return b.latestCommentTime - a.latestCommentTime
+      }
+      
+      // If neither has new comments, check if they have activity (comments)
+      // Posts with activity (commented but seen) come before posts with no activity
+      if (a.hasComments && !b.hasComments) return -1
+      if (!a.hasComments && b.hasComments) return 1
+      
+      // If both have activity (commented but seen), sort by latest comment timestamp (newest first)
+      if (a.hasComments && b.hasComments) {
+        return b.latestCommentTime - a.latestCommentTime
+      }
+      
+      // If neither has activity, sort by creation date (newest first)
+      return b.createdAtTime - a.createdAtTime
+    }).map(item => item.post)
+  }, [userActivity?.postsWithUserComments, postViewTimestamps])
 
   // Reset carousel index when userActivity changes
   useEffect(() => {
@@ -621,7 +678,7 @@ export default function Home() {
     
     // Only fetch data if user is authenticated
     if (session) {
-      fetchData()
+      fetchData(true) // Show loading on initial load
     } else {
       setLoading(false)
       setUniversityLoading(false)
@@ -663,9 +720,16 @@ export default function Home() {
     // Only handle university redirect if:
     // 1. There's a university parameter in URL
     // 2. We're not showing a post detail view
-    // 3. We're not navigating back (prevents state conflicts)
+    // 3. We're not navigating back (prevents state conflicts and data refresh)
     // 4. We haven't already loaded the university board data (avoid duplicate loads)
     if (universityIdFromUrl && !postId && !isNavigatingBack) {
+      // If we're already showing this university board, don't refresh data
+      // This prevents posts from reordering when going back
+      if (showUniversityBoard && selectedUniversity?.id === universityIdFromUrl) {
+        // Already showing this university - don't refresh
+        return
+      }
+      
       if (showUniversityBoard && universityLoading && selectedUniversity?.id !== universityIdFromUrl) {
         // We're showing university board but need to load different university
         // Load data directly
@@ -753,24 +817,78 @@ export default function Home() {
   }, [postId, status, session, loading, showUniversityBoard, selectedUniversity, isNavigatingBack, universityLoading])
 
 
-  // Handle browser back/forward buttons
+  // Handle browser back/forward buttons and two-finger swipe gestures
   useEffect(() => {
     const handlePopState = () => {
-      const path = window.location.pathname
+      const url = new URL(window.location.href)
+      const path = url.pathname
+      const searchParams = url.searchParams
+      const postParam = searchParams.get('post')
+      const universityParam = searchParams.get('university')
+      
+      // Set navigating back flag to prevent useEffect from interfering
+      setIsNavigatingBack(true)
+      
       if (path === '/') {
-        setShowUniversityBoard(false)
-        setShowPostDetail(false)
-        setSelectedPostId(null)
-        setSelectedUniversity(null)
-        setUniversityPosts([])
-        setPostSource(null)
-        setPostSourceUniversityId(null)
+        if (postParam) {
+          // Going back to a post detail view
+          setSelectedPostId(postParam)
+          setShowPostDetail(true)
+          if (universityParam) {
+            setPostSource('university')
+            setPostSourceUniversityId(universityParam)
+          } else {
+            setPostSource('main')
+          }
+        } else if (universityParam) {
+          // Going back to a university board
+          // Always restore university board state, even if it's the same university
+          // This ensures the board is shown when swiping back from post detail
+          setShowUniversityBoard(true)
+          setShowPostDetail(false)
+          setSelectedPostId(null)
+          
+          if (universityParam !== selectedUniversity?.id) {
+            // Different university - load it
+            handleUniversityClick(universityParam)
+          } else if (selectedUniversity) {
+            // Same university - just ensure board is visible
+            // Don't reload data to prevent posts from reordering
+            setUniversityLoading(false)
+          } else {
+            // University not loaded - load it
+            handleUniversityClick(universityParam)
+          }
+        } else {
+          // Going back to main page
+          // Only update state, don't trigger full reload
+          setShowUniversityBoard(false)
+          setShowPostDetail(false)
+          setSelectedPostId(null)
+          setSelectedUniversity(null)
+          setUniversityPosts([])
+          setPostSource(null)
+          setPostSourceUniversityId(null)
+          
+          // Refresh posts data only (mobile app-like feeling - no full reload)
+          // Don't show loading state to prevent UI flash
+          if (session) {
+            fetchData(false).catch(error => {
+              console.log('Data refresh failed on back to main:', error)
+            })
+          }
+        }
       } else if (path.startsWith('/university/')) {
         const universityId = path.split('/')[2]
         if (universityId && universityId !== selectedUniversity?.id) {
           handleUniversityClick(universityId)
         }
       }
+      
+      // Clear navigating back flag after a short delay
+      setTimeout(() => {
+        setIsNavigatingBack(false)
+      }, 100)
     }
 
     window.addEventListener('popstate', handlePopState)
@@ -814,25 +932,33 @@ export default function Home() {
     }
   }, [sortBy, universityPosts])
 
-  const fetchData = async () => {
+  const fetchData = async (showLoading = false) => {
     try {
+      if (showLoading) {
+        setLoading(true)
+      }
       console.log('fetchData: Starting to fetch all data...')
       
-      // Fetch all main datasets in parallel to reduce total load time
-      const [activityResponse, subscribedResponse, allPostsResponse] = await Promise.all([
-        fetch("/api/user/activity"),
+      // OPTIMIZED: Start all fetches in parallel, but set userActivity immediately when ready
+      // This makes "Gönderilerim" and "Yorumlarım" appear as fast as university board
+      const activityPromise = fetch("/api/user/activity").then(async (response) => {
+        if (response.ok) {
+          const activityData = await response.json()
+          // Set immediately - don't wait for other data
+          setUserActivity(activityData)
+          console.log('fetchData: User activity updated (immediate)')
+        } else {
+          console.error('fetchData: Failed to load user activity', response.status)
+        }
+      }).catch(error => {
+        console.error('fetchData: Error loading user activity', error)
+      })
+      
+      // Fetch other data in parallel (non-blocking)
+      const [subscribedResponse, allPostsResponse] = await Promise.all([
         fetch("/api/user/subscribed-posts"),
         fetch("/api/posts"),
       ])
-
-      // User activity (includes user's posts and posts with user comments)
-      if (activityResponse.ok) {
-        const activityData = await activityResponse.json()
-        setUserActivity(activityData)
-        console.log('fetchData: User activity updated')
-      } else {
-        console.error('fetchData: Failed to load user activity', activityResponse.status)
-      }
 
       // Posts from subscribed universities
       if (subscribedResponse.ok) {
@@ -852,6 +978,9 @@ export default function Home() {
         console.error('fetchData: Failed to load all posts', allPostsResponse.status)
       }
       
+      // Wait for all to complete (but userActivity already rendered)
+      await Promise.all([activityPromise])
+      
       // If we're currently viewing a university board, also fetch its posts
       if (selectedUniversity) {
         const universityResponse = await fetch(`/api/universities/${selectedUniversity.id}/posts`)
@@ -864,6 +993,8 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching data:", error)
     } finally {
+      // Always clear loading state when done (whether it was set or not)
+      // This ensures posts render immediately after data is fetched
       setLoading(false)
     }
   }
@@ -894,16 +1025,16 @@ export default function Home() {
     setSelectedPostId(postId)
     setShowPostDetail(true)
     
-    // Update URL using router.replace with scroll: false to prevent page reload
+    // Update URL using router.push to create history entry for back navigation
     // State is already updated above, so this just updates the URL
     // CRITICAL: Include university parameter if opened from university board
     const newUrl = source === 'university' && universityIdToStore
       ? `/?post=${postId}&university=${universityIdToStore}`
       : `/?post=${postId}`
     
-    // Use router.replace with scroll: false to update URL without full page reload
+    // Use router.push to create history entry so back gesture works
     // Since state is already updated, this should be seamless
-    router.replace(newUrl, { scroll: false })
+    router.push(newUrl, { scroll: false })
     
     // Mark post as viewed and save to localStorage
     setViewedPosts(prev => {
@@ -988,28 +1119,8 @@ export default function Home() {
     setPostSource(null)
     setPostSourceUniversityId(null)
     
-    // Clear the post parameter from URL immediately using window.history
-    // This ensures searchParams updates synchronously before router.replace()
-    // CRITICAL: This prevents PostDetailView from rendering because postId check will fail
-    // Also prevents useEffect from re-triggering and re-opening the post
+    // Navigate to appropriate board
     if (currentPostId) {
-      const currentUrl = new URL(window.location.href)
-      currentUrl.searchParams.delete('post')
-      // Keep university param if going to university board, otherwise remove it too
-      if (source === 'main' || (!urlUniversityId && source !== 'university')) {
-        currentUrl.searchParams.delete('university')
-      }
-      window.history.replaceState({}, '', currentUrl.toString())
-      
-      // CRITICAL: Immediately update state to reflect URL change
-      // This prevents any useEffect from seeing the old postId and re-opening it
-      // Do this synchronously before any async operations
-      setShowPostDetail(false)
-      setSelectedPostId(null)
-    }
-    
-      // Navigate to appropriate board
-      if (currentPostId) {
       // Mark the post as viewed before going back (especially important for newly created posts)
       setViewedPosts(prev => {
           const newSet = new Set(Array.from(prev).concat(currentPostId))
@@ -1058,94 +1169,16 @@ export default function Home() {
         })
       }
       
-      // Navigate based on where the user came from (postSource)
-      // CRITICAL: If source is explicitly 'main', ALWAYS go to main page (user was on main page)
-      // If source is 'university' or null/undefined (refresh case), use university context
-      
-      // Priority for determining destination:
-      // 1. If source === 'main' → ALWAYS go to main page (user came from main page)
-      // 2. If source === 'university' → go to university board
-      // 3. If source is null/undefined (refresh) → use universityId from post data/URL
-      
-      // Navigate immediately - don't wait for anything
-      if (source === 'main') {
-        // User explicitly came from main page - always return to main page
-        // Ensure post detail is closed and URL is cleared
-        setShowUniversityBoard(false)
-        setShowPostDetail(false)
-        setSelectedPostId(null)
-        
-        // Navigate to main page (URL post param already cleared above)
-        router.replace('/')
-        
-        // Clear the navigating flag after navigation completes
-        // Use longer delay to ensure:
-        // 1. URL change has fully propagated
-        // 2. All state updates have been applied
-        // 3. No useEffect can re-trigger before navigation is complete
-        setTimeout(() => {
-          // Final check: ensure URL doesn't have post parameter
-          const finalCheck = new URLSearchParams(window.location.search)
-          if (!finalCheck.get('post')) {
-            setIsNavigatingBack(false)
-          } else {
-            // If post still in URL (shouldn't happen), wait a bit more
-            setTimeout(() => {
-              setIsNavigatingBack(false)
-            }, 100)
-          }
-        }, 200)
-      } else if (source === 'university' || urlUniversityId) {
-        // Go to university board if:
-        // 1. Source is explicitly 'university', OR
-        // 2. We have a university ID from function param (post data), state, or URL (refresh case)
-        const targetUniversityId = urlUniversityId
-        if (targetUniversityId) {
-          // Use handleUniversityClick to ensure consistent behavior
-          // This handles all state clearing, URL updates, and data loading properly
-          // It also prevents race conditions with proper URL checking
-          handleUniversityClick(targetUniversityId)
-        } else {
-          // Fallback: if we don't have university ID, go to main page
-          setShowUniversityBoard(false)
-          router.replace('/')
-          setTimeout(() => {
-            setIsNavigatingBack(false)
-          }, 50)
-        }
+      // Use browser back navigation to go back through history
+      // This allows two-finger swipe back gesture to work properly
+      // The popstate handler will restore the correct state based on URL
+      // NOTE: We don't refresh data here to prevent posts from reordering
+      window.history.back()
       } else {
-        // Final fallback: go to main page
-        setShowUniversityBoard(false)
-        router.replace('/')
-        setTimeout(() => {
-          setIsNavigatingBack(false)
-        }, 50)
-      }
+      // If no postId, use browser back to go through history
+      window.history.back()
       
-      // Try to refresh data to get latest comments (async, don't block navigation)
-      if (session) {
-        fetchData().catch(error => {
-          console.log('Data refresh failed on go back, but badge logic should still work:', error)
-        })
-      }
-      } else {
-      // If no postId, just navigate based on source
-      if (source === 'main') {
-        router.replace('/')
-      } else if (source === 'university') {
-        const targetUniversityId = sourceUniId || universityId
-        if (targetUniversityId) {
-          router.replace(`/?university=${targetUniversityId}`)
-        } else {
-          router.replace('/')
-        }
-      } else if (universityId) {
-        router.replace(`/?university=${universityId}`)
-      } else {
-        router.replace('/')
-      }
-      
-      // Clear the navigating flag after a short delay to allow navigation to complete
+      // Clear the navigating flag after a short delay
       setTimeout(() => {
         setIsNavigatingBack(false)
       }, 100)
@@ -1181,8 +1214,9 @@ export default function Home() {
     }
     
     // Try to refresh data, but don't rely on it
+    // Don't show loading state to prevent UI flash
     if (session) {
-      fetchData().catch(error => {
+      fetchData(false).catch(error => {
         console.log('Data refresh failed:', error)
       })
     }
@@ -1240,14 +1274,14 @@ export default function Home() {
     setUniversityPosts([])
     setUniversityLoading(true)
     
-    // Update URL immediately to prevent old state from reloading
-    // Use window.history to update URL without triggering full page reload
+    // Update URL using pushState to create history entry for back navigation
+    // This allows two-finger swipe back gesture to work properly
     const newUrl = `/?university=${universityId}`
-    window.history.replaceState({}, '', newUrl)
+    window.history.pushState({}, '', newUrl)
     
     // Also update Next.js router state (but don't trigger navigation)
     // This ensures searchParams updates correctly
-    router.replace(newUrl, { scroll: false })
+    router.push(newUrl, { scroll: false })
     
     try {
       console.log(`🎯 Fetching university data for ID: ${universityId}`)
@@ -1366,8 +1400,17 @@ export default function Home() {
     setPostSource(null)
     setPostSourceUniversityId(null)
     
-    // Clear URL parameters explicitly to prevent useEffect from re-triggering
+    // Update URL without triggering navigation/reload
+    // Use replaceState to avoid creating new history entry when clicking logo
     window.history.replaceState({}, '', '/')
+    
+    // Refresh posts data only (mobile app-like feeling - no full reload)
+    // Don't show loading state to prevent UI flash
+    if (session) {
+      fetchData(false).catch(error => {
+        console.log('Data refresh failed on logo click:', error)
+      })
+    }
     
     // Clear the navigating flag after a short delay
     setTimeout(() => {
@@ -1916,7 +1959,7 @@ export default function Home() {
 
             {session && (
               <>
-                {loading ? (
+                {loading && !userActivity ? (
                   <PostListSkeleton />
                 ) : (
                   <>
@@ -2006,7 +2049,7 @@ export default function Home() {
                               {/* Carousel Container */}
                               <div className="mb-6">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                  {getVisiblePosts(userActivity.postsWithUserComments, commentedPostsIndex).map((post) => (
+                                  {getVisiblePosts(sortedCommentedPosts, commentedPostsIndex).map((post) => (
                        <PostCard 
                          key={post.id} 
                          post={post} 
@@ -2021,11 +2064,11 @@ export default function Home() {
                               </div>
                               
                               {/* Navigation Controls */}
-                              {getTotalSlides(userActivity.postsWithUserComments) > 1 && (
+                              {getTotalSlides(sortedCommentedPosts) > 1 && (
                                 <div className="flex items-center justify-center gap-6">
                                   {/* Previous Arrow */}
                                   <button
-                                    onClick={() => goToPrevSlide(commentedPostsIndex, userActivity.postsWithUserComments, setCommentedPostsIndex)}
+                                    onClick={() => goToPrevSlide(commentedPostsIndex, sortedCommentedPosts, setCommentedPostsIndex)}
                                     className="bg-white border-2 border-black brutal-shadow-sm p-2.5 hover:brutal-shadow transition-all flex items-center justify-center"
                                     style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', width: '40px', height: '40px'}}
                                   >
@@ -2034,7 +2077,7 @@ export default function Home() {
                                   
                                   {/* Dots Indicator */}
                                   <div className="flex items-center gap-2 min-w-[100px] justify-center">
-                                    {Array.from({ length: getTotalSlides(userActivity.postsWithUserComments) }).map((_, index) => (
+                                    {Array.from({ length: getTotalSlides(sortedCommentedPosts) }).map((_, index) => (
                                       <button
                                         key={index}
                                         onClick={() => goToSlide(index, setCommentedPostsIndex)}
@@ -2054,7 +2097,7 @@ export default function Home() {
                                   
                                   {/* Next Arrow */}
                                   <button
-                                    onClick={() => goToNextSlide(commentedPostsIndex, userActivity.postsWithUserComments, setCommentedPostsIndex)}
+                                    onClick={() => goToNextSlide(commentedPostsIndex, sortedCommentedPosts, setCommentedPostsIndex)}
                                     className="bg-white border-2 border-black brutal-shadow-sm p-2.5 hover:brutal-shadow transition-all flex items-center justify-center"
                                     style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', width: '40px', height: '40px'}}
                                   >

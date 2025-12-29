@@ -36,17 +36,7 @@ export async function GET() {
               shortName: true,
             },
           },
-          comments: {
-            select: {
-              id: true,
-              createdAt: true,
-              authorId: true, // Need authorId to exclude user's own comments
-            },
-            orderBy: {
-              createdAt: "desc",
-            },
-            take: 10, // Get more comments to find the latest one NOT by current user
-          },
+          // Don't fetch comments here - we'll fetch them in one optimized query later
           _count: {
             select: {
               comments: true,
@@ -87,17 +77,7 @@ export async function GET() {
               shortName: true,
             },
           },
-          comments: {
-            select: {
-              id: true,
-              createdAt: true,
-              authorId: true, // Need authorId to exclude user's own comments
-            },
-            orderBy: {
-              createdAt: "desc",
-            },
-            take: 10, // Get more comments to find the latest one NOT by current user
-          },
+          // Don't fetch comments here - we'll fetch them in one optimized query later
           _count: {
             select: {
               comments: true,
@@ -133,69 +113,85 @@ export async function GET() {
     ])
 
     // Get trending status in a separate optimized query
-    // Exclude comments from post authors - only count comments from other users
-    const trendingPosts = await prisma.post.findMany({
-      where: {
-        OR: [
-          { authorId: session.user.id },
-          { comments: { some: { authorId: session.user.id } } }
-        ],
-        comments: {
-          some: {
-            createdAt: {
-              gte: new Date(Date.now() - 48 * 60 * 60 * 1000), // Last 48 hours
-            }
-          }
+    // OPTIMIZED: Fetch all posts and their authorIds, then fetch all comments in one query
+    const allActivityPosts = [...userPosts, ...postsWithUserComments]
+    const postAuthorMap = new Map<string, string>()
+    allActivityPosts.forEach(post => {
+      postAuthorMap.set(post.id, post.authorId)
+    })
+
+    const postIds = allActivityPosts.map(p => p.id)
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
+
+    // OPTIMIZED: Fetch trending comments and latest comments in parallel
+    const [recentComments, latestCommentsByOthers] = await Promise.all([
+      // All comments from last 48 hours for trending calculation
+      postIds.length > 0 ? prisma.comment.findMany({
+        where: {
+          postId: { in: postIds },
+          createdAt: { gte: fortyEightHoursAgo },
+        },
+        select: {
+          postId: true,
+          authorId: true,
         }
-      },
-      select: {
-        id: true,
-        authorId: true, // Need authorId to exclude post author's comments
+      }) : [],
+      // Latest comments NOT from current user
+      postIds.length > 0 ? prisma.comment.findMany({
+        where: {
+          postId: { in: postIds },
+          authorId: { not: session.user.id },
+        },
+        select: {
+          postId: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }) : []
+    ])
+
+    // Count comments per post, excluding comments from post authors
+    const commentCountMap = new Map<string, number>()
+    recentComments.forEach(comment => {
+      const postAuthorId = postAuthorMap.get(comment.postId)
+      if (postAuthorId && comment.authorId !== postAuthorId) {
+        const currentCount = commentCountMap.get(comment.postId) || 0
+        commentCountMap.set(comment.postId, currentCount + 1)
       }
     })
 
-    // For each post, count comments from OTHER users (not the post author)
+    // Create trending map: post is trending if it has >= 10 comments from other users
     const trendingMap = new Map<string, boolean>()
-    for (const post of trendingPosts) {
-      const commentCount = await prisma.comment.count({
-              where: {
-          postId: post.id,
-                createdAt: {
-                  gte: new Date(Date.now() - 48 * 60 * 60 * 1000),
-          },
-          // Exclude comments from the post author
-          authorId: {
-            not: post.authorId
-        }
+    commentCountMap.forEach((count, postId) => {
+      trendingMap.set(postId, count >= 10)
+    })
+
+    // Group comments by postId and get the latest one per post
+    const latestCommentMap = new Map<string, Date>()
+    latestCommentsByOthers.forEach(comment => {
+      if (!latestCommentMap.has(comment.postId)) {
+        latestCommentMap.set(comment.postId, comment.createdAt)
       }
     })
-      trendingMap.set(post.id, commentCount >= 10)
-    }
 
     // Add trending status and most recent comment timestamp (excluding user's own comments)
-    const userPostsWithTrending = userPosts.map(post => {
-      // Find the latest comment that's NOT from the current user
-      const latestCommentByOthers = post.comments.find(
-        comment => comment.authorId !== session.user.id
-      )
-      return {
-        ...post,
-        isTrending: trendingMap.get(post.id) || false,
-        latestCommentTimestamp: latestCommentByOthers?.createdAt || null,
-      }
-    })
+    const userPostsWithTrending = userPosts.map(post => ({
+      ...post,
+      isTrending: trendingMap.get(post.id) || false,
+      latestCommentTimestamp: latestCommentMap.get(post.id) || null,
+      // Remove comments array as we don't need it anymore
+      comments: undefined,
+    }))
 
-    const postsWithUserCommentsWithTrending = postsWithUserComments.map(post => {
-      // Find the latest comment that's NOT from the current user
-      const latestCommentByOthers = post.comments.find(
-        comment => comment.authorId !== session.user.id
-      )
-      return {
-        ...post,
-        isTrending: trendingMap.get(post.id) || false,
-        latestCommentTimestamp: latestCommentByOthers?.createdAt || null,
-      }
-    })
+    const postsWithUserCommentsWithTrending = postsWithUserComments.map(post => ({
+      ...post,
+      isTrending: trendingMap.get(post.id) || false,
+      latestCommentTimestamp: latestCommentMap.get(post.id) || null,
+      // Remove comments array as we don't need it anymore
+      comments: undefined,
+    }))
 
     return NextResponse.json({
       userPosts: userPostsWithTrending,
