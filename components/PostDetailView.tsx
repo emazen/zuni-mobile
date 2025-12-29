@@ -1031,7 +1031,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                 </a>
               </div>
               <p className="text-[10px] font-medium" style={{color: 'var(--text-secondary)'}}>
-                © 2025 zuni.social. Tüm hakları saklıdır.
+                © 2025 Zuni v1.0. Tüm hakları saklıdır.
               </p>
             </div>
           </footer>
