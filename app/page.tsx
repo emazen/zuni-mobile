@@ -380,6 +380,58 @@ export default function Home() {
     return postsWithMeta.map(x => x.post)
   }, [universityPosts, sortBy])
 
+  const preloadImages = async (urls: string[], timeoutMs = 1200) => {
+    if (typeof window === 'undefined') return
+    if (!urls.length) return
+
+    const uniqueUrls = Array.from(new Set(urls)).filter(Boolean)
+    const timeout = new Promise<void>(resolve => setTimeout(resolve, timeoutMs))
+
+    const loads = uniqueUrls.map(
+      url =>
+        new Promise<void>(resolve => {
+          const img = new Image()
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = url
+        })
+    )
+
+    await Promise.race([Promise.allSettled(loads).then(() => undefined), timeout])
+  }
+
+  // (Tab title is constant "Zuni" now; post meta cache removed.)
+
+  const getUniversityMetaFromCaches = (universityId: string) => {
+    // Prefer our sessionStorage board cache (freshest for the current session)
+    const boardCache = readUniversityBoardCache(universityId)
+    if (boardCache?.university?.id === universityId) return boardCache.university
+
+    // Fallback: UniversitySidebar caches universities list in localStorage
+    if (typeof window === 'undefined') return null
+    try {
+      const raw = localStorage.getItem('universities_cache')
+      if (!raw) return null
+      const list = JSON.parse(raw) as Array<{
+        id: string
+        name: string
+        shortName: string
+        city: string
+        type: 'public' | 'private'
+      }>
+      const found = list.find(u => u.id === universityId)
+      return found || null
+    } catch {
+      return null
+    }
+  }
+
+  // Tab title: always "Zuni"
+  const setBaseTabTitle = () => {
+    if (typeof document === 'undefined') return
+    if (document.title !== 'Zuni') document.title = 'Zuni'
+  }
+
   const getUniversityCacheKey = (universityId: string) => `universityBoardCache_${universityId}`
 
   const readUniversityBoardCache = (universityId: string) => {
@@ -445,28 +497,52 @@ export default function Home() {
       setIsUniversityRefreshing(true)
     }
 
+    // Set selectedUniversity synchronously from cache to stabilize UI
+    const cachedMeta = getUniversityMetaFromCaches(universityId)
+    if (cachedMeta) setSelectedUniversity(cachedMeta)
+    setBaseTabTitle()
+
     try {
-      const [universityResponse, postsResponse] = await Promise.all([
-        fetch(`/api/universities/${universityId}`, { signal: abortController.signal }),
-        fetch(`/api/universities/${universityId}/posts`, { signal: abortController.signal }),
-      ])
+      // Start both requests immediately, but apply university name ASAP (tab title consistency)
+      const universityFetch = fetch(`/api/universities/${universityId}`, { signal: abortController.signal })
+      const postsFetch = fetch(`/api/universities/${universityId}/posts`, { signal: abortController.signal })
 
-      if (!universityResponse.ok || !postsResponse.ok) return
+      const universityResponse = await universityFetch
+      let uniObjForCache:
+        | { id: string; name: string; shortName: string; city: string; type: 'public' | 'private' }
+        | null = null
 
-      const university = await universityResponse.json()
+      if (universityResponse.ok) {
+        const university = await universityResponse.json()
+        const uniObj = {
+          id: university.id,
+          name: university.name,
+          shortName: university.shortName,
+          city: university.city,
+          type: university.type,
+        } as const
+        uniObjForCache = uniObj
+        setSelectedUniversity(uniObj)
+        setBaseTabTitle()
+      }
+
+      const postsResponse = await postsFetch
+      if (!postsResponse.ok) return
       const posts = await postsResponse.json()
 
-      const uniObj = {
-        id: university.id,
-        name: university.name,
-        shortName: university.shortName,
-        city: university.city,
-        type: university.type,
-      } as const
+      // Preload first visible images so UI appears "all at once" after loader
+      const firstImageUrls = (posts || [])
+        .filter((p: any) => !!p?.image)
+        .slice(0, 6)
+        .map((p: any) => p.image as string)
+      await preloadImages(firstImageUrls, 1200)
 
-      setSelectedUniversity(uniObj)
       setUniversityPosts(posts)
-      writeUniversityBoardCache(universityId, uniObj, posts)
+
+      // Update cache when we have both uni + posts (uni might have been set above)
+      if (uniObjForCache?.id === universityId) {
+        writeUniversityBoardCache(universityId, uniObjForCache, posts)
+      }
     } catch (error: any) {
       if (error?.name === 'AbortError') return
       console.error('Error refreshing university board:', error)
@@ -484,49 +560,16 @@ export default function Home() {
     }
   }, [userActivity?.userPosts.length, userActivity?.postsWithUserComments.length])
 
-  // Update browser tab title when viewing a university board or post detail
+  // Keep tab title stable as "Zuni" (Next.js may re-apply metadata).
   useEffect(() => {
-    // Priority 1: Post detail
-    if (showPostDetail && (postId || selectedPostId)) {
-      const allPostsList = [...posts, ...allPosts, ...(universityPosts || [])]
-      const currentPostId = postId || selectedPostId
-      const post = allPostsList.find(p => p.id === currentPostId)
-      
-      if (post) {
-        // Format: "Zuni - Post Title and Text"
-        // Truncate if total length exceeds ~60 characters (typical browser tab max)
-        const maxLength = 60
-        let postText = post.title
-        
-        // Add content preview if title is short enough
-        if (post.content && postText.length < maxLength - 10) {
-          const contentPreview = post.content.trim().substring(0, maxLength - postText.length - 3)
-          if (contentPreview.length < post.content.trim().length) {
-            postText = `${postText} ${contentPreview}...`
-          } else {
-            postText = `${postText} ${contentPreview}`
-          }
-        }
-        
-        // Truncate if still too long
-        if (postText.length > maxLength) {
-          postText = postText.substring(0, maxLength - 3) + '...'
-        }
-        
-        document.title = `Zuni - ${postText}`.trim()
-      } else {
-        document.title = 'Zuni'
-      }
-    }
-    // Priority 2: University board
-    else if (showUniversityBoard && selectedUniversity) {
-      document.title = `Zuni - ${selectedUniversity.name}`.trim()
-    }
-    // Default
-    else {
-      document.title = 'Zuni'
-    }
-  }, [showPostDetail, postId, selectedPostId, posts, allPosts, universityPosts, showUniversityBoard, selectedUniversity])
+    if (typeof document === 'undefined') return
+    const titleEl = document.querySelector('title')
+    if (!titleEl) return
+    const observer = new MutationObserver(() => setBaseTabTitle())
+    observer.observe(titleEl, { childList: true, characterData: true, subtree: true })
+    setBaseTabTitle()
+    return () => observer.disconnect()
+  }, [])
 
   // Control splash screen minimum display time
   useEffect(() => {
@@ -822,7 +865,7 @@ export default function Home() {
     const navigatingFromCreatePost = typeof window !== 'undefined' 
       ? sessionStorage.getItem('navigatingToUniversity')
       : null
-
+    
     const urlParams = new URLSearchParams(window.location.search)
     const universityIdFromUrl = urlParams.get('university')
 
@@ -844,12 +887,6 @@ export default function Home() {
       const wasAlreadyShowingThisUniversity =
         showUniversityBoard && selectedUniversity?.id === universityIdFromUrl
 
-      // Try to hydrate instantly from cache so refresh feels instant
-      const hydratedFromCache =
-        (!selectedUniversity || selectedUniversity.id !== universityIdFromUrl)
-          ? hydrateUniversityBoardFromCache(universityIdFromUrl)
-          : false
-
       // If we're already showing this university board, don't refresh data
       // This prevents posts from reordering when going back
       if (wasAlreadyShowingThisUniversity) {
@@ -860,10 +897,8 @@ export default function Home() {
       // Ensure university board is shown immediately
       setShowUniversityBoard(true)
 
-      // If navigating from create-post, allow showing loading spinner.
-      // Otherwise prefer background refresh (like main screen refresh).
-      const shouldShowLoading = !!navigatingFromCreatePost && !hydratedFromCache
-      refreshUniversityBoard(universityIdFromUrl, shouldShowLoading)
+      // Always show the 3-dot loader on refresh/deep-link, then reveal everything together
+      refreshUniversityBoard(universityIdFromUrl, true)
     }
   }, [postId, status, session, loading, showUniversityBoard, selectedUniversity, isNavigatingBack, universityLoading])
 
@@ -879,6 +914,8 @@ export default function Home() {
       
       // Set navigating back flag to prevent useEffect from interfering
       setIsNavigatingBack(true)
+      // Keep tab title constant
+      setBaseTabTitle()
       
       // Don't handle navigation if session is still loading
       // This prevents false "need to login" popups
@@ -917,8 +954,8 @@ export default function Home() {
             } else if (selectedUniversity) {
               // Same university - just ensure board is visible
               // Don't reload data to prevent posts from reordering
-              setUniversityLoading(false)
-            } else {
+                setUniversityLoading(false)
+              } else {
               // University not loaded - load it
               handleUniversityClick(universityParam)
             }
@@ -930,13 +967,13 @@ export default function Home() {
         } else {
           // Going back to main page
           // Only update state, don't trigger full reload
-          setShowUniversityBoard(false)
-          setShowPostDetail(false)
-          setSelectedPostId(null)
-          setSelectedUniversity(null)
-          setUniversityPosts([])
-          setPostSource(null)
-          setPostSourceUniversityId(null)
+        setShowUniversityBoard(false)
+        setShowPostDetail(false)
+        setSelectedPostId(null)
+        setSelectedUniversity(null)
+        setUniversityPosts([])
+        setPostSource(null)
+        setPostSourceUniversityId(null)
           
           // Refresh posts data only (mobile app-like feeling - no full reload)
           // Don't show loading state to prevent UI flash
@@ -1017,9 +1054,9 @@ export default function Home() {
         if (response.ok) {
           const activityData = await response.json()
           // Set immediately - don't wait for other data
-          setUserActivity(activityData)
+        setUserActivity(activityData)
           console.log('fetchData: User activity updated (immediate)')
-        } else {
+      } else {
           console.error('fetchData: Failed to load user activity', response.status)
         }
       }).catch(error => {
@@ -1107,6 +1144,9 @@ export default function Home() {
     // Use router.push to create history entry so back gesture works
     // Since state is already updated, this should be seamless
     router.push(newUrl, { scroll: false })
+
+    // Keep tab title constant
+    setBaseTabTitle()
     
     // Mark post as viewed and save to localStorage
     setViewedPosts(prev => {
@@ -1191,8 +1231,8 @@ export default function Home() {
     setPostSource(null)
     setPostSourceUniversityId(null)
     
-    // Navigate to appropriate board
-    if (currentPostId) {
+      // Navigate to appropriate board
+      if (currentPostId) {
       // Mark the post as viewed before going back (especially important for newly created posts)
       setViewedPosts(prev => {
           const newSet = new Set(Array.from(prev).concat(currentPostId))
@@ -1245,8 +1285,13 @@ export default function Home() {
       // This allows two-finger swipe back gesture to work properly
       // The popstate handler will restore the correct state based on URL
       // NOTE: We don't refresh data here to prevent posts from reordering
+      // Set tab title immediately so it doesn't flash old post title.
+      // If user opened post from main, back should show "Zuni" on main screen.
+      if (source === 'main') {
+        setBaseTabTitle()
+      }
       window.history.back()
-      } else {
+          } else {
       // If no postId, use browser back to go through history
       window.history.back()
       
@@ -1346,6 +1391,9 @@ export default function Home() {
     // Set navigation flag to prevent useEffect interference
     setIsNavigatingBack(true)
 
+    // University boards should not affect tab title
+    setBaseTabTitle()
+
     // Clear ALL state immediately (before async operations)
     // This prevents old state from being used when rapidly clicking different universities
     setShowUniversityBoard(true)
@@ -1353,8 +1401,6 @@ export default function Home() {
     setSelectedPostId(null)
     setPostSource(null)
     setPostSourceUniversityId(null)
-    // Clear selectedUniversity to prevent old data from showing
-    setSelectedUniversity(null)
     setUniversityPosts([])
     setUniversityLoading(true)
     
@@ -1370,11 +1416,12 @@ export default function Home() {
     try {
       console.log(`🎯 Fetching university data for ID: ${universityId}`)
       
-      // Fetch university info and posts with abort signal
-      const [universityResponse, postsResponse] = await Promise.all([
-        fetch(`/api/universities/${universityId}`, { signal: abortController.signal }),
-        fetch(`/api/universities/${universityId}/posts`, { signal: abortController.signal })
-      ])
+      // Start both fetches immediately, but apply university name ASAP (tab title consistency)
+      const universityFetch = fetch(`/api/universities/${universityId}`, { signal: abortController.signal })
+      const postsFetch = fetch(`/api/universities/${universityId}/posts`, { signal: abortController.signal })
+
+      const universityResponse = await universityFetch
+      const postsResponse = await postsFetch
       
       // Check if this is still the latest request (user might have clicked another university)
       if (latestUniversityRequestRef.current !== universityId) {
@@ -1407,6 +1454,14 @@ export default function Home() {
           city: university.city,
           type: university.type
         })
+
+        // Preload first visible images so UI appears "all at once" after loader
+        const firstImageUrls = (posts || [])
+          .filter((p: any) => !!p?.image)
+          .slice(0, 6)
+          .map((p: any) => p.image as string)
+        await preloadImages(firstImageUrls, 1200)
+
         setUniversityPosts(posts)
         writeUniversityBoardCache(universityId, {
           id: university.id,
@@ -1463,12 +1518,12 @@ export default function Home() {
       
       // Only update loading state if this is still the latest request
       if (latestUniversityRequestRef.current === universityId) {
-        setUniversityLoading(false)
-        setIsRedirecting(false) // Clear redirecting state when done
+      setUniversityLoading(false)
+      setIsRedirecting(false) // Clear redirecting state when done
         // Clear navigation flag after a delay to prevent useEffect from reloading old state
         // This ensures the new university data is fully loaded before allowing useEffect to run
-        setTimeout(() => {
-          setIsNavigatingBack(false)
+      setTimeout(() => {
+        setIsNavigatingBack(false)
         }, 500)
       } else {
         // If this is not the latest request, still clear loading to prevent endless loading
@@ -1858,7 +1913,7 @@ export default function Home() {
                      </div>
 
                      <div className="pb-6">
-                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                      {sortedUniversityPosts.map((post) => (
                        <PostCard 
                          key={post.id} 
@@ -1875,7 +1930,7 @@ export default function Home() {
                    </div>
                    )}
                 </div>
-                
+
                 {/* Footer */}
                 {!universityLoading && selectedUniversity && (
                   <footer className="w-full pt-0 pb-3 z-20 mt-8 sm:pb-0 sm:-mb-4 sm:relative sm:z-auto">
