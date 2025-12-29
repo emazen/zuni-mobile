@@ -1912,32 +1912,45 @@ export default function Home() {
         
         <div
           ref={mainScrollRef}
-          className={`flex-1 ${isMobile ? 'overflow-y-auto h-full pb-0' : 'overflow-y-auto h-full'} ${isRestoringMainScroll ? 'invisible pointer-events-none' : ''}`}
+          className={`relative flex-1 ${
+            isMobile
+              ? (isMobileMenuOpen ? 'overflow-hidden h-full pb-0' : 'overflow-y-auto h-full pb-0')
+              : 'overflow-y-auto h-full'
+          } ${isRestoringMainScroll ? 'invisible pointer-events-none' : ''}`}
           style={{backgroundColor: 'var(--bg-primary)'}}
         >
-          {/* Mobile Universities Full Page - No Sliding */}
-          {isMobile && isMobileMenuOpen ? (
-            <div className="h-full flex flex-col" style={{backgroundColor: 'var(--bg-primary)'}}>
+          {/* Mobile Universities Menu as full-page overlay (no unmount/reload) */}
+          {isMobile && isMobileMenuOpen && (
+            <div
+              className="fixed inset-0 top-14 z-50 flex flex-col"
+              style={{backgroundColor: 'var(--bg-primary)'}}
+            >
               {/* Mobile Universities Header */}
-              <div className="bg-white border-b-4 border-black px-4 py-4 mobile-menu-header" style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}>
+              <div
+                className="bg-white border-b-4 border-black px-4 py-4 mobile-menu-header flex-shrink-0"
+                style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}
+              >
                 <div className="flex items-center justify-between">
                   <h1 className="text-xl font-bold text-black" style={{color: 'var(--text-primary)'}}>Üniversiteler</h1>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="p-2 bg-white border-2 border-black brutal-shadow-sm hover:brutal-shadow"
                     style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}
+                    aria-label="Close universities menu"
                   >
                     <X className="h-5 w-5 text-black" style={{color: 'var(--text-primary)'}} />
                   </button>
                 </div>
               </div>
-              
+
               {/* Mobile Universities Content - Static */}
               <div className="flex-1 overflow-y-auto overscroll-none p-4 pb-0">
                 <UniversitySidebar onUniversityClick={handleUniversityClick} isMobile={true} />
               </div>
             </div>
-          ) : (showPostDetail && (postId || selectedPostId)) ? (
+          )}
+
+          {(showPostDetail && (postId || selectedPostId)) ? (
             <PostDetailView postId={postId || selectedPostId || ''} onGoBack={handleGoBack} onCommentAdded={handleCommentAdded} onPostDeleted={fetchData} onUniversityClick={handleUniversityClick} />
           ) : (showUniversityBoard || (universityParam && !postId)) ? (
             <div className={`flex-1 ${isMobile ? 'h-full' : 'overflow-y-auto'}`}>

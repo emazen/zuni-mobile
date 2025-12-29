@@ -1039,7 +1039,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
         
         {enlargedImage && (
           <div 
-            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3 sm:p-4 cursor-pointer"
+            className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-3 sm:p-4 cursor-pointer"
             onClick={() => setEnlargedImage(null)}
             onTouchStart={(e) => {
               // Only track on mobile with single touch (not two-finger zoom)
