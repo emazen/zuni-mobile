@@ -76,9 +76,11 @@ export default function Home() {
   const searchParams = useSearchParams()
   const { theme, effectiveTheme, toggleTheme } = useTheme()
   const mainScrollRef = useRef<HTMLDivElement | null>(null)
+  const lastHomeScrollTopRef = useRef<number>(0)
   const lastMainScrollTopRef = useRef<number>(0)
   const shouldRestoreMainScrollOnBackRef = useRef<boolean>(false)
   const [isRestoringMainScroll, setIsRestoringMainScroll] = useState(false)
+  const pendingUniversityScrollRestoreRef = useRef<{ universityId: string; top: number } | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [subscribedPostsLoaded, setSubscribedPostsLoaded] = useState(false)
   const [allPosts, setAllPosts] = useState<Post[]>([])
@@ -224,6 +226,50 @@ export default function Home() {
     }
     return false
   })
+
+  // Persist scroll positions (home + per-university) so back navigation restores where user left off.
+  useEffect(() => {
+    const el = mainScrollRef.current
+    if (!el || typeof window === 'undefined') return
+
+    let rafId: number | null = null
+    const onScroll = () => {
+      if (rafId !== null) return
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null
+        // Don't persist while in post detail; we restore from saved values on back.
+        if (showPostDetail) return
+        // Don't persist while we're actively restoring scroll (prevents overwriting saved positions)
+        if (isRestoringMainScroll) return
+
+        const top = el.scrollTop ?? 0
+
+        // University board scroll per university
+        if (showUniversityBoard && selectedUniversity?.id) {
+          try {
+            sessionStorage.setItem(`uniScroll:${selectedUniversity.id}`, String(top))
+          } catch {
+            // ignore
+          }
+          return
+        }
+
+        // Home scroll (main tabs)
+        lastHomeScrollTopRef.current = top
+        try {
+          sessionStorage.setItem('homeScrollTop', String(top))
+        } catch {
+          // ignore
+        }
+      })
+    }
+
+    el.addEventListener('scroll', onScroll, { passive: true } as any)
+    return () => {
+      if (rafId !== null) window.cancelAnimationFrame(rafId)
+      el.removeEventListener('scroll', onScroll as any)
+    }
+  }, [showUniversityBoard, showPostDetail, selectedUniversity?.id, isRestoringMainScroll])
   const [isUniversityRefreshing, setIsUniversityRefreshing] = useState(false)
   // Track the latest requested university ID to prevent race conditions
   const latestUniversityRequestRef = useRef<string | null>(null)
@@ -989,7 +1035,17 @@ export default function Home() {
 
           // Restore list scroll position when returning from post detail
           if (shouldRestoreMainScrollOnBackRef.current) {
-            const top = lastMainScrollTopRef.current
+            // Prefer in-memory scroll, but fall back to persisted home scroll (desktop can lose the ref)
+            let top = lastMainScrollTopRef.current
+            if (top === 0) {
+              try {
+                const saved = sessionStorage.getItem('homeScrollTop')
+                const parsed = saved ? Number(saved) : NaN
+                if (!Number.isNaN(parsed)) top = parsed
+              } catch {
+                // ignore
+              }
+            }
             requestAnimationFrame(() => {
               try {
                 mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
@@ -999,6 +1055,18 @@ export default function Home() {
               setIsRestoringMainScroll(false)
               shouldRestoreMainScrollOnBackRef.current = false
             })
+          } else {
+            // Restore last known scroll for this university (e.g. browser back to board)
+            try {
+              const saved = sessionStorage.getItem(`uniScroll:${universityParam}`)
+              const parsed = saved ? Number(saved) : NaN
+              if (!Number.isNaN(parsed)) {
+                pendingUniversityScrollRestoreRef.current = { universityId: universityParam, top: parsed }
+                setIsRestoringMainScroll(true)
+              }
+            } catch {
+              // ignore
+            }
           }
         } else {
           // Going back to main page
@@ -1039,6 +1107,25 @@ export default function Home() {
               }
               setIsRestoringMainScroll(false)
               shouldRestoreMainScrollOnBackRef.current = false
+            })
+          } else {
+            // Restore home scroll so it doesn't inherit uni board scrollTop.
+            setIsRestoringMainScroll(true)
+            let top = lastHomeScrollTopRef.current
+            try {
+              const saved = sessionStorage.getItem('homeScrollTop')
+              const parsed = saved ? Number(saved) : NaN
+              if (!Number.isNaN(parsed)) top = parsed
+            } catch {
+              // ignore
+            }
+            requestAnimationFrame(() => {
+              try {
+                mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
+              } catch {
+                if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
+              }
+              setIsRestoringMainScroll(false)
             })
           }
         }
@@ -1084,6 +1171,34 @@ export default function Home() {
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [selectedUniversity, status, session, postSourceTab])
+
+  // After a university board finishes rendering, restore saved scroll position (if queued).
+  useEffect(() => {
+    const pending = pendingUniversityScrollRestoreRef.current
+    if (!pending) return
+    if (!showUniversityBoard) return
+    if (showPostDetail) return
+    if (!selectedUniversity?.id || selectedUniversity.id !== pending.universityId) return
+    if (universityLoading) return
+    if (universityPostsLoaded[selectedUniversity.id] !== true) return
+
+    const top = pending.top
+    requestAnimationFrame(() => {
+      try {
+        mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
+      } catch {
+        if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
+      }
+      pendingUniversityScrollRestoreRef.current = null
+      setIsRestoringMainScroll(false)
+    })
+  }, [
+    showUniversityBoard,
+    showPostDetail,
+    selectedUniversity?.id,
+    universityLoading,
+    universityPostsLoaded,
+  ])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -1262,6 +1377,29 @@ export default function Home() {
     lastMainScrollTopRef.current = mainScrollRef.current?.scrollTop ?? 0
     shouldRestoreMainScrollOnBackRef.current = true
 
+    // Persist home scroll too so desktop back restores correctly
+    // (main + trending + subscribed share the same scroll container)
+    if (!showUniversityBoard) {
+      try {
+        sessionStorage.setItem('homeScrollTop', String(mainScrollRef.current?.scrollTop ?? 0))
+      } catch {
+        // ignore
+      }
+    }
+
+    // If opening from a university board, persist scroll per university too
+    // (helps restoring when navigating back to that board later)
+    if (showUniversityBoard && selectedUniversity?.id) {
+      try {
+        sessionStorage.setItem(
+          `uniScroll:${selectedUniversity.id}`,
+          String(mainScrollRef.current?.scrollTop ?? 0)
+        )
+      } catch {
+        // ignore
+      }
+    }
+
     // Mobile: ensure post detail opens from top (not current list scroll position)
     // We scroll the main scroll container (not the window) because the app uses an inner overflow container.
     requestAnimationFrame(() => {
@@ -1363,17 +1501,8 @@ export default function Home() {
     // Set flag to prevent useEffect from re-triggering
     // CRITICAL: Set this FIRST to prevent any useEffect from running during navigation
     setIsNavigatingBack(true)
-    
-    // Immediately clear post detail state BEFORE navigation
-    // This ensures the view switches immediately
-    // Hide the list briefly so we can restore scroll without a visible "jump to top"
-    if (shouldRestoreMainScrollOnBackRef.current) {
-      setIsRestoringMainScroll(true)
-    }
-    setShowPostDetail(false)
-    setSelectedPostId(null)
-    setPostSource(null)
-    setPostSourceUniversityId(null)
+    // IMPORTANT: For smooth "back button" behavior, do NOT clear post/detail state here.
+    // Let the browser history + popstate handler restore the correct UI based on URL.
     
       // Navigate to appropriate board
       if (currentPostId) {
@@ -1508,6 +1637,29 @@ export default function Home() {
     if (status === 'unauthenticated' || !session) {
       setShowAuthModal(true)
       return
+    }
+
+    // Coming from main screen -> remember home scroll so back returns correctly
+    if (!showUniversityBoard && !showPostDetail) {
+      const top = mainScrollRef.current?.scrollTop ?? 0
+      lastHomeScrollTopRef.current = top
+      try {
+        sessionStorage.setItem('homeScrollTop', String(top))
+      } catch {
+        // ignore
+      }
+    }
+
+    // If we are leaving a university board, remember its scroll position
+    if (showUniversityBoard && selectedUniversity?.id && selectedUniversity.id !== universityId) {
+      try {
+        sessionStorage.setItem(
+          `uniScroll:${selectedUniversity.id}`,
+          String(mainScrollRef.current?.scrollTop ?? 0)
+        )
+      } catch {
+        // ignore
+      }
     }
 
     // If user clicks the same university while in post detail, just return to the board
@@ -1726,6 +1878,11 @@ export default function Home() {
     // Set flag to prevent useEffect from re-triggering
     setIsNavigatingBack(true)
     
+    // Close mobile universities menu if open (don't affect scroll/state)
+    if (isMobile) {
+      setIsMobileMenuOpen(false)
+    }
+
     // Reset to main page view (synchronously, before navigation)
     setShowUniversityBoard(false)
     setShowPostDetail(false)
@@ -1739,6 +1896,16 @@ export default function Home() {
     // Reset to "Aktiviteler" tab (main/default tab)
     setActiveTab('my-activity')
     localStorage.setItem('activeTab', 'my-activity')
+
+    // Ensure we land at top of main screen (mobile "home" behavior)
+    requestAnimationFrame(() => {
+      try {
+        mainScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      } catch {
+        if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0
+        window.scrollTo(0, 0)
+      }
+    })
     
     // Update URL without triggering navigation/reload
     // Use replaceState to avoid creating new history entry when clicking logo
@@ -1953,7 +2120,7 @@ export default function Home() {
           {(showPostDetail && (postId || selectedPostId)) ? (
             <PostDetailView postId={postId || selectedPostId || ''} onGoBack={handleGoBack} onCommentAdded={handleCommentAdded} onPostDeleted={fetchData} onUniversityClick={handleUniversityClick} />
           ) : (showUniversityBoard || (universityParam && !postId)) ? (
-            <div className={`flex-1 ${isMobile ? 'h-full' : 'overflow-y-auto'}`}>
+            <div className={`flex-1 ${isMobile ? 'h-full' : ''}`}>
               <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-0 sm:py-8 flex flex-col ${isMobile ? 'h-full' : 'min-h-[calc(100vh-56px)]'}`}>
                 <div className="flex-1">
                 {/* University Posts */}
@@ -2245,7 +2412,7 @@ export default function Home() {
                     </footer>
                   </main>
                 ) : (
-                  <div className={`flex-1 ${isMobile ? 'h-full' : 'overflow-y-auto'}`}>
+                  <div className={`flex-1 ${isMobile ? 'h-full' : ''}`}>
                     <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-0 sm:py-8 flex flex-col ${isMobile ? 'h-full' : 'min-h-full'}`}>
                       <div className="flex-1">
                     <div className="mb-4 mt-2">

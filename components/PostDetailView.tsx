@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, MessageSquare, Trash2, Send, Clock, ChevronDown, Image as ImageIcon, X, MoreVertical, Mic } from 'lucide-react';
 import CustomSpinner from './CustomSpinner';
@@ -1037,9 +1038,9 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
           </footer>
         )}
         
-        {enlargedImage && (
+        {enlargedImage && typeof document !== 'undefined' && createPortal(
           <div 
-            className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-3 sm:p-4 cursor-pointer"
+            className="fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center p-3 sm:p-4 cursor-pointer"
             onClick={() => setEnlargedImage(null)}
             onTouchStart={(e) => {
               // Only track on mobile with single touch (not two-finger zoom)
@@ -1125,7 +1126,8 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                 }}
               />
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>
