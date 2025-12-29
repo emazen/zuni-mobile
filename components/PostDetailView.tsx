@@ -39,7 +39,6 @@ interface Post {
     shortName: string;
   };
   createdAt: string;
-  comments: Comment[];
   _count: {
     comments: number;
   };
@@ -60,6 +59,8 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
   const router = useRouter();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentContent, setCommentContent] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
@@ -86,7 +87,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
 
   // Extract durations for posted comments with audio
   useEffect(() => {
-    if (!post?.comments) return;
+    if (!comments) return;
 
     const extractDurations = async () => {
       // Get current durations from ref to avoid re-extracting
@@ -94,7 +95,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
       const durations = new Map<string, number>();
       const promises: Promise<void>[] = [];
 
-      post.comments.forEach((comment) => {
+      comments.forEach((comment) => {
         if (comment.audio && !currentDurations.has(comment.audio)) {
           // Extract duration for this audio URL
           promises.push(
@@ -124,7 +125,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
     };
 
     extractDurations();
-  }, [post?.comments]);
+  }, [comments]);
 
   // Extract duration for post audio
   useEffect(() => {
@@ -147,7 +148,8 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
     
     setLoading(true);
     try {
-      const response = await fetch(`/api/posts/${postId}`);
+      // Fetch post meta FIRST (fast), without comments
+      const response = await fetch(`/api/posts/${postId}?includeComments=false`);
       if (response.ok) {
         const data = await response.json();
         setPost(data);
@@ -156,6 +158,20 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
       console.error('Error fetching post:', error);
     } finally {
       setLoading(false);
+    }
+
+    // Fetch comments AFTER post is visible
+    setCommentsLoading(true);
+    try {
+      const commentsResponse = await fetch(`/api/posts/${postId}/comments`);
+      if (commentsResponse.ok) {
+        const commentData = await commentsResponse.json();
+        setComments(commentData);
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    } finally {
+      setCommentsLoading(false);
     }
   };
 
@@ -439,16 +455,18 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
       setCommentAudioDuration(undefined);
       setShowVoiceRecorder(false);
         
-        if (post) {
-          setPost(prevPost => ({
-            ...prevPost!,
-            comments: [...(prevPost?.comments || []), newComment],
-            _count: {
-              ...prevPost!._count,
-              comments: (prevPost?._count.comments || 0) + 1
-            }
-          }));
-        }
+        setComments(prev => [...prev, newComment]);
+        setPost(prevPost =>
+          prevPost
+            ? {
+                ...prevPost,
+                _count: {
+                  ...prevPost._count,
+                  comments: (prevPost._count?.comments || 0) + 1,
+                },
+              }
+            : prevPost
+        );
         
         onCommentAdded?.();
         
@@ -493,13 +511,9 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
 
       if (!response.ok) throw new Error('Failed to delete comment');
 
-      setPost((prev) => {
-        if (!prev) return prev;
-        const updatedComments = prev.comments.map((comment) =>
-          comment.id === commentId ? { ...comment, content: 'silinmiş' } : comment
-        );
-        return { ...prev, comments: updatedComments };
-      });
+      setComments(prev =>
+        prev.map((comment) => (comment.id === commentId ? { ...comment, content: 'silinmiş' } : comment))
+      );
     } catch (error) {
       console.error('Error deleting comment:', error);
     } finally {
@@ -571,6 +585,7 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
   };
 
   const isAuthor = session?.user?.id === post?.authorId;
+  const commentCount = post?._count?.comments ?? comments.length;
 
   return (
     <div className="flex-1 min-h-full bg-gray-50 dark:bg-[#121212]" style={{backgroundColor: 'var(--bg-primary)'}}>
@@ -760,132 +775,141 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
 
             {/* Comments Section */}
               <div className="space-y-6" data-comments-section>
-                <h3 className="font-display font-bold text-xl text-black dark:text-white flex items-center gap-2">
-                  Yorumlar 
-                  <span className="px-2 py-0.5 bg-gray-200 dark:bg-gray-800 rounded-full text-sm">{post.comments.length}</span>
-              </h3>
-
-              {/* Comment Form */}
-                <div className="bg-white dark:bg-[#151515] border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4" style={{borderColor: 'var(--border-color)'}}>
-                  <form onSubmit={handleSubmitComment} className="flex flex-col gap-2">
-                    <div className="flex gap-4">
-                      <div className="flex-1 min-w-0">
-                    <textarea
-                      value={commentContent}
-                      onChange={(e) => setCommentContent(e.target.value)}
-                          placeholder="Yorum yaz..."
-                          className="w-full p-3 bg-transparent border-none focus:ring-0 focus:outline-none resize-none text-lg font-sans placeholder:text-gray-400"
-                          rows={2}
-                          maxLength={2000}
-                          style={{ 
-                            wordBreak: 'break-all', 
-                            overflowWrap: 'break-word',
-                            hyphens: 'auto',
-                            WebkitHyphens: 'auto',
-                            overflow: 'hidden',
-                            whiteSpace: 'pre-wrap'
-                          }}
-                    />
+              {commentsLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  {/* Yellow bouncing ball loader (same as auth modals) */}
+                  <div className="h-12 w-12 bg-[#FFE066] border-4 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] animate-bounce-subtle relative">
+                    <div className="absolute top-1.5 left-1.5 w-2 h-2 bg-white/40 rounded-full"></div>
                   </div>
-                      <div className="flex items-end pb-2 gap-2">
-                        <input
-                          type="file"
-                          id="comment-image-upload"
-                          accept="image/*"
-                          onChange={handleImageSelect}
-                          className="hidden"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => document.getElementById('comment-image-upload')?.click()}
-                          className="p-3 text-gray-500 hover:text-black dark:hover:text-white transition-colors"
-                          title="Resim ekle"
-                        >
-                          <ImageIcon className="w-5 h-5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
-                          className={`p-3 transition-colors ${
-                            showVoiceRecorder || commentAudio
-                              ? 'text-red-500 hover:text-red-600'
-                              : 'text-gray-500 hover:text-black dark:hover:text-white'
-                          }`}
-                          title="Ses kaydı"
-                        >
-                          <Mic className="w-5 h-5" />
-                        </button>
-                  <button
-                    type="submit"
-                    disabled={submittingComment || (!commentContent.trim() && !commentAudio && !commentImage)}
-                          className="p-3 bg-black dark:bg-white text-white dark:text-black rounded-lg disabled:opacity-50 hover:scale-105 transition-transform"
-                        >
-                          <Send className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {showVoiceRecorder && !commentAudio && (
-                      <div className="mt-2">
-                        <VoiceRecorder
-                          onRecordingComplete={handleRecordingComplete}
-                          onCancel={handleCancelRecording}
-                          maxDuration={120}
-                        />
-                      </div>
-                    )}
-                    
-                    {commentAudioUrl && commentAudio && (
-                      <div className="mt-2">
-                        <AudioPlayer 
-                          key={`${commentAudioUrl}-${commentAudioDuration}`}
-                          audioUrl={commentAudioUrl} 
-                          duration={commentAudioDuration} 
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCommentAudio(null);
-                            if (commentAudioUrl) {
-                              URL.revokeObjectURL(commentAudioUrl);
-                              setCommentAudioUrl(null);
-                            }
-                          }}
-                          className="mt-2 text-xs text-red-500 hover:text-red-600"
-                        >
-                          Kaydı Sil
-                        </button>
-                      </div>
-                    )}
-                    
-                    {commentImagePreview && (
-                      <div className="relative inline-block self-start mt-2 ml-3">
-                        <img 
-                          src={commentImagePreview} 
-                          alt="Preview" 
-                          className="h-20 rounded-lg border border-gray-200 dark:border-gray-800"
-                        />
-                        <button
-                          type="button"
-                          onClick={removeCommentImage}
-                          className="absolute -top-2 -right-2 p-0.5 bg-red-500 text-white rounded-full border border-white hover:bg-red-600 transition-colors"
-                        >
-                          <X className="w-3 h-3" />
-                  </button>
-                      </div>
-                    )}
-                  </form>
                 </div>
+              ) : (
+                <>
+                  <h3 className="font-display font-bold text-xl text-black dark:text-white flex items-center gap-2">
+                    Yorumlar 
+                    <span className="px-2 py-0.5 bg-gray-200 dark:bg-gray-800 rounded-full text-sm">{commentCount}</span>
+                  </h3>
 
-              {/* Comments List */}
-                <div className="space-y-4 pb-8">
-                {post.comments.length === 0 ? (
+                  {/* Comment Form */}
+                  <div className="bg-white dark:bg-[#151515] border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4" style={{borderColor: 'var(--border-color)'}}>
+                    <form onSubmit={handleSubmitComment} className="flex flex-col gap-2">
+                      <div className="flex gap-4">
+                        <div className="flex-1 min-w-0">
+                          <textarea
+                            value={commentContent}
+                            onChange={(e) => setCommentContent(e.target.value)}
+                            placeholder="Yorum yaz..."
+                            className="w-full p-3 bg-transparent border-none focus:ring-0 focus:outline-none resize-none text-lg font-sans placeholder:text-gray-400"
+                            rows={2}
+                            maxLength={2000}
+                            style={{ 
+                              wordBreak: 'break-all', 
+                              overflowWrap: 'break-word',
+                              hyphens: 'auto',
+                              WebkitHyphens: 'auto',
+                              overflow: 'hidden',
+                              whiteSpace: 'pre-wrap'
+                            }}
+                          />
+                        </div>
+                        <div className="flex items-end pb-2 gap-2">
+                          <input
+                            type="file"
+                            id="comment-image-upload"
+                            accept="image/*"
+                            onChange={handleImageSelect}
+                            className="hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => document.getElementById('comment-image-upload')?.click()}
+                            className="p-3 text-gray-500 hover:text-black dark:hover:text-white transition-colors"
+                            title="Resim ekle"
+                          >
+                            <ImageIcon className="w-5 h-5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
+                            className={`p-3 transition-colors ${
+                              showVoiceRecorder || commentAudio
+                                ? 'text-red-500 hover:text-red-600'
+                                : 'text-gray-500 hover:text-black dark:hover:text-white'
+                            }`}
+                            title="Ses kaydı"
+                          >
+                            <Mic className="w-5 h-5" />
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={submittingComment || (!commentContent.trim() && !commentAudio && !commentImage)}
+                            className="p-3 bg-black dark:bg-white text-white dark:text-black rounded-lg disabled:opacity-50 hover:scale-105 transition-transform"
+                          >
+                            <Send className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {showVoiceRecorder && !commentAudio && (
+                        <div className="mt-2">
+                          <VoiceRecorder
+                            onRecordingComplete={handleRecordingComplete}
+                            onCancel={handleCancelRecording}
+                            maxDuration={120}
+                          />
+                        </div>
+                      )}
+                      
+                      {commentAudioUrl && commentAudio && (
+                        <div className="mt-2">
+                          <AudioPlayer 
+                            key={`${commentAudioUrl}-${commentAudioDuration}`}
+                            audioUrl={commentAudioUrl} 
+                            duration={commentAudioDuration} 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCommentAudio(null);
+                              if (commentAudioUrl) {
+                                URL.revokeObjectURL(commentAudioUrl);
+                                setCommentAudioUrl(null);
+                              }
+                            }}
+                            className="mt-2 text-xs text-red-500 hover:text-red-600"
+                          >
+                            Kaydı Sil
+                          </button>
+                        </div>
+                      )}
+                      
+                      {commentImagePreview && (
+                        <div className="relative inline-block self-start mt-2 ml-3">
+                          <img 
+                            src={commentImagePreview} 
+                            alt="Preview" 
+                            className="h-20 rounded-lg border border-gray-200 dark:border-gray-800"
+                          />
+                          <button
+                            type="button"
+                            onClick={removeCommentImage}
+                            className="absolute -top-2 -right-2 p-0.5 bg-red-500 text-white rounded-full border border-white hover:bg-red-600 transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </form>
+                  </div>
+
+                  {/* Comments List */}
+                  <div className="space-y-4 pb-8">
+                  {comments.length === 0 ? (
                     <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl">
                       <MessageSquare className="h-8 w-8 mx-auto text-gray-400 mb-2" />
                     <p className="text-gray-500 font-medium">Henüz yorum yapılmadı. </p>
                     </div>
                 ) : (
-                    post.comments.map((comment) => {
+                    comments.map((comment) => {
                       const isCommentAuthor = session?.user?.id === comment.authorId;
                       const isCommentDeleted = comment.content?.trim().toLowerCase() === 'silinmiş';
                       return (
@@ -976,6 +1000,8 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                     })
                 )}
               </div>
+                </>
+              )}
             </div>
           </div>
         ) : (

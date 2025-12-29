@@ -18,6 +18,10 @@ export async function GET(
       )
     }
 
+    const url = new URL(request.url)
+    const includeCommentsParam = url.searchParams.get('includeComments')
+    const includeComments = includeCommentsParam !== '0' && includeCommentsParam !== 'false'
+
     const resolvedParams = await params
     
     // Validate post ID
@@ -46,20 +50,24 @@ export async function GET(
             shortName: true,
           },
         },
-        comments: {
-          include: {
-            author: {
-              select: {
-                // name and email removed for privacy
-                gender: true,
-                customColor: true,
+        ...(includeComments
+          ? {
+              comments: {
+                include: {
+                  author: {
+                    select: {
+                      // name and email removed for privacy
+                      gender: true,
+                      customColor: true,
+                    },
+                  },
+                },
+                orderBy: {
+                  createdAt: "asc",
+                },
               },
-            },
-          },
-          orderBy: {
-            createdAt: "asc",
-          },
-        },
+            }
+          : {}),
         _count: {
           select: {
             comments: true,
