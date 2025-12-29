@@ -1089,8 +1089,8 @@ export default function Home() {
             localStorage.setItem('activeTab', 'my-activity')
           }
           
-          setPostSource(null)
-          setPostSourceUniversityId(null)
+        setPostSource(null)
+        setPostSourceUniversityId(null)
           setPostSourceTab(null)
           
           // Don't refresh posts data when going back to prevent reordering
@@ -1139,7 +1139,7 @@ export default function Home() {
           
           // Only load data if session is ready
           if (universityId !== selectedUniversity?.id && status === 'authenticated' && session) {
-            handleUniversityClick(universityId)
+          handleUniversityClick(universityId)
           } else if (status === 'unauthenticated') {
             // User is not authenticated - show auth modal
             setShowAuthModal(true)
@@ -1372,7 +1372,7 @@ export default function Home() {
     // Update both states simultaneously to prevent glitch
     setSelectedPostId(postId)
     setShowPostDetail(true)
-
+    
     // Save current list scroll position so back returns to where user left off
     lastMainScrollTopRef.current = mainScrollRef.current?.scrollTop ?? 0
     shouldRestoreMainScrollOnBackRef.current = true
@@ -1564,7 +1564,7 @@ export default function Home() {
         setBaseTabTitle()
       }
       window.history.back()
-          } else {
+              } else {
       // If no postId, use browser back to go through history
       window.history.back()
       
@@ -1882,7 +1882,7 @@ export default function Home() {
     if (isMobile) {
       setIsMobileMenuOpen(false)
     }
-
+    
     // Reset to main page view (synchronously, before navigation)
     setShowUniversityBoard(false)
     setShowPostDetail(false)
@@ -2109,7 +2109,7 @@ export default function Home() {
                   </button>
                 </div>
               </div>
-
+              
               {/* Mobile Universities Content - Static */}
               <div className="flex-1 overflow-y-auto overscroll-none p-4 pb-0">
                 <UniversitySidebar onUniversityClick={handleUniversityClick} isMobile={true} />

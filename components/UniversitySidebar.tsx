@@ -196,33 +196,39 @@ export default function UniversitySidebar({ onUniversityClick, isMobile = false 
 
   if (isCollapsed && !isMobile && session) {
     return (
-      <div className={`w-0 bg-transparent border-0 flex flex-col h-[calc(100vh-64px)] relative overflow-visible pointer-events-none ${session ? 'sidebar-transition' : ''}`}>
+      <div
+        className={`w-0 bg-transparent border-0 flex flex-col h-[calc(100vh-64px)] relative overflow-visible pointer-events-none z-[9999] ${session ? 'sidebar-transition' : ''}`}
+      >
         {session && (
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="absolute -right-6 top-1/2 -translate-y-1/2 p-2 bg-white dark:bg-[#121212] border-2 border-black rounded-full brutal-shadow-sm hover:brutal-shadow transition-all duration-150 z-20 pointer-events-auto"
-            style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-[45%] w-4 h-9 bg-white/90 dark:bg-[#121212]/90 border border-black rounded-l-none rounded-tr-full rounded-br-full shadow-[1px_1px_0px_0px_rgba(0,0,0,0.16)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,0.20)] transition-all duration-150 z-[9999] pointer-events-auto flex items-center justify-center cursor-pointer"
+            style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}
             title="Expand sidebar"
-          >
-            <ChevronLeft className="h-3 w-3 text-black dark:text-white rotate-180 transition-transform" />
-          </button>
+          />
         )}
       </div>
     );
   }
 
   return (
-    <div className={`${isMobile ? 'w-full' : 'w-80 brutal-sidebar'} flex flex-col ${isMobile ? 'h-full' : 'h-[calc(100vh-64px)]'} relative ${isMobile ? '' : (session ? 'sidebar-transition' : '')} ${isMobile ? '' : 'overflow-y-auto overflow-x-hidden overscroll-none'}`}>
+    <div
+      className={`${isMobile ? 'w-full' : 'w-80 brutal-sidebar'} flex flex-col ${
+        isMobile ? 'h-full' : 'h-[calc(100vh-64px)]'
+      } relative ${isMobile ? '' : (session ? 'sidebar-transition' : '')} ${
+        // IMPORTANT: Keep wrapper overflow visible so the collapse/expand button
+        // can sit "outside" the sidebar edge symmetrically.
+        isMobile ? '' : 'overflow-visible overscroll-none z-[9998]'
+      }`}
+    >
       {/* Arrow Button on Edge (static icon, rotates via CSS) - Hidden on Mobile and for non-logged-in users */}
       {!isMobile && session && (
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-6 top-1/2 -translate-y-1/2 p-2 bg-white dark:bg-[#121212] border-2 border-black rounded-full brutal-shadow-sm hover:brutal-shadow transition-all duration-150 z-20"
-          style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}
+          className="absolute right-[-2px] top-1/2 -translate-y-1/2 translate-x-full w-[8px] h-7 bg-white/90 dark:bg-[#121212]/90 border border-black border-l-0 rounded-l-none rounded-tr-full rounded-br-full shadow-[1px_1px_0px_0px_rgba(0,0,0,0.16)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,0.20)] transition-all duration-150 z-[9999] flex items-center justify-center cursor-pointer"
+          style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}
           title="Collapse sidebar"
-        >
-          <ChevronLeft className={`h-3 w-3 text-black dark:text-white transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />
-        </button>
+        />
       )}
 
       {/* Header */}
