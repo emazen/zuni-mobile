@@ -51,7 +51,7 @@ interface PostDetailViewProps {
   onGoBack: (universityId?: string) => void;
   onCommentAdded?: () => void;
   onPostDeleted?: () => void;
-  onUniversityClick?: (universityId: string) => void;
+  onUniversityClick?: (universityId: string, options?: { forceReload?: boolean }) => void;
 }
 
 export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPostDeleted, onUniversityClick }: PostDetailViewProps) {
@@ -629,7 +629,8 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
                     e.stopPropagation()
                     if (post?.university?.id) {
                       if (onUniversityClick) {
-                        onUniversityClick(post.university.id)
+                        // Always refresh the board when navigating via this tag
+                        onUniversityClick(post.university.id, { forceReload: true })
                       } else {
                       router.push(`/?university=${post.university.id}`)
                       }

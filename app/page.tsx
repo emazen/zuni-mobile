@@ -75,6 +75,10 @@ export default function Home() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { theme, effectiveTheme, toggleTheme } = useTheme()
+  const mainScrollRef = useRef<HTMLDivElement | null>(null)
+  const lastMainScrollTopRef = useRef<number>(0)
+  const shouldRestoreMainScrollOnBackRef = useRef<boolean>(false)
+  const [isRestoringMainScroll, setIsRestoringMainScroll] = useState(false)
   const [posts, setPosts] = useState<Post[]>([])
   const [subscribedPostsLoaded, setSubscribedPostsLoaded] = useState(false)
   const [allPosts, setAllPosts] = useState<Post[]>([])
@@ -928,12 +932,26 @@ export default function Home() {
       setIsNavigatingBack(true)
       // Keep tab title constant
       setBaseTabTitle()
+
+      // If we're leaving post detail back to a list, hide content until scroll is restored
+      if (!postParam && shouldRestoreMainScrollOnBackRef.current) {
+        setIsRestoringMainScroll(true)
+      }
       
       if (path === '/') {
         if (postParam) {
           // Going back to a post detail view
           setSelectedPostId(postParam)
           setShowPostDetail(true)
+          // Ensure post detail starts from top (not prior list scroll position)
+          requestAnimationFrame(() => {
+            try {
+              mainScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+            } catch {
+              if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0
+              window.scrollTo(0, 0)
+            }
+          })
           if (universityParam) {
             setPostSource('university')
             setPostSourceUniversityId(universityParam)
@@ -968,6 +986,20 @@ export default function Home() {
           }
           // If status is still loading, restore state but don't load data yet
           // The useEffect will handle loading when session is ready
+
+          // Restore list scroll position when returning from post detail
+          if (shouldRestoreMainScrollOnBackRef.current) {
+            const top = lastMainScrollTopRef.current
+            requestAnimationFrame(() => {
+              try {
+                mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
+              } catch {
+                if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
+              }
+              setIsRestoringMainScroll(false)
+              shouldRestoreMainScrollOnBackRef.current = false
+            })
+          }
         } else {
           // Going back to main page
           // Only update state, don't trigger full reload
@@ -995,6 +1027,20 @@ export default function Home() {
           
           // Don't refresh posts data when going back to prevent reordering
           // Posts are already loaded and visible
+
+          // Restore list scroll position when returning from post detail
+          if (shouldRestoreMainScrollOnBackRef.current) {
+            const top = lastMainScrollTopRef.current
+            requestAnimationFrame(() => {
+              try {
+                mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
+              } catch {
+                if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
+              }
+              setIsRestoringMainScroll(false)
+              shouldRestoreMainScrollOnBackRef.current = false
+            })
+          }
         }
       } else if (path.startsWith('/university/')) {
         const universityId = path.split('/')[2]
@@ -1012,6 +1058,20 @@ export default function Home() {
             setShowAuthModal(true)
           }
           // If status is still loading, state is restored and useEffect will handle loading
+
+          // Restore list scroll position when returning from post detail
+          if (shouldRestoreMainScrollOnBackRef.current) {
+            const top = lastMainScrollTopRef.current
+            requestAnimationFrame(() => {
+              try {
+                mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
+              } catch {
+                if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
+              }
+              setIsRestoringMainScroll(false)
+              shouldRestoreMainScrollOnBackRef.current = false
+            })
+          }
         }
       }
       
@@ -1197,6 +1257,22 @@ export default function Home() {
     // Update both states simultaneously to prevent glitch
     setSelectedPostId(postId)
     setShowPostDetail(true)
+
+    // Save current list scroll position so back returns to where user left off
+    lastMainScrollTopRef.current = mainScrollRef.current?.scrollTop ?? 0
+    shouldRestoreMainScrollOnBackRef.current = true
+
+    // Mobile: ensure post detail opens from top (not current list scroll position)
+    // We scroll the main scroll container (not the window) because the app uses an inner overflow container.
+    requestAnimationFrame(() => {
+      try {
+        mainScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      } catch {
+        // Fallbacks for older browsers / edge cases
+        if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0
+        window.scrollTo(0, 0)
+      }
+    })
     
     // Update URL using router.push to create history entry for back navigation
     // State is already updated above, so this just updates the URL
@@ -1290,6 +1366,10 @@ export default function Home() {
     
     // Immediately clear post detail state BEFORE navigation
     // This ensures the view switches immediately
+    // Hide the list briefly so we can restore scroll without a visible "jump to top"
+    if (shouldRestoreMainScrollOnBackRef.current) {
+      setIsRestoringMainScroll(true)
+    }
     setShowPostDetail(false)
     setSelectedPostId(null)
     setPostSource(null)
@@ -1409,7 +1489,10 @@ export default function Home() {
     localStorage.setItem('activeTab', tab)
   }
 
-  const handleUniversityClick = async (universityId: string) => {
+  const handleUniversityClick = async (
+    universityId: string,
+    options?: { forceReload?: boolean }
+  ) => {
     // Close mobile menu when clicking a board (mobile only)
     if (isMobile) {
       setIsMobileMenuOpen(false)
@@ -1427,8 +1510,40 @@ export default function Home() {
       return
     }
 
-    // If already showing this university board, don't reload
-    if (showUniversityBoard && selectedUniversity?.id === universityId && !universityLoading) {
+    // If user clicks the same university while in post detail, just return to the board
+    // without refetching/reloading (mobile app feeling).
+    if (selectedUniversity?.id === universityId && !options?.forceReload) {
+      // If we're currently in post detail (or board hidden), restore board view immediately.
+      if (showPostDetail || !showUniversityBoard) {
+        setIsNavigatingBack(true)
+        setShowUniversityBoard(true)
+        setShowPostDetail(false)
+        setSelectedPostId(null)
+        setPostSource(null)
+        setPostSourceUniversityId(null)
+        setPostSourceTab(null)
+        setUniversityLoading(false)
+
+        // Ensure URL points to the board (but don't create duplicate history entry if already there)
+        const targetUrl = `/?university=${universityId}`
+        if (typeof window !== 'undefined' && window.location.search.includes('post=')) {
+          router.push(targetUrl, { scroll: false })
+        }
+
+        setTimeout(() => setIsNavigatingBack(false), 100)
+      }
+
+      console.log('✅ Same university clicked; restored board without reload')
+      return
+    }
+
+    // If already showing this university board, don't reload unless explicitly forced
+    if (
+      showUniversityBoard &&
+      selectedUniversity?.id === universityId &&
+      !universityLoading &&
+      !options?.forceReload
+    ) {
       console.log('✅ Already showing this university board, skipping reload')
       return
     }
@@ -1795,7 +1910,11 @@ export default function Home() {
           <UniversitySidebar onUniversityClick={handleUniversityClick} />
         )}
         
-        <div className={`flex-1 ${isMobile ? 'overflow-y-auto h-full pb-0' : 'overflow-y-auto h-full'}`} style={{backgroundColor: 'var(--bg-primary)'}}>
+        <div
+          ref={mainScrollRef}
+          className={`flex-1 ${isMobile ? 'overflow-y-auto h-full pb-0' : 'overflow-y-auto h-full'} ${isRestoringMainScroll ? 'invisible pointer-events-none' : ''}`}
+          style={{backgroundColor: 'var(--bg-primary)'}}
+        >
           {/* Mobile Universities Full Page - No Sliding */}
           {isMobile && isMobileMenuOpen ? (
             <div className="h-full flex flex-col" style={{backgroundColor: 'var(--bg-primary)'}}>
