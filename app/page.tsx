@@ -216,10 +216,12 @@ export default function Home() {
     }
     return false
   })
+  const [isUniversityRefreshing, setIsUniversityRefreshing] = useState(false)
   // Track the latest requested university ID to prevent race conditions
   const latestUniversityRequestRef = useRef<string | null>(null)
   // AbortController to cancel previous requests when a new one is initiated
   const abortControllerRef = useRef<AbortController | null>(null)
+  const universityRefreshAbortControllerRef = useRef<AbortController | null>(null)
   // Track if a request is currently in progress to prevent duplicate requests
   const isRequestInProgressRef = useRef<boolean>(false)
   const [isRedirecting, setIsRedirecting] = useState(false)
@@ -357,6 +359,122 @@ export default function Home() {
       return b.createdAtTime - a.createdAtTime
     }).map(item => item.post)
   }, [userActivity?.postsWithUserComments, postViewTimestamps])
+
+  const sortedUniversityPosts = useMemo(() => {
+    if (!universityPosts || universityPosts.length === 0) return []
+
+    // Pre-compute values once to avoid repeated Date parsing
+    const postsWithMeta = universityPosts.map(post => ({
+      post,
+      createdAtTime: new Date(post.createdAt).getTime(),
+      commentCount: post._count?.comments || 0,
+    }))
+
+    postsWithMeta.sort((a, b) => {
+      if (sortBy === 'newest') {
+        return b.createdAtTime - a.createdAtTime
+      }
+      return b.commentCount - a.commentCount
+    })
+
+    return postsWithMeta.map(x => x.post)
+  }, [universityPosts, sortBy])
+
+  const getUniversityCacheKey = (universityId: string) => `universityBoardCache_${universityId}`
+
+  const readUniversityBoardCache = (universityId: string) => {
+    if (typeof window === 'undefined') return null
+    try {
+      const raw = sessionStorage.getItem(getUniversityCacheKey(universityId))
+      if (!raw) return null
+      return JSON.parse(raw) as {
+        university: { id: string; name: string; shortName: string; city: string; type: 'public' | 'private' }
+        posts: Post[]
+        cachedAt: number
+      }
+    } catch {
+      return null
+    }
+  }
+
+  const writeUniversityBoardCache = (
+    universityId: string,
+    university: { id: string; name: string; shortName: string; city: string; type: 'public' | 'private' },
+    posts: Post[]
+  ) => {
+    if (typeof window === 'undefined') return
+    try {
+      sessionStorage.setItem(
+        getUniversityCacheKey(universityId),
+        JSON.stringify({ university, posts, cachedAt: Date.now() })
+      )
+    } catch {
+      // ignore quota / serialization errors
+    }
+  }
+
+  const hydrateUniversityBoardFromCache = (universityId: string) => {
+    const cached = readUniversityBoardCache(universityId)
+    if (!cached) return false
+
+    setShowUniversityBoard(true)
+    setShowPostDetail(false)
+    setSelectedPostId(null)
+    setPostSource(null)
+    setPostSourceUniversityId(null)
+    setSelectedUniversity(cached.university)
+    setUniversityPosts(cached.posts || [])
+    setUniversityLoading(false)
+    return true
+  }
+
+  const refreshUniversityBoard = async (universityId: string, showLoading: boolean) => {
+    if (status === 'loading') return
+    if (status === 'unauthenticated' || !session) return
+
+    // Cancel any previous background refresh for university board
+    if (universityRefreshAbortControllerRef.current) {
+      universityRefreshAbortControllerRef.current.abort()
+    }
+    const abortController = new AbortController()
+    universityRefreshAbortControllerRef.current = abortController
+
+    if (showLoading) {
+      setUniversityLoading(true)
+    } else {
+      setIsUniversityRefreshing(true)
+    }
+
+    try {
+      const [universityResponse, postsResponse] = await Promise.all([
+        fetch(`/api/universities/${universityId}`, { signal: abortController.signal }),
+        fetch(`/api/universities/${universityId}/posts`, { signal: abortController.signal }),
+      ])
+
+      if (!universityResponse.ok || !postsResponse.ok) return
+
+      const university = await universityResponse.json()
+      const posts = await postsResponse.json()
+
+      const uniObj = {
+        id: university.id,
+        name: university.name,
+        shortName: university.shortName,
+        city: university.city,
+        type: university.type,
+      } as const
+
+      setSelectedUniversity(uniObj)
+      setUniversityPosts(posts)
+      writeUniversityBoardCache(universityId, uniObj, posts)
+    } catch (error: any) {
+      if (error?.name === 'AbortError') return
+      console.error('Error refreshing university board:', error)
+    } finally {
+      setIsUniversityRefreshing(false)
+      setUniversityLoading(false)
+    }
+  }
 
   // Reset carousel index when userActivity changes
   useEffect(() => {
@@ -704,13 +822,13 @@ export default function Home() {
     const navigatingFromCreatePost = typeof window !== 'undefined' 
       ? sessionStorage.getItem('navigatingToUniversity')
       : null
-    
-    // If navigating from create-post, don't wait for initial data fetch
-    // This allows immediate navigation to university board
-    if (!navigatingFromCreatePost && loading) return
-    
+
     const urlParams = new URLSearchParams(window.location.search)
     const universityIdFromUrl = urlParams.get('university')
+
+    // If we're landing directly on a university board (refresh / deep link),
+    // DON'T wait for main feed loading — load the board immediately in parallel.
+    if (!navigatingFromCreatePost && loading && !universityIdFromUrl) return
     
     // Clear the navigation flag if it matches
     if (navigatingFromCreatePost && universityIdFromUrl === navigatingFromCreatePost) {
@@ -723,96 +841,29 @@ export default function Home() {
     // 3. We're not navigating back (prevents state conflicts and data refresh)
     // 4. We haven't already loaded the university board data (avoid duplicate loads)
     if (universityIdFromUrl && !postId && !isNavigatingBack) {
+      const wasAlreadyShowingThisUniversity =
+        showUniversityBoard && selectedUniversity?.id === universityIdFromUrl
+
+      // Try to hydrate instantly from cache so refresh feels instant
+      const hydratedFromCache =
+        (!selectedUniversity || selectedUniversity.id !== universityIdFromUrl)
+          ? hydrateUniversityBoardFromCache(universityIdFromUrl)
+          : false
+
       // If we're already showing this university board, don't refresh data
       // This prevents posts from reordering when going back
-      if (showUniversityBoard && selectedUniversity?.id === universityIdFromUrl) {
+      if (wasAlreadyShowingThisUniversity) {
         // Already showing this university - don't refresh
         return
       }
       
-      if (showUniversityBoard && universityLoading && selectedUniversity?.id !== universityIdFromUrl) {
-        // We're showing university board but need to load different university
-        // Load data directly
-        const loadUniversityData = async () => {
-          try {
-            const [universityResponse, postsResponse] = await Promise.all([
-              fetch(`/api/universities/${universityIdFromUrl}`),
-              fetch(`/api/universities/${universityIdFromUrl}/posts`)
-            ])
-            
-            if (universityResponse.ok && postsResponse.ok) {
-              const university = await universityResponse.json()
-              const posts = await postsResponse.json()
-              
-              setSelectedUniversity({
-                id: university.id,
-                name: university.name,
-                shortName: university.shortName,
-                city: university.city,
-                type: university.type
-              })
-              setUniversityPosts(posts)
-              setUniversityLoading(false)
-            } else {
-              // Error loading - go back to main page
-              setShowUniversityBoard(false)
-              setUniversityLoading(false)
-            }
-          } catch (error) {
-            console.error('Error loading university data:', error)
-            setShowUniversityBoard(false)
-            setUniversityLoading(false)
-          }
-        }
-        loadUniversityData()
-      } else if (!showUniversityBoard || !selectedUniversity) {
-        // Not showing university board OR no university loaded - load it
-        // If navigating from create-post, show board immediately
-        if (navigatingFromCreatePost) {
-          setShowUniversityBoard(true)
-          setUniversityLoading(true)
-          // Load university data immediately without waiting
-          const loadUniversityData = async () => {
-            try {
-              const [universityResponse, postsResponse] = await Promise.all([
-                fetch(`/api/universities/${universityIdFromUrl}`),
-                fetch(`/api/universities/${universityIdFromUrl}/posts`)
-              ])
-              
-              if (universityResponse.ok && postsResponse.ok) {
-                const university = await universityResponse.json()
-                const posts = await postsResponse.json()
-                
-                setSelectedUniversity({
-                  id: university.id,
-                  name: university.name,
-                  shortName: university.shortName,
-                  city: university.city,
-                  type: university.type
-                })
-                setUniversityPosts(posts)
-                setUniversityLoading(false)
-              } else {
-                setUniversityLoading(false)
-              }
-            } catch (error) {
-              console.error('Error loading university data:', error)
-              setUniversityLoading(false)
-            }
-          }
-          loadUniversityData()
-        } else {
-          // Don't call handleUniversityClick if we're navigating back
-          // This prevents duplicate loads and state conflicts
-          if (!isNavigatingBack) {
-            setShowUniversityBoard(true)
-            if (!selectedUniversity || selectedUniversity.id !== universityIdFromUrl) {
-              setUniversityLoading(true)
-              handleUniversityClick(universityIdFromUrl)
-            }
-          }
-        }
-      }
+      // Ensure university board is shown immediately
+      setShowUniversityBoard(true)
+
+      // If navigating from create-post, allow showing loading spinner.
+      // Otherwise prefer background refresh (like main screen refresh).
+      const shouldShowLoading = !!navigatingFromCreatePost && !hydratedFromCache
+      refreshUniversityBoard(universityIdFromUrl, shouldShowLoading)
     }
   }, [postId, status, session, loading, showUniversityBoard, selectedUniversity, isNavigatingBack, universityLoading])
 
@@ -1357,6 +1408,13 @@ export default function Home() {
           type: university.type
         })
         setUniversityPosts(posts)
+        writeUniversityBoardCache(universityId, {
+          id: university.id,
+          name: university.name,
+          shortName: university.shortName,
+          city: university.city,
+          type: university.type
+        }, posts)
       } else {
         // Only handle error if this is still the latest request
         if (latestUniversityRequestRef.current !== universityId) {
@@ -1801,19 +1859,7 @@ export default function Home() {
 
                      <div className="pb-6">
                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                     {universityPosts
-                       .sort((a, b) => {
-                         if (sortBy === 'newest') {
-                           // Sort by creation time (newest first)
-                           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                         } else {
-                           // Sort by comment count (most commented first)
-                           const aComments = a._count?.comments || 0
-                           const bComments = b._count?.comments || 0
-                           return bComments - aComments
-                         }
-                       })
-                       .map((post) => (
+                     {sortedUniversityPosts.map((post) => (
                        <PostCard 
                          key={post.id} 
                          post={post} 
