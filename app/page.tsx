@@ -272,6 +272,39 @@ export default function Home() {
       el.removeEventListener('scroll', onScroll as any)
     }
   }, [showUniversityBoard, showPostDetail, selectedUniversity?.id, isRestoringMainScroll, loading, universityLoading])
+
+  // Fix mobile scroll stuck issue: Reset scroll position when loading finishes
+  // This prevents the page from being stuck in a non-existent scroll area
+  useEffect(() => {
+    if (!isMobile) return
+    
+    const el = mainScrollRef.current
+    if (!el) return
+    
+    // When loading starts, reset scroll to prevent getting stuck
+    if (loading || universityLoading) {
+      // Reset scroll to top when loading starts to prevent stuck state
+      requestAnimationFrame(() => {
+        el.scrollTo({ top: 0, behavior: 'auto' })
+      })
+      return
+    }
+    
+    // When loading finishes, ensure scroll position is valid
+    // Use requestAnimationFrame to ensure DOM has updated with new content
+    requestAnimationFrame(() => {
+      const scrollHeight = el.scrollHeight
+      const clientHeight = el.clientHeight
+      const scrollTop = el.scrollTop
+      const maxScroll = Math.max(0, scrollHeight - clientHeight)
+      
+      // If scroll position is beyond the actual content height, reset to max scrollable position
+      if (scrollTop > maxScroll) {
+        el.scrollTo({ top: maxScroll, behavior: 'auto' })
+      }
+    })
+  }, [loading, universityLoading, isMobile, showUniversityBoard, showPostDetail])
+
   const [isUniversityRefreshing, setIsUniversityRefreshing] = useState(false)
   // Track the latest requested university ID to prevent race conditions
   const latestUniversityRequestRef = useRef<string | null>(null)
@@ -1979,7 +2012,7 @@ export default function Home() {
   return (
     <div className="h-screen overflow-hidden" style={{backgroundColor: 'var(--bg-primary)'}}>
       {/* Header */}
-      <header className={`brutal-header ${isMobile ? 'fixed top-0 left-0 right-0 z-50' : 'relative'}`}>
+      <header className={`brutal-header ${isMobile ? 'fixed top-0 left-0 right-0 z-[60]' : 'relative'}`}>
         <div className="w-full px-2 sm:px-4">
           <div className="flex justify-between items-center h-14">
             {/* Logo */}
@@ -2023,7 +2056,7 @@ export default function Home() {
                       
                       {/* Dropdown Menu */}
                       {isMenuOpen && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white border-2 border-black brutal-shadow z-50 user-menu-dropdown" style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}>
+                        <div className="absolute right-0 mt-2 w-48 bg-white border-2 border-black brutal-shadow z-[70] user-menu-dropdown" style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}>
                           <div className="px-4 py-3 border-b-2 border-black" style={{borderColor: 'var(--border-color)'}}>
                               <div className="flex items-center space-x-2">
                                 <div className="w-8 h-8 bg-yellow-300 rounded-full flex items-center justify-center border-2 border-black" style={{borderColor: 'var(--border-color)'}}>
@@ -2127,7 +2160,7 @@ export default function Home() {
           {/* Mobile Universities Menu as full-page overlay (no unmount/reload) */}
           {isMobile && isMobileMenuOpen && (
             <div
-              className="fixed inset-0 top-14 z-50 flex flex-col"
+              className="fixed inset-0 top-[58px] z-40 flex flex-col"
               style={{backgroundColor: 'var(--bg-primary)'}}
             >
               {/* Mobile Universities Header */}
