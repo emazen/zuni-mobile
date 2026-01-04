@@ -2149,12 +2149,19 @@ export default function Home() {
           ref={mainScrollRef}
           className={`relative flex-1 ${
             isMobile
-              ? (isMobileMenuOpen ? 'overflow-hidden h-full pb-0' : (loading || universityLoading) ? 'overflow-hidden h-full pb-0' : 'overflow-y-auto h-full pb-0')
+              ? (isMobileMenuOpen 
+                  ? 'overflow-hidden h-full pb-0' 
+                  : (loading || universityLoading || (activeTab === 'subscribed' && !subscribedPostsLoaded) || (activeTab === 'trending' && !allPostsLoaded) || (activeTab === 'my-activity' && loading && !userActivity))
+                    ? 'overflow-hidden h-full pb-0' 
+                    : 'overflow-y-auto h-full pb-0')
               : 'overflow-y-auto h-full'
           } ${isRestoringMainScroll ? 'invisible pointer-events-none' : ''}`}
           style={{
             backgroundColor: 'var(--bg-primary)',
-            ...(isMobile && (loading || universityLoading) && { touchAction: 'none', overscrollBehavior: 'none' })
+            ...(isMobile && (loading || universityLoading || (activeTab === 'subscribed' && !subscribedPostsLoaded) || (activeTab === 'trending' && !allPostsLoaded) || (activeTab === 'my-activity' && loading && !userActivity)) && { 
+              touchAction: 'none', 
+              overscrollBehavior: 'none'
+            })
           }}
         >
           {/* Mobile Universities Menu as full-page overlay (no unmount/reload) */}
