@@ -244,7 +244,7 @@ export default function AuthModalCombined({ isOpen, onClose, initialMode = 'sign
   if (!isMounted) return null
 
   return (
-    <div className={`fixed inset-0 z-50 ${isMobile ? 'flex items-end' : 'flex items-center justify-center'}`}>
+    <div className={`fixed inset-0 z-[10000] ${isMobile ? 'flex items-end' : 'flex items-center justify-center'}`}>
       {/* Backdrop */}
       <div 
         className={`absolute inset-0 bg-black/50 transition-opacity ease-out ${isMobile ? 'duration-200' : 'duration-100'}`}

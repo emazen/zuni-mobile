@@ -241,6 +241,8 @@ export default function Home() {
         if (showPostDetail) return
         // Don't persist while we're actively restoring scroll (prevents overwriting saved positions)
         if (isRestoringMainScroll) return
+        // Don't persist scroll during loading states (prevents buggy scroll behavior on mobile)
+        if (loading || universityLoading) return
 
         const top = el.scrollTop ?? 0
 
@@ -269,7 +271,7 @@ export default function Home() {
       if (rafId !== null) window.cancelAnimationFrame(rafId)
       el.removeEventListener('scroll', onScroll as any)
     }
-  }, [showUniversityBoard, showPostDetail, selectedUniversity?.id, isRestoringMainScroll])
+  }, [showUniversityBoard, showPostDetail, selectedUniversity?.id, isRestoringMainScroll, loading, universityLoading])
   const [isUniversityRefreshing, setIsUniversityRefreshing] = useState(false)
   // Track the latest requested university ID to prevent race conditions
   const latestUniversityRequestRef = useRef<string | null>(null)
@@ -285,6 +287,7 @@ export default function Home() {
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin')
   const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [myPostsIndex, setMyPostsIndex] = useState(0)
+  const [justCreatedMyPostId, setJustCreatedMyPostId] = useState<string | null>(null)
   const [commentedPostsIndex, setCommentedPostsIndex] = useState(0)
   const postsPerSlide = 4
 
@@ -309,6 +312,20 @@ export default function Home() {
     const start = currentIndex * postsPerSlide
     return posts.slice(start, start + postsPerSlide)
   }
+
+  // If we just created a post, pin it near the top of "Gönderiler" once (then clear).
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const id = sessionStorage.getItem('justCreatedMyPostId')
+      if (id) {
+        setJustCreatedMyPostId(id)
+        sessionStorage.removeItem('justCreatedMyPostId')
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
 
   // Sort user posts: 
   // 1. New commented posts first (by latest comment timestamp)
@@ -337,7 +354,7 @@ export default function Home() {
       }
     })
     
-    return postsWithTimestamps.sort((a, b) => {
+    const sortedItems = postsWithTimestamps.sort((a, b) => {
       // Posts with new comments come first
       if (a.hasNewComments && !b.hasNewComments) return -1
       if (!a.hasNewComments && b.hasNewComments) return 1
@@ -359,8 +376,27 @@ export default function Home() {
       
       // If neither has activity, sort by creation date (newest first)
       return b.createdAtTime - a.createdAtTime
-    }).map(item => item.post)
-  }, [userActivity?.userPosts, postViewTimestamps])
+    })
+
+    // One-time pin: put the just-created post at the top of the carousel (but still let
+    // "new comments" posts stay above it, preserving the existing behavior).
+    if (justCreatedMyPostId) {
+      const idx = sortedItems.findIndex((x) => x.post.id === justCreatedMyPostId)
+      if (idx !== -1) {
+        const [pinned] = sortedItems.splice(idx, 1)
+        // Insert after the "new comments" group (which is already at the top).
+        const insertAfterNewComments = pinned.hasNewComments
+          ? 0
+          : (() => {
+              const firstNonNew = sortedItems.findIndex((x) => !x.hasNewComments)
+              return firstNonNew === -1 ? sortedItems.length : firstNonNew
+            })()
+        sortedItems.splice(insertAfterNewComments, 0, pinned)
+      }
+    }
+
+    return sortedItems.map(item => item.post)
+  }, [userActivity?.userPosts, postViewTimestamps, justCreatedMyPostId])
 
   // Sort posts with user comments using the same ordering system
   // 1. New commented posts first (by latest comment timestamp)
@@ -1975,8 +2011,7 @@ export default function Home() {
                     <div className="relative">
                       <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="p-2.5 border-2 border-black bg-white brutal-shadow-sm hover:brutal-shadow transition-all duration-150"
-                        style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}
+                        className="p-2.5 transition-opacity duration-150 hover:opacity-70"
                         aria-label="User menu"
                       >
                         {isMenuOpen ? (
@@ -2081,10 +2116,13 @@ export default function Home() {
           ref={mainScrollRef}
           className={`relative flex-1 ${
             isMobile
-              ? (isMobileMenuOpen ? 'overflow-hidden h-full pb-0' : 'overflow-y-auto h-full pb-0')
+              ? (isMobileMenuOpen ? 'overflow-hidden h-full pb-0' : (loading || universityLoading) ? 'overflow-hidden h-full pb-0' : 'overflow-y-auto h-full pb-0')
               : 'overflow-y-auto h-full'
           } ${isRestoringMainScroll ? 'invisible pointer-events-none' : ''}`}
-          style={{backgroundColor: 'var(--bg-primary)'}}
+          style={{
+            backgroundColor: 'var(--bg-primary)',
+            ...(isMobile && (loading || universityLoading) && { touchAction: 'none', overscrollBehavior: 'none' })
+          }}
         >
           {/* Mobile Universities Menu as full-page overlay (no unmount/reload) */}
           {isMobile && isMobileMenuOpen && (

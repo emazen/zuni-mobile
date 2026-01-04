@@ -369,6 +369,14 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
 
       if (response.ok) {
         const post = await response.json();
+        // Pin this newly created post to the top of the "Gönderiler" carousel once we land back on home.
+        if (typeof window !== 'undefined') {
+          try {
+            sessionStorage.setItem('justCreatedMyPostId', post.id);
+          } catch {
+            // ignore
+          }
+        }
         // Redirect to main page with the new post and university ID
         // This ensures "Geri Dön" takes user back to the university board
         window.location.href = `/?post=${post.id}&university=${resolvedParams.id}`;
@@ -482,8 +490,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                     <div className="relative">
                     <button
                       onClick={() => setIsMenuOpen(!isMenuOpen)}
-                      className="p-3 border-2 border-black bg-white brutal-shadow-sm hover:brutal-shadow transition-all duration-150"
-                      style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}
+                      className="p-3 transition-opacity duration-150 hover:opacity-70"
                       aria-label="User menu"
                     >
                       {isMenuOpen ? (
@@ -677,7 +684,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                               className="text-xs font-bold text-gray-500 hover:text-black dark:hover:text-white flex items-center gap-1 transition-colors"
                             >
                               <ImageIcon className="w-4 h-4" />
-                              {imageFile ? 'Resim Değiştir' : 'Resim Ekle'}
+                              Resim
                             </button>
                             <button
                               type="button"
@@ -689,7 +696,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
                               }`}
                             >
                               <Mic className="w-4 h-4" />
-                              {audioFile ? 'Ses Kaydı Değiştir' : 'Ses Kaydı Ekle'}
+                              Ses Kaydı
                             </button>
                           </div>
                           <span className={`text-xs font-bold ${content.length > 4800 ? 'text-red-500' : 'text-gray-400'}`}>

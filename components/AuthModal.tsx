@@ -55,7 +55,7 @@ export default function AuthModal({ isOpen, onClose, onSignIn, onSignUp }: AuthM
   const effectiveIsMobile = isMobile || mobileCheck;
 
   return (
-    <div className={`fixed inset-0 z-50 ${effectiveIsMobile ? 'flex items-end' : 'flex items-center justify-center p-4'}`}>
+    <div className={`fixed inset-0 z-[10000] ${effectiveIsMobile ? 'flex items-end' : 'flex items-center justify-center p-4'}`}>
       {/* Backdrop */}
       <div 
         className={`absolute inset-0 bg-black/50 transition-opacity ease-out ${effectiveIsMobile ? 'duration-200' : 'duration-100'}`}

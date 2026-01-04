@@ -45,7 +45,7 @@ export default function SignInModal({ isOpen, onClose, onSwitchToSignUp }: SignI
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50"

@@ -10,3 +10,4 @@ CREATE INDEX IF NOT EXISTS "Comment_postId_createdAt_idx" ON "Comment"("postId",
 -- Composite index for Comment queries: filtering by postId and authorId, ordering by createdAt
 CREATE INDEX IF NOT EXISTS "Comment_postId_authorId_createdAt_idx" ON "Comment"("postId", "authorId", "createdAt" DESC);
 
+

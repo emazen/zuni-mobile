@@ -42,6 +42,14 @@ export default function CreatePost() {
 
       if (response.ok) {
         const post = await response.json();
+        // Pin this newly created post to the top of the "Gönderiler" carousel once we land back on home.
+        if (typeof window !== 'undefined') {
+          try {
+            sessionStorage.setItem('justCreatedMyPostId', post.id);
+          } catch {
+            // ignore
+          }
+        }
         // Redirect to main page with the new post
         window.location.href = `/?post=${post.id}`;
       } else {

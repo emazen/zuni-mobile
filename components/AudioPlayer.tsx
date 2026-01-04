@@ -19,8 +19,12 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
   const [volume, setVolume] = useState(1.0);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isScrubbing, setIsScrubbing] = useState(false);
   const volumeHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const progressBarRef = useRef<HTMLDivElement | null>(null);
+  const preScrubMutedRef = useRef(false);
+  const scrubRestoreTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Detect mobile on mount
   useEffect(() => {
@@ -341,6 +345,87 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
+
+  const seekFromClientX = (clientX: number) => {
+    const audio = audioRef.current;
+    const bar = progressBarRef.current;
+    if (!audio || !bar) return;
+    if (!duration || !isFinite(duration) || duration <= 0) return;
+
+    const rect = bar.getBoundingClientRect();
+    if (!rect.width) return;
+
+    const ratio = clamp((clientX - rect.left) / rect.width, 0, 1);
+    const nextTime = ratio * duration;
+    try {
+      audio.currentTime = nextTime;
+      setCurrentTime(nextTime);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleScrubStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    // allow scrubbing even while loading, but only if we have a usable duration
+    if (!duration || !isFinite(duration) || duration <= 0) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // capture pointer so we keep receiving move/up even if pointer leaves the bar
+    try {
+      (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+
+    // Mute during scrubbing to avoid click/pop artifacts when jumping currentTime.
+    // We restore on pointer up/cancel.
+    const audio = audioRef.current;
+    if (audio) {
+      preScrubMutedRef.current = audio.muted;
+      audio.muted = true;
+    }
+    if (scrubRestoreTimeoutRef.current) {
+      clearTimeout(scrubRestoreTimeoutRef.current);
+      scrubRestoreTimeoutRef.current = null;
+    }
+    setIsScrubbing(true);
+
+    seekFromClientX(e.clientX);
+  };
+
+  const handleScrubMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isScrubbing) return;
+    e.preventDefault();
+    e.stopPropagation();
+    seekFromClientX(e.clientX);
+  };
+
+  const handleScrubEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isScrubbing) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    setIsScrubbing(false);
+
+    try {
+      (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+
+    // Restore mute shortly after scrubbing ends to prevent a pop on unmute.
+    const audio = audioRef.current;
+    if (!audio) return;
+    const restoreMuted = preScrubMutedRef.current;
+    scrubRestoreTimeoutRef.current = setTimeout(() => {
+      if (audioRef.current) audioRef.current.muted = restoreMuted;
+      scrubRestoreTimeoutRef.current = null;
+    }, 80);
+  };
+
   // Update audio volume when volume state changes
   useEffect(() => {
     if (audioRef.current) {
@@ -393,6 +478,9 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
     return () => {
       if (volumeHideTimeout.current) {
         clearTimeout(volumeHideTimeout.current);
+      }
+      if (scrubRestoreTimeoutRef.current) {
+        clearTimeout(scrubRestoreTimeoutRef.current);
       }
     };
   }, []);
@@ -483,10 +571,28 @@ export default function AudioPlayer({ audioUrl, className = '', duration: provid
         </button>
 
         <div className="flex-1">
-          <div className="relative h-2 bg-gray-300 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div
+            ref={progressBarRef}
+            className="relative h-2 bg-gray-300 dark:bg-gray-700 rounded-full cursor-pointer touch-none select-none"
+            onPointerDown={handleScrubStart}
+            onPointerMove={handleScrubMove}
+            onPointerUp={handleScrubEnd}
+            onPointerCancel={handleScrubEnd}
+            role="slider"
+            aria-label="Ses ilerleme çubuğu"
+            aria-valuemin={0}
+            aria-valuemax={Math.max(0, Math.floor(duration || 0))}
+            aria-valuenow={Math.max(0, Math.floor(currentTime || 0))}
+            aria-valuetext={`${formatTime(currentTime)} / ${formatTime(duration)}`}
+          >
             <div
-              className="absolute top-0 left-0 h-full bg-red-500 transition-all duration-100"
+              className={`absolute top-0 left-0 h-full bg-red-500 rounded-full ${isScrubbing ? '' : 'transition-all duration-100'}`}
               style={{ width: `${progress}%` }}
+            />
+            {/* Thumb */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white dark:bg-[#151515] border border-black dark:border-gray-700 rounded-full shadow-sm z-10"
+              style={{ left: `calc(${progress}% - 6px)` }}
             />
           </div>
           <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mt-1">
