@@ -279,6 +279,21 @@ html.dark > body {
     background-color: #121212 !important;
   }
 
+  /* Optimized skeleton animation - single animation on container for better performance */
+  @keyframes skeleton-pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+  
+  .skeleton-card {
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+    will-change: opacity;
+  }
+
   .line-clamp-2 {
     line-clamp: 2;
     display: -webkit-box;

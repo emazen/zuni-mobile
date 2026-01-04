@@ -3,7 +3,7 @@
 import { useSession, signOut } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState, useCallback, useMemo, useRef } from "react"
-import { MessageSquare, LogOut, User, GraduationCap, Star, BookOpen, Plus, Menu, X, Send, Calendar, TrendingUp, Building2, Moon, Sun, ArrowUpDown, Clock, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { MessageSquare, Volume2, LogOut, User, GraduationCap, Star, BookOpen, Plus, Menu, X, Send, Calendar, TrendingUp, Building2, Moon, Sun, ArrowUpDown, Clock, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import CustomSpinner from "@/components/CustomSpinner"
 import Link from "next/link"
 import Image from "next/image"
@@ -194,6 +194,7 @@ export default function Home() {
   // Track which tab user was on when opening a post (for back navigation)
   const [postSourceTab, setPostSourceTab] = useState<'my-activity' | 'subscribed' | 'trending' | null>(null)
   const [isNavigatingBack, setIsNavigatingBack] = useState(false) // Flag to prevent useEffect from re-triggering
+  const fetchDataInFlightRef = useRef(false)
   const [viewedPosts, setViewedPosts] = useState<Set<string>>(new Set())
   const [postViewTimestamps, setPostViewTimestamps] = useState<Map<string, string>>(new Map())
   const [userJustCommented, setUserJustCommented] = useState<Set<string>>(new Set())
@@ -239,8 +240,7 @@ export default function Home() {
         rafId = null
         // Don't persist while in post detail; we restore from saved values on back.
         if (showPostDetail) return
-        // Don't persist while we're actively restoring scroll (prevents overwriting saved positions)
-        if (isRestoringMainScroll) return
+        // Scroll persistence (no restoration blocking needed)
         // Don't persist scroll during loading states (prevents buggy scroll behavior on mobile)
         if (loading || universityLoading) return
 
@@ -271,7 +271,7 @@ export default function Home() {
       if (rafId !== null) window.cancelAnimationFrame(rafId)
       el.removeEventListener('scroll', onScroll as any)
     }
-  }, [showUniversityBoard, showPostDetail, selectedUniversity?.id, isRestoringMainScroll, loading, universityLoading])
+  }, [showUniversityBoard, showPostDetail, selectedUniversity?.id, loading, universityLoading])
 
   // Fix mobile scroll stuck issue: Reset scroll position when loading finishes
   // This prevents the page from being stuck in a non-existent scroll area
@@ -1048,10 +1048,7 @@ export default function Home() {
       // Keep tab title constant
       setBaseTabTitle()
 
-      // If we're leaving post detail back to a list, hide content until scroll is restored
-      if (!postParam && shouldRestoreMainScrollOnBackRef.current) {
-        setIsRestoringMainScroll(true)
-      }
+      // Instant scroll restoration - no hiding content
       
       if (path === '/') {
         if (postParam) {
@@ -1115,15 +1112,13 @@ export default function Home() {
                 // ignore
               }
             }
-            requestAnimationFrame(() => {
-              try {
-                mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
-              } catch {
-                if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
-              }
-              setIsRestoringMainScroll(false)
-              shouldRestoreMainScrollOnBackRef.current = false
-            })
+            // Immediate scroll for smooth transition
+            try {
+              mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
+            } catch {
+              if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
+            }
+            shouldRestoreMainScrollOnBackRef.current = false
           } else {
             // Restore last known scroll for this university (e.g. browser back to board)
             try {
@@ -1131,7 +1126,12 @@ export default function Home() {
               const parsed = saved ? Number(saved) : NaN
               if (!Number.isNaN(parsed)) {
                 pendingUniversityScrollRestoreRef.current = { universityId: universityParam, top: parsed }
-                setIsRestoringMainScroll(true)
+                // Instant scroll restore
+                try {
+                  mainScrollRef.current?.scrollTo({ top: parsed, left: 0, behavior: 'auto' })
+                } catch {
+                  if (mainScrollRef.current) mainScrollRef.current.scrollTop = parsed
+                }
               }
             } catch {
               // ignore
@@ -1165,21 +1165,17 @@ export default function Home() {
           // Don't refresh posts data when going back to prevent reordering
           // Posts are already loaded and visible
 
-          // Restore list scroll position when returning from post detail
+          // Instant scroll restoration - no delays
           if (shouldRestoreMainScrollOnBackRef.current) {
             const top = lastMainScrollTopRef.current
-            requestAnimationFrame(() => {
-              try {
-                mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
-              } catch {
-                if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
-              }
-              setIsRestoringMainScroll(false)
-              shouldRestoreMainScrollOnBackRef.current = false
-            })
+            try {
+              mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
+            } catch {
+              if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
+            }
+            shouldRestoreMainScrollOnBackRef.current = false
           } else {
             // Restore home scroll so it doesn't inherit uni board scrollTop.
-            setIsRestoringMainScroll(true)
             let top = lastHomeScrollTopRef.current
             try {
               const saved = sessionStorage.getItem('homeScrollTop')
@@ -1188,14 +1184,11 @@ export default function Home() {
             } catch {
               // ignore
             }
-            requestAnimationFrame(() => {
-              try {
-                mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
-              } catch {
-                if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
-              }
-              setIsRestoringMainScroll(false)
-            })
+            try {
+              mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
+            } catch {
+              if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
+            }
           }
         }
       } else if (path.startsWith('/university/')) {
@@ -1218,23 +1211,19 @@ export default function Home() {
           // Restore list scroll position when returning from post detail
           if (shouldRestoreMainScrollOnBackRef.current) {
             const top = lastMainScrollTopRef.current
-            requestAnimationFrame(() => {
-              try {
-                mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
-              } catch {
-                if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
-              }
-              setIsRestoringMainScroll(false)
-              shouldRestoreMainScrollOnBackRef.current = false
-            })
+            // Instant scroll - no requestAnimationFrame delay
+            try {
+              mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
+            } catch {
+              if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
+            }
+            shouldRestoreMainScrollOnBackRef.current = false
           }
         }
       }
       
-      // Clear navigating back flag after a short delay
-      setTimeout(() => {
-        setIsNavigatingBack(false)
-      }, 100)
+      // Clear navigating back flag immediately
+      setIsNavigatingBack(false)
     }
 
     window.addEventListener('popstate', handlePopState)
@@ -1252,15 +1241,13 @@ export default function Home() {
     if (universityPostsLoaded[selectedUniversity.id] !== true) return
 
     const top = pending.top
-    requestAnimationFrame(() => {
-      try {
-        mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
-      } catch {
-        if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
-      }
-      pendingUniversityScrollRestoreRef.current = null
-      setIsRestoringMainScroll(false)
-    })
+    // Instant scroll - no requestAnimationFrame delay
+    try {
+      mainScrollRef.current?.scrollTo({ top, left: 0, behavior: 'auto' })
+    } catch {
+      if (mainScrollRef.current) mainScrollRef.current.scrollTop = top
+    }
+    pendingUniversityScrollRestoreRef.current = null
   }, [
     showUniversityBoard,
     showPostDetail,
@@ -1287,24 +1274,7 @@ export default function Home() {
     }
   }, [showSortDropdown])
 
-  // Debug sorting
-  useEffect(() => {
-    if (universityPosts.length > 0) {
-      console.log('Sorting posts by:', sortBy)
-      const sortedPosts = [...universityPosts].sort((a, b) => {
-        if (sortBy === 'newest') {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        } else {
-          const aComments = a._count?.comments || 0
-          const bComments = b._count?.comments || 0
-          console.log(`Post "${a.title}": ${aComments} comments`)
-          console.log(`Post "${b.title}": ${bComments} comments`)
-          return bComments - aComments
-        }
-      })
-      console.log('Sorted posts:', sortedPosts.map(p => ({ title: p.title, comments: p._count?.comments || 0 })))
-    }
-  }, [sortBy, universityPosts])
+  // NOTE: Avoid debug logging here; it runs often and causes noticeable jank on mobile.
 
   const fetchSubscribedPosts = async () => {
     if (!session) return
@@ -1341,10 +1311,11 @@ export default function Home() {
   }
 
   const fetchData = async (showLoading = false) => {
+    if (fetchDataInFlightRef.current) return
+    fetchDataInFlightRef.current = true
     try {
-      if (showLoading) {
-        setLoading(true)
-      }
+      // Only show the top-level skeleton for "Aktiviteler" initial load.
+      if (showLoading && activeTab === 'my-activity' && !userActivity) setLoading(true)
       console.log('fetchData: Starting to fetch all data...')
       
       // OPTIMIZED: Start all fetches in parallel, but set userActivity immediately when ready
@@ -1366,11 +1337,9 @@ export default function Home() {
       // Other tabs will lazy-load when the user switches to them.
       const promises: Promise<any>[] = [activityPromise]
       if (activeTab === 'subscribed') {
-        setSubscribedPostsLoaded(false)
         promises.push(fetchSubscribedPosts())
       }
       if (activeTab === 'trending') {
-        setAllPostsLoaded(false)
         promises.push(fetchAllPosts())
       }
 
@@ -1391,6 +1360,7 @@ export default function Home() {
       // Always clear loading state when done (whether it was set or not)
       // This ensures posts render immediately after data is fetched
       setLoading(false)
+      fetchDataInFlightRef.current = false
     }
   }
 
@@ -1398,11 +1368,9 @@ export default function Home() {
   useEffect(() => {
     if (!session || status !== 'authenticated') return
     if (activeTab === 'subscribed' && !subscribedPostsLoaded) {
-      setSubscribedPostsLoaded(false)
       fetchSubscribedPosts()
     }
     if (activeTab === 'trending' && !allPostsLoaded) {
-      setAllPostsLoaded(false)
       fetchAllPosts()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2155,7 +2123,7 @@ export default function Home() {
                     ? 'overflow-hidden h-full pb-0' 
                     : 'overflow-y-auto h-full pb-0')
               : 'overflow-y-auto h-full'
-          } ${isRestoringMainScroll ? 'invisible pointer-events-none' : ''}`}
+          }`}
           style={{
             backgroundColor: 'var(--bg-primary)',
             ...(isMobile && (loading || universityLoading || (activeTab === 'subscribed' && !subscribedPostsLoaded) || (activeTab === 'trending' && !allPostsLoaded) || (activeTab === 'my-activity' && loading && !userActivity)) && { 
@@ -2447,17 +2415,17 @@ export default function Home() {
                       {/* Text under image */}
                       <div className="text-center max-w-2xl mx-auto px-4 -mt-4 sm:-mt-2 -mb-4">
                         <p className="text-base sm:text-lg md:text-xl font-medium text-black leading-relaxed sm:hidden" style={{color: 'var(--text-secondary)'}}>
-                          Üniversitene özel yazılı, görsel ve sesli gönderiler paylaş, tartışmalara katıl.
+                          Üniversitene özel yazılı, görsel ve sesli gönderiler paylaş; tartışmalara katıl.
                         </p>
                         <p className="text-base sm:text-lg md:text-xl font-medium text-black leading-relaxed hidden sm:block" style={{color: 'var(--text-secondary)'}}>
-                          Üniversitene özel yazılı, görsel ve sesli gönderiler paylaş, tartışmalara katıl.
+                          Üniversitene özel yazılı, görsel ve sesli gönderiler paylaş; tartışmalara katıl.
                         </p>
                       </div>
 
                       {/* Minimalist Features Grid */}
                       <div className="grid grid-cols-3 gap-3 md:gap-5 max-w-4xl mx-auto mb-0 w-full mt-8">
                         {[
-                          { icon: MessageSquare, text: "Tartış" },
+                          { icon: Volume2, text: "Tartış" },
                           { icon: Building2, text: "Keşfet" },
                           { icon: User, text: "Bağlan" }
                         ].map((item, i) => (
@@ -2553,7 +2521,7 @@ export default function Home() {
 
             {session && (
               <>
-                {loading && !userActivity ? (
+                {activeTab === 'my-activity' && loading && !userActivity ? (
                   <div style={{ minHeight: isMobile ? '2000px' : 'auto' }}>
                     <PostListSkeleton />
                   </div>

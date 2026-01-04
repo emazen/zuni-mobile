@@ -104,7 +104,7 @@ export default function VerifyEmail() {
           <div className="p-8 text-center">
             {status === 'loading' && (
               <>
-                <div className="w-16 h-16 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-6 dark:border-white dark:border-t-transparent"></div>
+                <div className="w-16 h-16 border-4 border-black border-t-[#FFE066] rounded-full animate-spin mx-auto mb-6 dark:border-white dark:border-t-[#FFE066]"></div>
                 <h2 className="text-2xl font-display font-bold text-black dark:text-white mb-2">
                   Doğrulanıyor...
                 </h2>
@@ -116,7 +116,7 @@ export default function VerifyEmail() {
 
             {status === 'success' && (
               <>
-                <div className="w-20 h-20 bg-[#4ADE80] rounded-full border-2 border-black flex items-center justify-center mx-auto mb-6 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                <div className="w-20 h-20 bg-[#FFE066] rounded-full border-2 border-black flex items-center justify-center mx-auto mb-6 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                   <CheckCircle className="h-10 w-10 text-black" />
                 </div>
                 
@@ -130,7 +130,7 @@ export default function VerifyEmail() {
 
                   <Link
                   href="/"
-                  className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-3 px-4 rounded border-2 border-black hover:-translate-y-0.5 active:translate-y-0 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,0)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] flex items-center justify-center gap-2"
+                  className="w-full bg-[#FFE066] text-black font-bold py-3 px-4 rounded border-2 border-black hover:-translate-y-0.5 active:translate-y-0 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2"
                   >
                   Hesabına Giriş Yap
                   <ArrowRight className="h-4 w-4" />
