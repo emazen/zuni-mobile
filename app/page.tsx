@@ -2547,7 +2547,9 @@ export default function Home() {
             {session && (
               <>
                 {loading && !userActivity ? (
-                  <PostListSkeleton />
+                  <div style={{ minHeight: isMobile ? '2000px' : 'auto' }}>
+                    <PostListSkeleton />
+                  </div>
                 ) : (
                   <>
                     {activeTab === 'my-activity' && (
@@ -2713,7 +2715,9 @@ export default function Home() {
                     {activeTab === 'subscribed' && (
                       <>
                     {!subscribedPostsLoaded ? (
-                      <PostListSkeleton />
+                      <div style={{ minHeight: isMobile ? '2000px' : 'auto' }}>
+                        <PostListSkeleton />
+                      </div>
                     ) : posts.length === 0 ? (
                       <div className="text-center py-10 font-sans">
                         <Star className="h-10 w-10 mx-auto mb-3 opacity-80" style={{color: 'var(--text-secondary)'}} />
@@ -2751,7 +2755,9 @@ export default function Home() {
                     {activeTab === 'trending' && (
                       <>
                         {!allPostsLoaded ? (
-                          <PostListSkeleton />
+                          <div style={{ minHeight: isMobile ? '2000px' : 'auto' }}>
+                            <PostListSkeleton />
+                          </div>
                         ) : allPosts.filter(post => post.isTrending).length === 0 ? (
                           <div className="text-center py-10 font-sans">
                             <TrendingUp className="h-10 w-10 mx-auto mb-3 opacity-80" style={{color: 'var(--text-secondary)'}} />
