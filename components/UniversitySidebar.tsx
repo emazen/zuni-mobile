@@ -282,7 +282,17 @@ export default function UniversitySidebar({ onUniversityClick, isMobile = false 
       </div>
 
       {/* University List */}
-      <div className={`flex-1 overflow-y-auto transition-opacity duration-300 ease-in-out ${isMobile ? 'min-h-0' : ''}`}>
+      <div 
+        className={`flex-1 transition-opacity duration-300 ease-in-out ${isMobile ? 'min-h-0' : ''} ${
+          isMobile && (loading || selectedType === null) 
+            ? 'overflow-hidden' 
+            : 'overflow-y-auto'
+        }`}
+        style={isMobile && (loading || selectedType === null) ? {
+          touchAction: 'none',
+          overscrollBehavior: 'none'
+        } : undefined}
+      >
         <div className="p-2">
         {loading ? (
           <div className="animate-pulse space-y-3">
