@@ -81,6 +81,8 @@ export default function Home() {
   const shouldRestoreMainScrollOnBackRef = useRef<boolean>(false)
   const [isRestoringMainScroll, setIsRestoringMainScroll] = useState(false)
   const pendingUniversityScrollRestoreRef = useRef<{ universityId: string; top: number } | null>(null)
+  const fetchingSubscribedRef = useRef<boolean>(false)
+  const fetchingAllPostsRef = useRef<boolean>(false)
   const [posts, setPosts] = useState<Post[]>([])
   const [subscribedPostsLoaded, setSubscribedPostsLoaded] = useState(false)
   const [allPosts, setAllPosts] = useState<Post[]>([])
@@ -1278,6 +1280,8 @@ export default function Home() {
 
   const fetchSubscribedPosts = async () => {
     if (!session) return
+    if (fetchingSubscribedRef.current) return // Prevent double fetch
+    fetchingSubscribedRef.current = true
     try {
       const res = await fetch("/api/user/subscribed-posts")
       if (res.ok) {
@@ -1290,11 +1294,14 @@ export default function Home() {
       console.error('fetchSubscribedPosts: Error', e)
     } finally {
       setSubscribedPostsLoaded(true)
+      fetchingSubscribedRef.current = false
     }
   }
 
   const fetchAllPosts = async () => {
     if (!session) return
+    if (fetchingAllPostsRef.current) return // Prevent double fetch
+    fetchingAllPostsRef.current = true
     try {
       const res = await fetch("/api/posts")
       if (res.ok) {
@@ -1307,6 +1314,7 @@ export default function Home() {
       console.error('fetchAllPosts: Error', e)
     } finally {
       setAllPostsLoaded(true)
+      fetchingAllPostsRef.current = false
     }
   }
 
@@ -1364,13 +1372,13 @@ export default function Home() {
     }
   }
 
-  // Lazy-load tab data when user switches tabs (don’t refetch if already loaded)
+  // Lazy-load tab data when user switches tabs (don't refetch if already loaded or currently fetching)
   useEffect(() => {
     if (!session || status !== 'authenticated') return
-    if (activeTab === 'subscribed' && !subscribedPostsLoaded) {
+    if (activeTab === 'subscribed' && !subscribedPostsLoaded && !fetchingSubscribedRef.current) {
       fetchSubscribedPosts()
     }
-    if (activeTab === 'trending' && !allPostsLoaded) {
+    if (activeTab === 'trending' && !allPostsLoaded && !fetchingAllPostsRef.current) {
       fetchAllPosts()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
