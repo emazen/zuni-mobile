@@ -322,4 +322,23 @@ html.dark > body {
   .animate-bounce-subtle {
     animation: bounce-subtle 2s ease-in-out infinite;
   }
+
+  /* Optimized skeleton pulse animation for mobile performance */
+  @keyframes skeleton-pulse-optimized {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* GPU-accelerated skeleton animation - better performance on mobile */
+  .skeleton-pulse-optimized {
+    animation: skeleton-pulse-optimized 1.5s ease-in-out infinite;
+    will-change: opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
 }
