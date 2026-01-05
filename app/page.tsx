@@ -83,11 +83,14 @@ export default function Home() {
   const pendingUniversityScrollRestoreRef = useRef<{ universityId: string; top: number } | null>(null)
   const fetchingSubscribedRef = useRef<boolean>(false)
   const fetchingAllPostsRef = useRef<boolean>(false)
+  const hasFetchedInitialDataRef = useRef<boolean>(false)
   const [posts, setPosts] = useState<Post[]>([])
   const [subscribedPostsLoaded, setSubscribedPostsLoaded] = useState(false)
   const [allPosts, setAllPosts] = useState<Post[]>([])
   const [allPostsLoaded, setAllPostsLoaded] = useState(false)
   const [userActivity, setUserActivity] = useState<UserActivity | null>(null)
+  // Initialize loading as true only on first SSR mount
+  // After hydration, if we already have data, don't show loading again
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'my-activity' | 'subscribed' | 'trending'>(() => {
     if (typeof window === 'undefined') return 'my-activity'
@@ -972,7 +975,10 @@ export default function Home() {
     
     // Only fetch data if user is authenticated
     if (session) {
-      fetchData(true) // Show loading on initial load
+      // Prevent double loading: if we've already fetched initial data, don't show loading again
+      // This prevents skeleton flash on client-side navigation
+      const shouldShowLoading = !hasFetchedInitialDataRef.current
+      fetchData(shouldShowLoading) // Only show loading on true first mount
     } else {
       setLoading(false)
       setUniversityLoading(false)
@@ -1323,7 +1329,10 @@ export default function Home() {
     fetchDataInFlightRef.current = true
     try {
       // Only show the top-level skeleton for "Aktiviteler" initial load.
-      if (showLoading && activeTab === 'my-activity' && !userActivity) setLoading(true)
+      // Don't reset loading if we already have data (prevents double skeleton on navigation)
+      if (showLoading && activeTab === 'my-activity' && !userActivity) {
+        setLoading(true)
+      }
       console.log('fetchData: Starting to fetch all data...')
       
       // OPTIMIZED: Start all fetches in parallel, but set userActivity immediately when ready
@@ -1352,6 +1361,9 @@ export default function Home() {
       }
 
       await Promise.all(promises)
+      
+      // Mark that we've fetched initial data (prevents double loading on navigation)
+      hasFetchedInitialDataRef.current = true
       
       // If we're currently viewing a university board, also fetch its posts
       if (selectedUniversity) {
