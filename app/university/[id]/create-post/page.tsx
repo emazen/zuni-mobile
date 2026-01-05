@@ -408,7 +408,8 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
 
   const handleUniversityClick = (universityId: string) => {
     setIsMobileMenuOpen(false);
-    router.push(`/university/${universityId}`);
+    // Skip /university/[id] indirection to avoid extra redirect/loading cycle.
+    router.push(`/?university=${universityId}`);
   };
 
 

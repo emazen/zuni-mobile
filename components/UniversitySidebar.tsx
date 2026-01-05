@@ -357,7 +357,11 @@ export default function UniversitySidebar({ onUniversityClick, isMobile = false 
                   key={university.id}
                   className="block p-4 border-2 border-black bg-white brutal-shadow-sm hover:brutal-shadow transition-all duration-150 group cursor-pointer"
                   style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}
-                  onClick={() => onUniversityClick ? onUniversityClick(university.id) : window.location.href = `${window.location.origin}/university/${university.id}`}
+                  onClick={() =>
+                    onUniversityClick
+                      ? onUniversityClick(university.id)
+                      : (window.location.href = `${window.location.origin}/?university=${university.id}`)
+                  }
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
