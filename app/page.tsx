@@ -2156,7 +2156,7 @@ export default function Home() {
           {isMobile && isMobileMenuOpen && (
             <div
               className="fixed inset-0 top-[58px] z-40 flex flex-col"
-              style={{backgroundColor: 'var(--bg-primary)'}}
+              style={{backgroundColor: 'var(--bg-secondary)'}}
             >
               {/* Mobile Universities Header */}
               <div
@@ -2167,8 +2167,8 @@ export default function Home() {
                   <h1 className="text-xl font-bold text-black" style={{color: 'var(--text-primary)'}}>Üniversiteler</h1>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="p-2 bg-white border-2 border-black brutal-shadow-sm hover:brutal-shadow"
-                    style={{backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)'}}
+                    className="p-2 bg-white"
+                    style={{backgroundColor: 'var(--bg-secondary)'}}
                     aria-label="Close universities menu"
                   >
                     <X className="h-5 w-5 text-black" style={{color: 'var(--text-primary)'}} />

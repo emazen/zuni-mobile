@@ -10,7 +10,7 @@ export default function PageSkeleton() {
               <div className="w-3 h-3 rounded bg-gray-300/80 dark:bg-black/10" />
             </div>
 
-            <div className="relative h-[260px] bg-white dark:bg-[#151515] border-2 border-gray-200 dark:border-gray-700 rounded-xl flex flex-col p-4 overflow-visible">
+            <div className="relative h-[260px] bg-white dark:bg-[#151515] border-2 border-gray-200 dark:border-gray-700 rounded-xl flex flex-col p-4 overflow-visible" style={{ transform: 'translateY(2mm)' }}>
               {/* Metadata row */}
               <div className="flex justify-between items-center mb-3 text-sm text-gray-500 dark:text-gray-400">
                 <div className="flex items-center gap-2">

@@ -197,7 +197,7 @@ export default function UniversitySidebar({ onUniversityClick, isMobile = false 
   if (isCollapsed && !isMobile && session) {
     return (
       <div
-        className={`w-0 bg-transparent border-0 flex flex-col h-[calc(100vh-64px)] relative overflow-visible pointer-events-none z-[9999] ${session ? 'sidebar-transition' : ''}`}
+        className={`w-0 bg-transparent border-0 flex flex-col h-[calc(100vh-56px)] relative overflow-visible pointer-events-none z-[9999] ${session ? 'sidebar-transition' : ''}`}
       >
         {session && (
           <button
@@ -214,7 +214,7 @@ export default function UniversitySidebar({ onUniversityClick, isMobile = false 
   return (
     <div
       className={`${isMobile ? 'w-full' : 'w-80 brutal-sidebar'} flex flex-col ${
-        isMobile ? 'h-full' : 'h-[calc(100vh-64px)]'
+        isMobile ? 'h-full' : 'h-[calc(100vh-56px)]'
       } relative ${isMobile ? '' : (session ? 'sidebar-transition' : '')} ${
         // IMPORTANT: Keep wrapper overflow visible so the collapse/expand button
         // can sit "outside" the sidebar edge symmetrically.
