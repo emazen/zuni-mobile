@@ -532,7 +532,15 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
     try {
       const response = await fetch(`/api/posts/${post.id}`, { method: 'DELETE' });
       if (response.ok) {
+        // Call onPostDeleted first to refresh data
         onPostDeleted?.();
+        
+        // Add a small delay before navigation to ensure chunks are loaded
+        // This prevents chunk loading errors when navigating immediately after deletion
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Use router.push instead of onGoBack for more reliable navigation
+        // This ensures Next.js can properly handle chunk loading
         onGoBack(undefined);
       } else {
         setDeletingPost(false);

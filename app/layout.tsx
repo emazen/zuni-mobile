@@ -28,6 +28,30 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
+                // Handle Next.js chunk loading errors
+                if (typeof window !== 'undefined') {
+                  window.addEventListener('error', function(e) {
+                    if (e.message && e.message.includes('Loading chunk') && e.message.includes('failed')) {
+                      console.warn('Chunk loading error detected, reloading page...');
+                      // Retry by reloading the page
+                      setTimeout(function() {
+                        window.location.reload();
+                      }, 100);
+                    }
+                  }, true);
+                  
+                  // Also handle unhandled promise rejections for chunk errors
+                  window.addEventListener('unhandledrejection', function(e) {
+                    if (e.reason && typeof e.reason === 'string' && e.reason.includes('Loading chunk') && e.reason.includes('failed')) {
+                      console.warn('Chunk loading promise rejection detected, reloading page...');
+                      e.preventDefault();
+                      setTimeout(function() {
+                        window.location.reload();
+                      }, 100);
+                    }
+                  });
+                }
+                
                 // CRITICAL: Execute immediately, before any CSS or rendering
                 // This prevents flash of wrong theme
                 // Safari-compatible: use setProperty instead of cssText

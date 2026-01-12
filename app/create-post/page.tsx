@@ -7,7 +7,7 @@ import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
 
 export default function CreatePost() {
-  const { data: session } = useSession()
+  const { data: session, update: updateSession } = useSession()
   const router = useRouter()
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
@@ -29,11 +29,16 @@ export default function CreatePost() {
     // and allow empty content (the API will handle validation)
 
     try {
+      // Refresh session before making the request to ensure it's valid
+      // This prevents timeout issues when user spends time in gallery
+      await updateSession();
+      
       const response = await fetch("/api/posts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: 'include',
         body: JSON.stringify({
           title: title.trim(),
           content: content.trim(),
@@ -53,6 +58,36 @@ export default function CreatePost() {
         // Redirect to main page with the new post
         window.location.href = `/?post=${post.id}`;
       } else {
+        // If we get a 401, try refreshing session and retry once
+        if (response.status === 401) {
+          await updateSession();
+          // Retry the request once after session refresh
+          const retryResponse = await fetch("/api/posts", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              title: title.trim(),
+              content: content.trim(),
+            }),
+          });
+          
+          if (retryResponse.ok) {
+            const post = await retryResponse.json();
+            if (typeof window !== 'undefined') {
+              try {
+                sessionStorage.setItem('justCreatedMyPostId', post.id);
+              } catch {
+                // ignore
+              }
+            }
+            window.location.href = `/?post=${post.id}`;
+            return;
+          }
+        }
+        
         const data = await response.json()
         setError(data.error || "Failed to create post")
       }

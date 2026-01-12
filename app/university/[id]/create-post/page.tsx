@@ -30,7 +30,7 @@ interface CreatePostPageProps {
 
 export default function CreatePostPage({ params }: CreatePostPageProps) {
   const resolvedParams = use(params);
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
   const { theme, effectiveTheme, toggleTheme } = useTheme();
   const [university, setUniversity] = useState<University | null>(null);
@@ -82,7 +82,9 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
   const fetchUniversity = async () => {
     try {
       setFetchingUniversity(true);
-      const response = await fetch(`/api/universities/${resolvedParams.id}`);
+      const response = await fetch(`/api/universities/${resolvedParams.id}`, {
+        credentials: 'include',
+      });
       if (response.ok) {
         const data = await response.json();
         setUniversity(data);
@@ -354,11 +356,16 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
         }
       }
 
+      // Refresh session before making the request to ensure it's valid
+      // This prevents timeout issues when user spends time in gallery
+      await updateSession();
+      
       const response = await fetch(`/api/universities/${resolvedParams.id}/posts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           title: title.trim(),
           content: content.trim() || '',
@@ -390,6 +397,41 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
         // [university board (replaced create post)] -> [post detail]
         window.location.href = `/?post=${post.id}&university=${resolvedParams.id}`;
       } else {
+        // If we get a 401, try refreshing session and retry once
+        if (response.status === 401) {
+          await updateSession();
+          // Retry the request once after session refresh
+          const retryResponse = await fetch(`/api/universities/${resolvedParams.id}/posts`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              title: title.trim(),
+              content: content.trim() || '',
+              image: imageUrl,
+              audio: audioUrl,
+            }),
+          });
+          
+          if (retryResponse.ok) {
+            const post = await retryResponse.json();
+            if (typeof window !== 'undefined') {
+              try {
+                sessionStorage.setItem('justCreatedMyPostId', post.id);
+                sessionStorage.setItem('justCreatedPostUniversityId', resolvedParams.id);
+                const universityBoardUrl = `/?university=${resolvedParams.id}`;
+                window.history.replaceState({}, '', universityBoardUrl);
+              } catch {
+                // ignore
+              }
+            }
+            window.location.href = `/?post=${post.id}&university=${resolvedParams.id}`;
+            return;
+          }
+        }
+        
         const error = await response.json();
         alert(error.error || 'Gönderi oluşturulamadı');
       }
