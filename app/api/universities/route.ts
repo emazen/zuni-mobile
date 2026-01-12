@@ -26,6 +26,11 @@ export async function GET() {
           shortName: true,
           city: true,
           type: true,
+          _count: {
+            select: {
+              posts: true,
+            },
+          },
         },
         orderBy: {
           name: 'asc',
@@ -59,6 +64,7 @@ export async function GET() {
       shortName: uni.shortName,
       city: uni.city,
       type: uni.type,
+      totalPosts: uni._count?.posts ?? 0,
       isSubscribed: session?.user?.id ? subscribedUniversityIds.has(uni.id) : false
     }));
 

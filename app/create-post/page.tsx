@@ -79,9 +79,9 @@ export default function CreatePost() {
   return (
     <div className="min-h-screen bg-gray-100" style={{backgroundColor: 'var(--bg-primary)'}}>
       {/* Header */}
-      <header className="brutal-header fixed top-0 left-0 right-0 z-50">
+      <header className="brutal-header fixed top-0 left-0 right-0 z-50 h-14">
         <div className="w-full px-2 sm:px-4">
-          <div className="flex items-center h-16">
+          <div className="flex items-center h-14">
             <Link
               href="/"
               className="inline-flex items-center text-black font-black hover:text-pink-600 transition-colors mr-2 sm:mr-4"
@@ -95,7 +95,7 @@ export default function CreatePost() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 sm:pt-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8 sm:pt-20">
         <div className="brutal-card">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (

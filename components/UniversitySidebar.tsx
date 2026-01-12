@@ -12,6 +12,7 @@ interface University {
   city: string;
   type: 'public' | 'private';
   isSubscribed?: boolean;
+  totalPosts?: number;
 }
 
 interface UniversitySidebarProps {
@@ -368,15 +369,22 @@ export default function UniversitySidebar({ onUniversityClick, isMobile = false 
                       <h3 className="text-sm font-semibold text-black group-hover:text-pink-600 transition-colors truncate" style={{color: 'var(--text-primary)'}}>
                         {university.name}
                       </h3>
-                      <div className="flex items-center gap-3 mt-2">
-                        <span className="text-xs font-medium text-black" style={{color: 'var(--text-secondary)'}}>{university.city}</span>
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium border-2 border-black ${
-                          university.type === 'public'
-                            ? 'bg-green-300 text-black'
-                            : 'bg-purple-300 text-black'
-                        }`} style={{borderColor: 'var(--border-color)'}}>
-                          {university.type === 'public' ? 'Devlet' : 'Vakıf'}
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-xs font-medium text-black truncate min-w-0" style={{color: 'var(--text-secondary)'}}>{university.city}</span>
+                        <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium border-2 border-black whitespace-nowrap ${
+                            university.type === 'public'
+                              ? 'bg-green-300 text-black'
+                              : 'bg-purple-300 text-black'
+                          }`} style={{borderColor: 'var(--border-color)'}}>
+                            {university.type === 'public' ? 'Devlet' : 'Vakıf'}
+                          </span>
+                      {(university.totalPosts ?? 0) > 0 && (
+                        <span className="text-[11px] px-1.5 py-0.5 font-semibold text-black dark:text-white whitespace-nowrap shrink-0">
+                          {university.totalPosts} gönderi
                         </span>
+                      )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 ml-2" onClick={(e) => e.stopPropagation()}>

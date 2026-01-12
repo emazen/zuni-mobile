@@ -373,12 +373,21 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
         if (typeof window !== 'undefined') {
           try {
             sessionStorage.setItem('justCreatedMyPostId', post.id);
+            // Store flag to indicate post was just created and which university board to go back to
+            sessionStorage.setItem('justCreatedPostUniversityId', resolvedParams.id);
+            
+            // Replace the create post page entry in history with university board URL
+            // This way, when user clicks back from post detail, they go to university board instead of create post page
+            const universityBoardUrl = `/?university=${resolvedParams.id}`;
+            window.history.replaceState({}, '', universityBoardUrl);
           } catch {
             // ignore
           }
         }
         // Redirect to main page with the new post and university ID
         // This ensures "Geri Dön" takes user back to the university board
+        // Note: window.location.href will add a new entry, so history becomes:
+        // [university board (replaced create post)] -> [post detail]
         window.location.href = `/?post=${post.id}&university=${resolvedParams.id}`;
       } else {
         const error = await response.json();
@@ -461,7 +470,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
       {/* Header */}
       <header className={`brutal-header ${isMobile ? 'fixed top-0 left-0 right-0 z-50' : 'relative'}`}>
         <div className="w-full px-2 sm:px-4">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-14">
             {/* Logo */}
             <div className="flex-shrink-0">
               <Link href="/" className="hover:opacity-80 transition-opacity">
@@ -571,7 +580,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
       </header>
 
       {/* Sidebar and Main Content */}
-      <div className={`flex ${isMobile ? 'absolute inset-0 top-16' : 'h-[calc(100vh-64px)]'} overscroll-none`}>
+      <div className={`flex ${isMobile ? 'absolute inset-0 top-14' : 'h-[calc(100vh-56px)]'} overscroll-none`}>
         {/* Desktop Sidebar */}
         {!isMobile && (
           <UniversitySidebar />

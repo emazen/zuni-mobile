@@ -1534,6 +1534,41 @@ export default function Home() {
     // Get values before clearing state
     const currentPostId = postId || selectedPostId
     
+    // Check if this is a recently created post - if so, go directly to university board
+    if (currentPostId && typeof window !== 'undefined') {
+      try {
+        const justCreatedPostId = sessionStorage.getItem('justCreatedMyPostId')
+        const justCreatedUniId = sessionStorage.getItem('justCreatedPostUniversityId')
+        
+        if (justCreatedPostId === currentPostId && justCreatedUniId) {
+          // This is a recently created post - navigate directly to university board
+          sessionStorage.removeItem('justCreatedMyPostId')
+          sessionStorage.removeItem('justCreatedPostUniversityId')
+          
+          // Replace the current history entry (post detail) with university board URL
+          // This way, when user clicks back, they go to university board instead of create post page
+          const universityBoardUrl = `/?university=${justCreatedUniId}`
+          window.history.replaceState({}, '', universityBoardUrl)
+          
+          // Navigate to university board
+          setIsNavigatingBack(true)
+          setShowUniversityBoard(true)
+          setShowPostDetail(false)
+          setSelectedPostId(null)
+          setPostSource(null)
+          setPostSourceUniversityId(null)
+          setPostSourceTab(null)
+          setBaseTabTitle()
+          
+          // Use router.replace to update the URL (already replaced above, but this ensures Next.js state is in sync)
+          router.replace(universityBoardUrl, { scroll: false })
+          return
+        }
+      } catch {
+        // ignore sessionStorage errors
+      }
+    }
+    
     // Read directly from URL FIRST (most reliable source on refresh)
     // This ensures we have correct context even if state hasn't initialized properly
     const urlSearchParams = new URLSearchParams(window.location.search)
