@@ -37,18 +37,20 @@ export async function GET(
       }),
       prisma.post.findMany({
         where: { universityId: resolvedParams.id },
-        include: {
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          image: true,
+          audio: true,
+          authorId: true,
+          universityId: true,
+          createdAt: true,
+          updatedAt: true,
           author: {
             select: {
               gender: true,
               customColor: true,
-            },
-          },
-          university: {
-            select: {
-              id: true,
-              name: true,
-              shortName: true,
             },
           },
           _count: {
@@ -60,6 +62,7 @@ export async function GET(
         orderBy: {
           createdAt: "desc",
         },
+        take: 100, // Limit posts to reduce response size and improve load time
       })
     ]);
 
@@ -80,9 +83,10 @@ export async function GET(
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
 
     // OPTIMIZED: Fetch trending comments and latest comments in parallel
-    const [recentComments, allLatestComments] = await Promise.all([
+    // Only fetch if we have posts to avoid unnecessary queries
+    const [recentComments, allLatestComments] = postIds.length > 0 ? await Promise.all([
       // All comments from last 48 hours for trending calculation
-      postIds.length > 0 ? prisma.comment.findMany({
+      prisma.comment.findMany({
         where: {
           postId: { in: postIds },
           createdAt: { gte: fortyEightHoursAgo },
@@ -91,28 +95,25 @@ export async function GET(
           postId: true,
           authorId: true,
         }
-      }) : [],
-      // All comments NOT from current user, ordered by date (we'll group by postId in JS)
-      postIds.length > 0 ? prisma.comment.findMany({
+      }),
+      // Latest comment per post (NOT from current user) - optimized query
+      prisma.comment.groupBy({
+        by: ['postId'],
         where: {
           postId: { in: postIds },
           authorId: { not: session.user.id },
         },
-        select: {
-          postId: true,
+        _max: {
           createdAt: true,
         },
-        orderBy: {
-          createdAt: "desc",
-        },
-      }) : []
-    ])
+      })
+    ]) : [[], []]
     
-    // Group comments by postId and get the latest one per post
+    // Create latest comment map from groupBy result
     const latestCommentMap = new Map<string, Date>()
-    allLatestComments.forEach(comment => {
-      if (!latestCommentMap.has(comment.postId)) {
-        latestCommentMap.set(comment.postId, comment.createdAt)
+    allLatestComments.forEach(group => {
+      if (group._max.createdAt) {
+        latestCommentMap.set(group.postId, group._max.createdAt)
       }
     })
 

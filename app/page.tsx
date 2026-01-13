@@ -662,12 +662,13 @@ export default function Home() {
       if (!postsResponse.ok) return
       const posts = await postsResponse.json()
 
-      // Preload first visible images so UI appears "all at once" after loader
+      // Preload first visible images in background (non-blocking)
+      // Don't wait for images - show posts immediately
       const firstImageUrls = (posts || [])
         .filter((p: any) => !!p?.image)
         .slice(0, 6)
         .map((p: any) => p.image as string)
-      await preloadImages(firstImageUrls, 1200)
+      preloadImages(firstImageUrls, 0) // No timeout, non-blocking
 
       // If user switched boards mid-refresh, don't overwrite the visible board.
       if (latestUniversityRequestRef.current && latestUniversityRequestRef.current !== universityId) {
@@ -1914,20 +1915,13 @@ export default function Home() {
           type: university.type
         })
 
-        // Preload first visible images so UI appears "all at once" after loader
+        // Preload first visible images in background (non-blocking)
+        // Don't wait for images - show posts immediately
         const firstImageUrls = (posts || [])
           .filter((p: any) => !!p?.image)
           .slice(0, 6)
           .map((p: any) => p.image as string)
-        await preloadImages(firstImageUrls, 1200)
-
-        // User may have clicked another university while we were preloading images.
-        // Guard against stale responses overwriting the current board.
-        if (!isLatestRequest()) {
-          console.log('⚠️ Skipping stale university posts update after preload')
-          isRequestInProgressRef.current = false
-          return
-        }
+        preloadImages(firstImageUrls, 0) // No timeout, non-blocking
 
         setUniversityPosts(posts)
         setUniversityPostsLoaded(prev => ({ ...prev, [universityId]: true }))
