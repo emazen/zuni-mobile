@@ -57,7 +57,7 @@ export default function SplashScreen() {
           padding: '0 1rem'
         }}
       >
-        <div className="splash-logo-wrapper animate-pulse">
+        <div className="splash-logo-wrapper">
           <Logo />
         </div>
       </div>

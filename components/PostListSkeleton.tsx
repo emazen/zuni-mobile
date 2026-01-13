@@ -2,7 +2,7 @@
 
 export default function PostListSkeleton() {
   const PostCardSkeleton = () => (
-    <div className="relative group h-full skeleton-pulse-optimized">
+    <div className="relative group h-full">
       {/* Notification badge skeleton */}
       <div className="absolute -top-3 -right-3 min-w-[32px] h-8 px-2 flex items-center justify-center rounded-full shadow-md z-20 pointer-events-none bg-gray-200 dark:bg-[#8899AC]">
         <div className="w-3 h-3 rounded bg-gray-300/80 dark:bg-black/10" />
@@ -44,9 +44,9 @@ export default function PostListSkeleton() {
   )
 
   return (
-    <div className="pt-6">
+    <div className="pt-6 skeleton-pulse-optimized">
       {/* My Posts Section Skeleton */}
-      <div className="mb-6 skeleton-pulse-optimized">
+      <div className="mb-6">
         <h3 className="text-xl font-semibold text-black dark:text-white mb-4 flex items-center">
           <div className="h-6 w-6 bg-gray-200 dark:bg-[#8899AC] rounded mr-3"></div>
           <div className="h-6 bg-gray-200 dark:bg-[#8899AC] rounded w-32"></div>
@@ -59,7 +59,7 @@ export default function PostListSkeleton() {
       </div>
 
       {/* Posts with Comments Section Skeleton */}
-      <div className="mb-6 skeleton-pulse-optimized">
+      <div className="mb-6">
         <h3 className="text-xl font-semibold text-black dark:text-white mb-4 flex items-center">
           <div className="h-5 w-5 bg-gray-200 dark:bg-[#8899AC] rounded mr-2"></div>
           <div className="h-6 bg-gray-200 dark:bg-[#8899AC] rounded w-48"></div>

@@ -2,8 +2,8 @@
 
 export default function PageSkeleton() {
   return (
-    <div className="pt-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 skeleton-pulse-optimized">
+    <div className="pt-6 skeleton-pulse-optimized">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {Array.from({ length: 6 }).map((_, index) => (
           <div key={index} className="relative group h-full">
             <div className="absolute -top-3 -right-3 min-w-[32px] h-8 px-2 flex items-center justify-center rounded-full shadow-md z-20 pointer-events-none bg-gray-200 dark:bg-[#8899AC]">
