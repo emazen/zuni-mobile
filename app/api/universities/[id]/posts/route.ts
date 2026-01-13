@@ -262,6 +262,15 @@ export async function POST(
       },
     });
 
+    // Invalidate universities cache to update post counts in sidebar
+    try {
+      const { invalidateUniversitiesCache } = await import('@/app/api/universities/route')
+      invalidateUniversitiesCache()
+    } catch (error) {
+      // If cache invalidation fails, log but don't fail the request
+      console.error('Failed to invalidate universities cache:', error)
+    }
+
     // Add trending status to the created post
     const postWithTrending = {
       ...post,

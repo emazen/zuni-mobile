@@ -120,7 +120,10 @@ export async function DELETE(
     
     const post = await prisma.post.findUnique({
       where: { id: resolvedParams.id },
-      select: { authorId: true },
+      select: { 
+        authorId: true,
+        universityId: true,
+      },
     })
 
     if (!post) {
@@ -140,6 +143,15 @@ export async function DELETE(
     await prisma.post.delete({
       where: { id: resolvedParams.id },
     })
+
+    // Invalidate universities cache to update post counts in sidebar
+    try {
+      const { invalidateUniversitiesCache } = await import('@/app/api/universities/route')
+      invalidateUniversitiesCache()
+    } catch (error) {
+      // If cache invalidation fails, log but don't fail the request
+      console.error('Failed to invalidate universities cache:', error)
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

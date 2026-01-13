@@ -313,6 +313,8 @@ export default function Home() {
   const [isUniversityRefreshing, setIsUniversityRefreshing] = useState(false)
   // Track the latest requested university ID to prevent race conditions
   const latestUniversityRequestRef = useRef<string | null>(null)
+  // Track the latest request ID to ensure only the most recent request updates state
+  const latestRequestIdRef = useRef<string | null>(null)
   // AbortController to cancel previous requests when a new one is initiated
   const abortControllerRef = useRef<AbortController | null>(null)
   const universityRefreshAbortControllerRef = useRef<AbortController | null>(null)
@@ -1798,17 +1800,26 @@ export default function Home() {
       return
     }
 
-    // Cancel any previous request
+    // Generate unique request ID for this request
+    const requestId = `${universityId}-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    
+    // Cancel any previous request by marking it as stale
+    // We don't actually abort the fetch - we just ignore its response
+    // This prevents AbortError from being thrown
     if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
+      // Just clear the ref - don't call abort() to avoid errors
+      abortControllerRef.current = null
     }
 
-    // Create new AbortController for this request
+    // Create new AbortController for this request (but we won't use it to abort)
+    // We keep it for consistency but rely on request ID checking instead
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
-    // Track this as the latest request
+    // Track this as the latest request BEFORE starting async operations
+    // This ensures any aborted requests know they're not the latest
     latestUniversityRequestRef.current = universityId
+    latestRequestIdRef.current = requestId
     isRequestInProgressRef.current = true
 
     // Set navigation flag to prevent useEffect interference
@@ -1837,18 +1848,35 @@ export default function Home() {
     // This ensures searchParams updates correctly
     router.push(newUrl, { scroll: false })
     
+    // Helper function to check if this request is still the latest
+    const isLatestRequest = () => latestRequestIdRef.current === requestId
+    
     try {
-      console.log(`🎯 Fetching university data for ID: ${universityId}`)
+      console.log(`🎯 Fetching university data for ID: ${universityId} (request: ${requestId})`)
       
       // Start both fetches immediately, but apply university name ASAP (tab title consistency)
-      const universityFetch = fetch(`/api/universities/${universityId}`, { signal: abortController.signal })
-      const postsFetch = fetch(`/api/universities/${universityId}/posts`, { signal: abortController.signal })
+      // Don't use abort signal - we'll rely on request ID checking instead to prevent AbortError
+      const universityFetch = fetch(`/api/universities/${universityId}`)
+      const postsFetch = fetch(`/api/universities/${universityId}/posts`)
 
-      const universityResponse = await universityFetch
-      const postsResponse = await postsFetch
+      let universityResponse, postsResponse
+      try {
+        universityResponse = await universityFetch
+        postsResponse = await postsFetch
+      } catch (fetchError: any) {
+        // If fetch was aborted, silently ignore - this is expected behavior
+        // AbortError is not a real error, it's just a signal that the request was cancelled
+        if (fetchError.name === 'AbortError' || fetchError.message?.includes('aborted')) {
+          // Silently return - don't log or throw, just exit
+          isRequestInProgressRef.current = false
+          return
+        }
+        // Only throw non-abort errors
+        throw fetchError
+      }
       
       // Check if this is still the latest request (user might have clicked another university)
-      if (latestUniversityRequestRef.current !== universityId) {
+      if (!isLatestRequest()) {
         console.log('⚠️ Ignoring stale response - newer request in progress')
         isRequestInProgressRef.current = false
         return
@@ -1858,11 +1886,18 @@ export default function Home() {
       console.log('📊 Posts response status:', postsResponse.status)
       
       if (universityResponse.ok && postsResponse.ok) {
+        // Check again before parsing JSON (abort might have happened during fetch)
+        if (!isLatestRequest()) {
+          console.log('⚠️ Ignoring stale response - newer request in progress (before JSON parse)')
+          isRequestInProgressRef.current = false
+          return
+        }
+        
         const university = await universityResponse.json()
         const posts = await postsResponse.json()
         
         // Double-check this is still the latest request before setting state
-        if (latestUniversityRequestRef.current !== universityId) {
+        if (!isLatestRequest()) {
           console.log('⚠️ Ignoring stale data - newer request completed first')
           isRequestInProgressRef.current = false
           return
@@ -1888,7 +1923,7 @@ export default function Home() {
 
         // User may have clicked another university while we were preloading images.
         // Guard against stale responses overwriting the current board.
-        if (latestUniversityRequestRef.current !== universityId) {
+        if (!isLatestRequest()) {
           console.log('⚠️ Skipping stale university posts update after preload')
           isRequestInProgressRef.current = false
           return
@@ -1905,7 +1940,7 @@ export default function Home() {
         }, posts)
       } else {
         // Only handle error if this is still the latest request
-        if (latestUniversityRequestRef.current !== universityId) {
+        if (!isLatestRequest()) {
           isRequestInProgressRef.current = false
           return
         }
@@ -1924,44 +1959,41 @@ export default function Home() {
         setShowUniversityBoard(false)
       }
     } catch (error: any) {
-      // Ignore abort errors (expected when canceling previous requests)
-      if (error.name === 'AbortError') {
-        console.log('🛑 Request aborted for university:', universityId)
-        // Don't clear loading state here - the new request will handle it
-        // But clear the in-progress flag if this was the latest request
-        if (latestUniversityRequestRef.current === universityId) {
-          isRequestInProgressRef.current = false
-        }
+      // Silently ignore abort errors (expected when canceling previous requests)
+      // AbortError is not a real error, it's just a signal that the request was cancelled
+      if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+        // Silently return - don't log or throw, just exit
+        isRequestInProgressRef.current = false
         return
       }
       
       // Only handle error if this is still the latest request
-      if (latestUniversityRequestRef.current !== universityId) {
+      if (!isLatestRequest()) {
+        console.log('⚠️ Ignoring error - newer request in progress')
         isRequestInProgressRef.current = false
         return
       }
       
       console.error('💥 Error fetching university data:', error)
       setShowUniversityBoard(false)
-    } finally {
-      // Always clear the in-progress flag
-      if (latestUniversityRequestRef.current === universityId) {
-        isRequestInProgressRef.current = false
-      }
-      
-      // Only update loading state if this is still the latest request
-      if (latestUniversityRequestRef.current === universityId) {
       setUniversityLoading(false)
-      setIsRedirecting(false) // Clear redirecting state when done
+    } finally {
+      // Only update state if this is still the latest request
+      const isLatest = latestRequestIdRef.current === requestId
+      
+      if (isLatest) {
+        isRequestInProgressRef.current = false
+        setUniversityLoading(false)
+        setIsRedirecting(false) // Clear redirecting state when done
         // Clear navigation flag after a delay to prevent useEffect from reloading old state
         // This ensures the new university data is fully loaded before allowing useEffect to run
-      setTimeout(() => {
-        setIsNavigatingBack(false)
+        setTimeout(() => {
+          setIsNavigatingBack(false)
         }, 500)
       } else {
-        // If this is not the latest request, still clear loading to prevent endless loading
-        // This handles the case where a request completes but is superseded
-        setUniversityLoading(false)
+        // If this is not the latest request, silently ignore
+        // Don't update any state to prevent showing wrong university data
+        isRequestInProgressRef.current = false
       }
     }
   }

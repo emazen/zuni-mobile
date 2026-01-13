@@ -532,6 +532,14 @@ export default function PostDetailView({ postId, onGoBack, onCommentAdded, onPos
     try {
       const response = await fetch(`/api/posts/${post.id}`, { method: 'DELETE' });
       if (response.ok) {
+        // Invalidate sidebar cache to update post counts
+        try {
+          localStorage.removeItem('universities_cache');
+          localStorage.removeItem('universities_cache_timestamp');
+        } catch (e) {
+          // Ignore localStorage errors
+        }
+        
         // Call onPostDeleted first to refresh data
         onPostDeleted?.();
         
