@@ -146,7 +146,7 @@ export async function DELETE(
 
     // Invalidate universities cache to update post counts in sidebar
     try {
-      const { invalidateUniversitiesCache } = await import('@/app/api/universities/route')
+      const { invalidateUniversitiesCache } = await import('@/lib/universitiesCache')
       invalidateUniversitiesCache()
     } catch (error) {
       // If cache invalidation fails, log but don't fail the request

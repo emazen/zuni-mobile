@@ -2,17 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-// Cache for universities data (since it rarely changes)
-let universitiesCache: any[] | null = null;
-let cacheTimestamp: number = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-// Export function to invalidate cache (called when posts are created/deleted)
-export function invalidateUniversitiesCache() {
-  universitiesCache = null;
-  cacheTimestamp = 0;
-}
+import { getUniversitiesCache, setUniversitiesCache, invalidateUniversitiesCache } from "@/lib/universitiesCache";
 
 export async function GET() {
   try {
@@ -20,9 +10,10 @@ export async function GET() {
     const now = Date.now();
     
     // Check if we have valid cached universities data
+    const { cache, timestamp, duration } = getUniversitiesCache();
     let universities;
-    if (universitiesCache && (now - cacheTimestamp) < CACHE_DURATION) {
-      universities = universitiesCache;
+    if (cache && (now - timestamp) < duration) {
+      universities = cache;
     } else {
       // Fetch universities from database
       universities = await prisma.university.findMany({
@@ -44,8 +35,7 @@ export async function GET() {
       });
       
       // Update cache
-      universitiesCache = universities;
-      cacheTimestamp = now;
+      setUniversitiesCache(universities, now);
     }
     
     // Get user's subscriptions (always fresh, no cache needed)
