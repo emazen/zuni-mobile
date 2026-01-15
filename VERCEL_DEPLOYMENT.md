@@ -110,7 +110,7 @@ BASE_URL=https://your-project.vercel.app
    - Update after setting custom domain
 
 4. **Database Password**: 
-   - Replace `zaza5` with your actual Supabase database password if different
+   - Replace `YOUR_DATABASE_PASSWORD` with your actual Supabase database password
 
 ### 3.3 Verify All Variables
 

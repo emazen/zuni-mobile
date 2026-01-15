@@ -150,122 +150,30 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
         return null;
       }
       
-      // Check file size (max 10MB for audio)
-      if (audioBlob.size > 10 * 1024 * 1024) {
-        alert('Ses kaydı 10MB\'dan küçük olmalıdır.');
-        return null;
-      }
+      // Convert Blob to File for FormData
+      const fileName = `audio_${Date.now()}.${audioBlob.type.includes('webm') ? 'webm' : 'mp3'}`;
+      const audioFile = new File([audioBlob], fileName, { type: audioBlob.type || 'audio/webm' });
       
-      // Determine file extension and MIME type
-      const originalMimeType = audioBlob.type || 'audio/webm';
-      let fileExt = 'webm';
-      let uploadMimeType: string | undefined = 'audio/webm';
+      // Use server-side upload API with authentication
+      const formData = new FormData();
+      formData.append('file', audioFile);
       
-      if (originalMimeType.includes('webm')) {
-        fileExt = 'webm';
-        uploadMimeType = 'audio/webm';
-      } else if (originalMimeType.includes('mp3') || originalMimeType.includes('mpeg')) {
-        fileExt = 'mp3';
-        uploadMimeType = 'audio/mpeg';
-      } else if (originalMimeType.includes('mp4') || originalMimeType.includes('m4a')) {
-        fileExt = 'm4a';
-        uploadMimeType = 'video/mp4';
-      } else {
-        fileExt = 'webm';
-        uploadMimeType = 'audio/webm';
-      }
-      
-      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-      const filePath = `posts/audio/${fileName}`;
-
-      console.log('Uploading audio:', {
-        size: audioBlob.size,
-        originalType: originalMimeType,
-        uploadType: uploadMimeType,
-        fileExt,
-        filePath
+      const response = await fetch('/api/upload/audio?folder=audio', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include', // Include session cookies
       });
 
-      // Upload strategies (try multiple approaches if first fails)
-      let uploadError: any = null;
-      let uploadSuccess = false;
-
-      // Strategy 1: Upload with determined MIME type
-      const { error: error1 } = await supabase.storage
-        .from('uploads')
-        .upload(filePath, audioBlob, {
-          contentType: uploadMimeType,
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (!error1) {
-        uploadSuccess = true;
-      } else {
-        uploadError = error1;
-        console.log('Upload strategy 1 failed:', error1.message);
-        
-        // Strategy 2: For mp4, try without contentType
-        if (originalMimeType.includes('mp4') || originalMimeType.includes('m4a')) {
-          console.log('Trying upload without contentType...');
-          const { error: error2 } = await supabase.storage
-            .from('uploads')
-            .upload(filePath, audioBlob, {
-              cacheControl: '3600',
-              upsert: false
-            });
-          
-          if (!error2) {
-            uploadSuccess = true;
-            uploadError = null;
-          } else {
-            uploadError = error2;
-            console.log('Upload strategy 2 failed:', error2.message);
-          }
-        }
-        
-        // Strategy 3: Try as audio/mpeg
-        if (!uploadSuccess && !originalMimeType.includes('mp4')) {
-          console.log('Trying upload as audio/mpeg...');
-          const { error: error3 } = await supabase.storage
-            .from('uploads')
-            .upload(filePath, audioBlob, {
-              contentType: 'audio/mpeg',
-              cacheControl: '3600',
-              upsert: false
-            });
-          
-          if (!error3) {
-            uploadSuccess = true;
-            uploadError = null;
-          } else {
-            uploadError = error3;
-            console.log('Upload strategy 3 failed:', error3.message);
-          }
-        }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(errorData.error || 'Upload failed');
       }
 
-      if (!uploadSuccess && uploadError) {
-        console.error('All upload strategies failed:', uploadError);
-        throw new Error(
-          uploadError.message || 
-          `Yükleme başarısız oldu. Hata kodu: ${uploadError.statusCode || uploadError.error || 'Bilinmeyen'}`
-        );
-      }
-
-      // Get public URL
-      const { data } = supabase.storage
-        .from('uploads')
-        .getPublicUrl(filePath);
-
-      if (!data?.publicUrl) {
-        throw new Error('Dosya yüklendi ancak URL alınamadı.');
-      }
-
-      console.log('Audio uploaded successfully:', data.publicUrl);
-      return data.publicUrl;
+      const data = await response.json();
+      console.log('Audio uploaded successfully:', data.url);
+      return data.url;
     } catch (error: any) {
-      console.error('Error uploading audio to Supabase:', error);
+      console.error('Error uploading audio:', error);
       const errorMessage = error?.message || 'Bilinmeyen hata';
       alert(`Ses kaydı yüklenirken bir hata oluştu: ${errorMessage}. Lütfen tekrar deneyin.`);
       return null;
@@ -295,26 +203,27 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
       setUploadingImage(true);
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-      const filePath = `posts/${fileName}`;
+      
+      // Use server-side upload API with authentication
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/upload/image?folder=posts', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include', // Include session cookies
+      });
 
-      const { error: uploadError } = await supabase.storage
-        .from('uploads')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        throw uploadError;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(errorData.error || 'Upload failed');
       }
 
-      const { data } = supabase.storage
-        .from('uploads')
-        .getPublicUrl(filePath);
-
-      return data.publicUrl;
-    } catch (error) {
+      const data = await response.json();
+      return data.url;
+    } catch (error: any) {
       console.error('Error uploading image:', error);
-      alert('Resim yüklenirken bir hata oluştu.');
+      alert(error.message || 'Resim yüklenirken bir hata oluştu.');
       return null;
     } finally {
       setUploadingImage(false);

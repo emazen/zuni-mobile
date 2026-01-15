@@ -92,23 +92,16 @@ Your Supabase Storage bucket (`uploads`) needs these RLS policies:
    - Allowed Operation: `SELECT`
    - Target Roles: `authenticated`
 
-2. **Allow authenticated uploads:**
-   - Policy Name: `Allow authenticated uploads`
-   - Bucket: `uploads`
-   - Policy Definition: `bucket_id = 'uploads'`
-   - Allowed Operation: `INSERT`
-   - Target Roles: `authenticated`
+2. **✅ IMPORTANT: Remove anon uploads policy**
+   - **DELETE** any policy that allows `anon` role to `INSERT`
+   - This prevents spam and unauthorized uploads
+   - Uploads are now handled server-side via `/api/upload/image` and `/api/upload/audio`
 
-3. **Allow anon uploads (if needed):**
-   - Policy Name: `Allow anon uploads`
-   - Bucket: `uploads`
-   - Policy Definition: `bucket_id = 'uploads'`
-   - Allowed Operation: `INSERT`
-   - Target Roles: `anon`
-
-**⚠️ SECURITY NOTE:** 
-- Currently allowing `anon` uploads is a security vulnerability
-- Consider implementing signed URLs or backend proxy uploads for production
+**✅ SECURITY IMPROVEMENT:**
+- All uploads now go through Next.js API routes with NextAuth authentication
+- Server-side validation (file size, type, authentication)
+- No direct client-side uploads to Supabase (prevents spam)
+- Service role key is used server-side only (never exposed to client)
 
 ### Step 4: Verify Resend Domain
 

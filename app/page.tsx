@@ -17,6 +17,7 @@ import { useTheme } from "@/contexts/ThemeContext"
 import AuthModalCombined from "@/components/AuthModalCombined"
 import AuthModal from "@/components/AuthModal"
 import Logo from "@/components/Logo"
+import { logger } from "@/lib/logger"
 
 interface Post {
   id: string
@@ -816,7 +817,7 @@ export default function Home() {
           // Also save to localStorage as backup
           const userKey = `postViewTimestamps_${session.user.email}`
           localStorage.setItem(userKey, JSON.stringify(Array.from(newMap.entries())))
-          console.log(`Updated view timestamp for post ${postId} (refresh: ${!shouldShowPostDetail}): ${currentTimestamp}`)
+          // Removed: User activity logging (privacy)
           return newMap
         })
         
@@ -831,7 +832,7 @@ export default function Home() {
             })
             
             if (response.ok) {
-              console.log('Post marked as read in database')
+              // Removed: User activity logging (privacy)
             }
           } catch (error) {
             console.error('Error marking post as read:', error)
@@ -882,7 +883,7 @@ export default function Home() {
             })
             
             if (response.ok) {
-              console.log('Own post marked as read in database')
+              // Removed: User activity logging (privacy)
             }
           } catch (error) {
             console.error('Error marking own post as read:', error)
@@ -909,7 +910,7 @@ export default function Home() {
             const localStorageMap = new Map<string, string>(parsed)
             // Set immediately from localStorage (no waiting for API)
             setPostViewTimestamps(localStorageMap)
-            console.log('Loaded postViewTimestamps from localStorage:', localStorageMap.size, 'posts')
+            // Removed: User activity logging (privacy)
           } catch (error) {
             console.error('Error parsing postViewTimestamps from localStorage:', error)
           }
@@ -942,7 +943,7 @@ export default function Home() {
               return mergedMap
             })
             
-            console.log('Loaded postViewTimestamps from database and merged:', databaseMap.size, 'posts')
+            // Removed: User activity logging (privacy)
           }
         } catch (error) {
           console.error('Error loading read posts from database:', error)
@@ -958,7 +959,7 @@ export default function Home() {
           try {
             const parsed = JSON.parse(savedUserJustCommented)
             setUserJustCommented(new Set(parsed))
-            console.log(`Loaded userJustCommented from localStorage:`, Array.from(parsed))
+            // Removed: User activity logging (privacy)
           } catch (error) {
             console.error('Error parsing userJustCommented from localStorage:', error)
           }
@@ -1499,7 +1500,7 @@ export default function Home() {
       setUserJustCommented(prev => {
         const newSet = new Set(prev)
         newSet.delete(postId)
-        console.log(`Removed post ${postId} from userJustCommented set`)
+        // Removed: User activity logging (privacy)
         // Persist to localStorage
         localStorage.setItem(userJustCommentedKey, JSON.stringify(Array.from(newSet)))
         return newSet
@@ -1524,11 +1525,11 @@ export default function Home() {
           // Update to current timestamp to mark when user viewed the post
           newMap.set(postId, currentTimestamp)
           localStorage.setItem(userKey, JSON.stringify(Array.from(newMap.entries())))
-          console.log(`User viewed post ${postId}, saved view timestamp: ${currentTimestamp}`)
+          // Removed: User activity logging (privacy - only visible to user in their own console)
           return newMap
         })
       } else {
-        console.log(`Post author ${session.user.email} viewed their own post ${postId}, keeping original view timestamp`)
+        // Removed: User activity logging (privacy)
       }
     }
   }
@@ -1620,7 +1621,7 @@ export default function Home() {
             // Save to localStorage immediately
             const userKey = `postViewTimestamps_${session.user.email}`
             localStorage.setItem(userKey, JSON.stringify(Array.from(newMap.entries())))
-            console.log(`Updated view timestamp for post ${currentPostId} when going back: ${currentTimestamp}`)
+            // Removed: User activity logging (privacy)
             return newMap
           })
           
@@ -1644,7 +1645,7 @@ export default function Home() {
           const newSet = new Set(prev)
           newSet.delete(currentPostId)
           localStorage.setItem(userJustCommentedKey, JSON.stringify(Array.from(newSet)))
-          console.log(`Removed post ${currentPostId} from userJustCommented when going back`)
+          // Removed: User activity logging (privacy)
           return newSet
         })
       }
@@ -1681,7 +1682,7 @@ export default function Home() {
         newSet.add(currentPostId)
         // Persist to localStorage
         localStorage.setItem(userJustCommentedKey, JSON.stringify(Array.from(newSet)))
-        console.log(`User added comment to post ${currentPostId}`)
+        // Removed: User activity logging (privacy)
         return newSet
       })
       
@@ -1693,7 +1694,7 @@ export default function Home() {
         const newMap = new Map(prev)
         newMap.set(currentPostId, currentTimestamp)
         localStorage.setItem(userKey, JSON.stringify(Array.from(newMap.entries())))
-        console.log(`Updated view timestamp for post ${currentPostId} after comment`)
+        // Removed: User activity logging (privacy)
         return newMap
       })
     }
@@ -1853,7 +1854,7 @@ export default function Home() {
     const isLatestRequest = () => latestRequestIdRef.current === requestId
     
     try {
-      console.log(`🎯 Fetching university data for ID: ${universityId} (request: ${requestId})`)
+      logger.debug(`Fetching university data for ID: ${universityId}`)
       
       // Start both fetches immediately, but apply university name ASAP (tab title consistency)
       // Don't use abort signal - we'll rely on request ID checking instead to prevent AbortError
@@ -1883,8 +1884,7 @@ export default function Home() {
         return
       }
       
-      console.log('📊 University response status:', universityResponse.status)
-      console.log('📊 Posts response status:', postsResponse.status)
+      logger.debug('University and posts fetched successfully')
       
       if (universityResponse.ok && postsResponse.ok) {
         // Check again before parsing JSON (abort might have happened during fetch)
@@ -1904,8 +1904,7 @@ export default function Home() {
           return
         }
         
-        console.log('✅ University data:', university)
-        console.log('✅ Posts data:', posts.length, 'posts')
+        logger.debug(`Loaded ${posts.length} posts for university`)
         
         setSelectedUniversity({
           id: university.id,
