@@ -69,13 +69,17 @@ export async function POST(request: NextRequest) {
     // Handle empty/undefined MIME types (browser-default from MediaRecorder)
     const fileType = file.type || ''
     
+    // Extract base MIME type (remove codec parameters like "; codecs=opus")
+    const baseMimeType = fileType.split(';')[0].trim().toLowerCase()
+    
     // If MIME type is empty, allow it (MediaRecorder browser-default)
-    // Otherwise check against allowed types
-    if (fileType && !ALLOWED_MIME_TYPES.includes(fileType)) {
+    // Otherwise check against allowed types (case-insensitive, without codec params)
+    if (fileType && !ALLOWED_MIME_TYPES.some(allowed => allowed.toLowerCase() === baseMimeType)) {
       return NextResponse.json(
         { 
           error: `Invalid file type: ${fileType || 'unknown'}. Allowed types: MP3, WAV, WebM, OGG, AAC, Opus, MP4/M4A.`,
-          receivedType: fileType
+          receivedType: fileType,
+          baseType: baseMimeType
         },
         { status: 400 }
       )
@@ -110,9 +114,17 @@ export async function POST(request: NextRequest) {
     if (!contentType || contentType === '') {
       // Default to audio/webm for browser-default recordings
       contentType = 'audio/webm'
-    } else if (contentType === 'video/mp4') {
-      // Safari sometimes returns video/mp4 for audio, normalize to audio/mp4
-      contentType = 'audio/mp4'
+    } else {
+      // Extract base MIME type (remove codec parameters)
+      const baseMimeType = contentType.split(';')[0].trim().toLowerCase()
+      
+      if (baseMimeType === 'video/mp4') {
+        // Safari sometimes returns video/mp4 for audio, normalize to audio/mp4
+        contentType = 'audio/mp4'
+      } else {
+        // Use base MIME type without codec parameters for Supabase
+        contentType = baseMimeType
+      }
     }
 
     // 9. Upload to Supabase using admin client (bypasses RLS)
