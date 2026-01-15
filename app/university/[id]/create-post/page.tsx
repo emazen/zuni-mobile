@@ -151,8 +151,32 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
       }
       
       // Convert Blob to File for FormData
-      const fileName = `audio_${Date.now()}.${audioBlob.type.includes('webm') ? 'webm' : 'mp3'}`;
-      const audioFile = new File([audioBlob], fileName, { type: audioBlob.type || 'audio/webm' });
+      // Handle different MIME types from MediaRecorder
+      let fileExt = 'webm';
+      let mimeType = audioBlob.type || 'audio/webm';
+      
+      if (mimeType.includes('webm')) {
+        fileExt = 'webm';
+      } else if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
+        fileExt = 'm4a';
+        // Normalize to audio/mp4 for Safari
+        if (!mimeType || mimeType === 'video/mp4') {
+          mimeType = 'audio/mp4';
+        }
+      } else if (mimeType.includes('mp3') || mimeType.includes('mpeg')) {
+        fileExt = 'mp3';
+      } else if (mimeType.includes('wav')) {
+        fileExt = 'wav';
+      } else if (mimeType.includes('ogg')) {
+        fileExt = 'ogg';
+      } else if (!mimeType || mimeType === '') {
+        // Browser-default: assume webm for Chrome/Firefox, mp4 for Safari
+        fileExt = 'webm';
+        mimeType = 'audio/webm';
+      }
+      
+      const fileName = `audio_${Date.now()}.${fileExt}`;
+      const audioFile = new File([audioBlob], fileName, { type: mimeType });
       
       // Use server-side upload API with authentication
       const formData = new FormData();

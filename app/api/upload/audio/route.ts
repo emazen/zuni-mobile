@@ -8,6 +8,10 @@ import { checkUploadRateLimit } from "@/lib/rateLimit"
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 // Allowed audio MIME types
+// Note: MediaRecorder can produce different types depending on browser:
+// - Chrome/Firefox: audio/webm
+// - Safari: audio/mp4 or video/mp4
+// - Some browsers: empty string (browser-default)
 const ALLOWED_MIME_TYPES = [
   'audio/mpeg',
   'audio/mp3',
@@ -15,7 +19,10 @@ const ALLOWED_MIME_TYPES = [
   'audio/webm',
   'audio/ogg',
   'audio/aac',
-  'audio/opus'
+  'audio/opus',
+  'audio/mp4', // Safari MediaRecorder
+  'video/mp4', // Safari MediaRecorder (sometimes returns this for audio)
+  'audio/x-m4a', // Alternative M4A format
 ]
 
 export async function POST(request: NextRequest) {
@@ -59,9 +66,17 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Validate file type
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    // Handle empty/undefined MIME types (browser-default from MediaRecorder)
+    const fileType = file.type || ''
+    
+    // If MIME type is empty, allow it (MediaRecorder browser-default)
+    // Otherwise check against allowed types
+    if (fileType && !ALLOWED_MIME_TYPES.includes(fileType)) {
       return NextResponse.json(
-        { error: "Invalid file type. Only MP3, WAV, WebM, OGG, AAC, and Opus are allowed." },
+        { 
+          error: `Invalid file type: ${fileType || 'unknown'}. Allowed types: MP3, WAV, WebM, OGG, AAC, Opus, MP4/M4A.`,
+          receivedType: fileType
+        },
         { status: 400 }
       )
     }
@@ -90,11 +105,21 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer()
     const uint8Array = new Uint8Array(arrayBuffer)
 
-    // 8. Upload to Supabase using admin client (bypasses RLS)
+    // 8. Determine content type (handle empty/undefined from MediaRecorder)
+    let contentType = file.type
+    if (!contentType || contentType === '') {
+      // Default to audio/webm for browser-default recordings
+      contentType = 'audio/webm'
+    } else if (contentType === 'video/mp4') {
+      // Safari sometimes returns video/mp4 for audio, normalize to audio/mp4
+      contentType = 'audio/mp4'
+    }
+
+    // 9. Upload to Supabase using admin client (bypasses RLS)
     const { data, error } = await supabaseAdmin.storage
       .from('uploads')
       .upload(filePath, uint8Array, {
-        contentType: file.type,
+        contentType: contentType,
         upsert: false // Don't allow overwriting
       })
 
@@ -109,7 +134,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 9. Get public URL
+    // 10. Get public URL
     const { data: urlData } = supabaseAdmin.storage
       .from('uploads')
       .getPublicUrl(filePath)
