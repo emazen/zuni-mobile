@@ -77,21 +77,23 @@ html, body {
   font-weight: 400;
   line-height: 1.4;
   overscroll-behavior-y: none;
-  overscroll-behavior-x: auto;
+  overscroll-behavior-x: none;
   -webkit-overflow-scrolling: touch;
   margin: 0;
   padding: 0;
   height: 100%;
   overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
-  /* iOS Safe Area Support */
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+  /* iOS Safe Area Support - applied via classes, not here to avoid double padding */
   /* Ensure pointer events work correctly */
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
+  /* Prevent keyboard from pushing layout */
+  /* Use 100vh instead of 100% to prevent keyboard resize issues */
+  height: 100vh;
+  height: -webkit-fill-available;
+  width: 100%;
+  position: relative;
 }
 
 ::selection {
@@ -164,6 +166,9 @@ html.dark > body {
     background-color: var(--bg-secondary);
     color: var(--text-primary);
     box-shadow: var(--brutal-shadow-sm);
+    /* Ensure minimum touch target size for mobile */
+    min-height: 44px;
+    min-width: 44px;
   }
   
   .brutal-button:hover {
@@ -188,6 +193,9 @@ html.dark > body {
     background-color: #FFFFFF;
     color: #000;
     box-shadow: var(--brutal-shadow-sm);
+    /* Ensure minimum touch target size for mobile */
+    min-height: 44px;
+    min-width: 44px;
   }
   
   .brutal-button-comment:hover {
@@ -356,9 +364,26 @@ html.dark > body {
   }
   
   /* Ensure buttons and interactive elements are clickable */
-  button, a, [role="button"], input, textarea, select {
+  /* Minimum touch target: 44x44px for iOS accessibility */
+  button, a, [role="button"], input[type="button"], input[type="submit"], input[type="reset"] {
     pointer-events: auto;
-    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Small buttons can use padding to meet touch target */
+  button.small, a.small {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.5rem;
+  }
+  
+  /* Input fields and textareas */
+  input, textarea, select {
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
   
@@ -382,6 +407,14 @@ html.dark > body {
   
   .pointer-events-auto {
     pointer-events: auto;
+  }
+  
+  /* Prevent rubber-band effect on body, but allow on scrollable containers */
+  /* Note: overscroll-behavior is already set on html, body above */
+  
+  /* Allow overscroll on scrollable lists/containers */
+  [data-scrollable], .overflow-y-auto, .overflow-auto {
+    overscroll-behavior-y: auto;
   }
 
   /* Optimized skeleton pulse animation for mobile performance */

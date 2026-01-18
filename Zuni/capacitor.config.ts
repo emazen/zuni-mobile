@@ -5,7 +5,7 @@ const config = {
   appName: 'Zuni',
   webDir: 'out',
   server: {
-    url: 'https://zuni.social',
+    url: 'https://zuni-mobile.vercel.app',
     cleartext: true,
   },
   ios: {

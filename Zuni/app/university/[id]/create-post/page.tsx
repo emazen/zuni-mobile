@@ -443,7 +443,7 @@ export default function CreatePostPage({ params }: CreatePostPageProps) {
   return (
     <div className="h-screen bg-gray-100 overflow-hidden" style={{backgroundColor: 'var(--bg-primary)'}}>
       {/* Header */}
-      <header className={`brutal-header ${isMobile ? 'fixed top-0 left-0 right-0 z-50' : 'relative'}`}>
+      <header className={`brutal-header ${isMobile ? 'fixed top-0 left-0 right-0 z-50 safe-area-top' : 'relative'}`} style={isMobile ? { paddingTop: 'env(safe-area-inset-top)' } : undefined}>
         <div className="w-full px-2 sm:px-4">
           <div className="flex justify-between items-center h-14">
             {/* Logo */}

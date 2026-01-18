@@ -2060,7 +2060,7 @@ export default function Home() {
   return (
     <div className="h-screen overflow-hidden" style={{backgroundColor: 'var(--bg-primary)'}}>
       {/* Header */}
-      <header className={`brutal-header ${isMobile ? 'fixed top-0 left-0 right-0 z-[60]' : 'relative'}`}>
+      <header className={`brutal-header ${isMobile ? 'fixed top-0 left-0 right-0 z-[60] safe-area-top' : 'relative'}`} style={isMobile ? { paddingTop: 'env(safe-area-inset-top)' } : undefined}>
         <div className="w-full px-2 sm:px-4">
           <div className="flex justify-between items-center h-14">
             {/* Logo */}
@@ -2187,7 +2187,7 @@ export default function Home() {
       </header>
 
       {/* Sidebar and Main Content */}
-      <div className={`flex ${isMobile ? 'absolute inset-0 top-14' : 'h-[calc(100vh-56px)] sm:h-[calc(100dvh-56px)]'}`}>
+      <div className={`flex ${isMobile ? 'absolute inset-0 top-14 safe-area-top' : 'h-[calc(100vh-56px)] sm:h-[calc(100dvh-56px)]'}`} style={isMobile ? { paddingTop: 'env(safe-area-inset-top)' } : undefined}>
         {/* Desktop Sidebar */}
         {!isMobile && (
           <UniversitySidebar onUniversityClick={handleUniversityClick} />
@@ -2215,8 +2215,11 @@ export default function Home() {
           {/* Mobile Universities Menu as full-page overlay (no unmount/reload) */}
           {isMobile && isMobileMenuOpen && (
             <div
-              className="fixed inset-0 top-[58px] z-40 flex flex-col"
-              style={{backgroundColor: 'var(--bg-secondary)'}}
+              className="fixed inset-0 top-[58px] z-40 flex flex-col safe-area-top"
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                paddingTop: 'env(safe-area-inset-top)'
+              }}
             >
               {/* Mobile Universities Header */}
               <div

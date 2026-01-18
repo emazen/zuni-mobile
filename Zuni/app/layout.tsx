@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk, Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/AuthProvider'
 import { ThemeProviderWrapper } from '@/components/ThemeProviderWrapper'
+import StatusBarManager from '@/components/StatusBarManager'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space' })
@@ -24,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full" suppressHydrationWarning style={{ height: '-webkit-fill-available' }}>
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -198,6 +199,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${spaceGrotesk.variable} ${plusJakarta.variable} font-sans h-full m-0 p-0 safe-area-inset`} suppressHydrationWarning style={{ minHeight: '-webkit-fill-available' }}>
         <AuthProvider>
           <ThemeProviderWrapper>
+            <StatusBarManager />
             {children}
           </ThemeProviderWrapper>
         </AuthProvider>
