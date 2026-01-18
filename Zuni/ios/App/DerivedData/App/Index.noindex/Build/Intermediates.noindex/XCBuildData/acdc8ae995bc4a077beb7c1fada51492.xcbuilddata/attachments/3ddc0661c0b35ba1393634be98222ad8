@@ -1,0 +1,12 @@
+{
+  "" : {
+    "dependencies" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphoneos/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM-master.d",
+    "diagnostics" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphoneos/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM-master.dia",
+    "emit-module-dependencies" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphoneos/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphoneos/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM-master-emit-module.dia",
+    "swift-dependencies" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/CapApp-SPM.build/Debug-iphoneos/CapApp-SPM.build/Objects-normal/arm64/CapApp-SPM-master.swiftdeps"
+  },
+  "/Users/emre/Desktop/Zuni/Zuni/ios/App/CapApp-SPM/Sources/CapApp-SPM/CapApp-SPM.swift" : {
+
+  }
+}

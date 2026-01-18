@@ -1,0 +1,12 @@
+{
+	"appId": "com.zuni.social",
+	"appName": "Zuni",
+	"webDir": "out",
+	"server": {
+		"url": "https://zuni.social",
+		"cleartext": true
+	},
+	"packageClassList": [
+		"StatusBarPlugin"
+	]
+}

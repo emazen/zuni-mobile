@@ -1,0 +1,6 @@
+version: "Apple Swift version 6.1 (swiftlang-6.1.0.110.21 clang-1700.0.13.3)"
+options: "8ad9143e2a9c56fba64fb06fc2067aa8e30a6eca85e083af88f54f077290e05d"
+build_start_time: [1768739594, 266664000]
+build_end_time: [1768739594, 483650000]
+inputs:
+  "/Users/emre/Desktop/Zuni/Zuni/ios/App/CapApp-SPM/Sources/CapApp-SPM/CapApp-SPM.swift": [1768305355, 0]

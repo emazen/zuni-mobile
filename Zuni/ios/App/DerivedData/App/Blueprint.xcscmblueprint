@@ -1,0 +1,30 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "BD7EB066D6EE6AD37F448AF1013305FEB301C37D",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "BD7EB066D6EE6AD37F448AF1013305FEB301C37D" : 0,
+    "CAD5EDFEFAB5AE1AF0A4D86952E6D1FF334B00D5" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "C1CADB19-DD13-4583-8E87-DE080302F341",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "BD7EB066D6EE6AD37F448AF1013305FEB301C37D" : "Zuni\/",
+    "CAD5EDFEFAB5AE1AF0A4D86952E6D1FF334B00D5" : "Zuni\/ios\/App\/DerivedData\/App\/SourcePackages\/checkouts\/capacitor-swift-pm\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "App",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "ios\/App\/App.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/samimi4\/Zuni.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "BD7EB066D6EE6AD37F448AF1013305FEB301C37D"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "\/Users\/emre\/Desktop\/Zuni\/Zuni\/ios\/App\/DerivedData\/App\/SourcePackages\/repositories\/capacitor-swift-pm-c864e9bc",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "CAD5EDFEFAB5AE1AF0A4D86952E6D1FF334B00D5"
+    }
+  ]
+}

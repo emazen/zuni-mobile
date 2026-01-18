@@ -1,0 +1,72 @@
+{
+  "buildCommand" : {
+    "command" : "prepareForIndexing",
+    "enableIndexBuildArena" : true,
+    "targets" : null
+  },
+  "configuredTargets" : [
+    {
+      "guid" : "PACKAGE-TARGET:StatusBarPlugin"
+    },
+    {
+      "guid" : "PACKAGE-PRODUCT:CapacitorStatusBar"
+    },
+    {
+      "guid" : "PACKAGE-PRODUCT:CapApp-SPM"
+    },
+    {
+      "guid" : "PACKAGE-PRODUCT:Capacitor"
+    },
+    {
+      "guid" : "PACKAGE-PRODUCT:Cordova"
+    }
+  ],
+  "containerPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/App.xcodeproj",
+  "continueBuildingAfterErrors" : true,
+  "dependencyScope" : "workspace",
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "indexbuild",
+    "activeArchitecture" : "arm64",
+    "activeRunDestination" : {
+      "disableOnlyActiveArch" : false,
+      "platform" : "iphonesimulator",
+      "sdk" : "iphonesimulator18.4",
+      "sdkVariant" : "iphonesimulator",
+      "supportedArchitectures" : [
+        "arm64",
+        "x86_64"
+      ],
+      "targetArchitecture" : "arm64"
+    },
+    "arenaInfo" : {
+      "buildIntermediatesPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex",
+      "buildProductsPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Products",
+      "derivedDataPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData",
+      "indexDataStoreFolderPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/DataStore",
+      "indexEnableDataStore" : true,
+      "indexPCHPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/PrecompiledHeaders",
+      "indexRegularBuildIntermediatesPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Build/Intermediates.noindex",
+      "indexRegularBuildProductsPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Build/Products",
+      "pchPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/PrecompiledHeaders"
+    },
+    "configurationName" : "Debug",
+    "overrides" : {
+      "synthesized" : {
+        "table" : {
+          "ENABLE_PREVIEWS" : "NO",
+          "ENABLE_XOJIT_PREVIEWS" : "NO",
+          "ONLY_ACTIVE_ARCH" : "YES"
+        }
+      }
+    }
+  },
+  "qos" : "utility",
+  "schemeCommand" : "launch",
+  "showNonLoggedProgress" : true,
+  "useDryRun" : false,
+  "useImplicitDependencies" : true,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : true
+}

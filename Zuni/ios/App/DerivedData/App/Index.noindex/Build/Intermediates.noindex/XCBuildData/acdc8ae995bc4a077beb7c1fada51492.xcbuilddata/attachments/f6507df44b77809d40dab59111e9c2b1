@@ -1,0 +1,15 @@
+{
+  "" : {
+    "dependencies" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/App.build/Debug-iphonesimulator/App.build/Objects-normal/arm64/App-master.d",
+    "diagnostics" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/App.build/Debug-iphonesimulator/App.build/Objects-normal/arm64/App-master.dia",
+    "emit-module-dependencies" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/App.build/Debug-iphonesimulator/App.build/Objects-normal/arm64/App-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/App.build/Debug-iphonesimulator/App.build/Objects-normal/arm64/App-master-emit-module.dia",
+    "swift-dependencies" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/App.build/Debug-iphonesimulator/App.build/Objects-normal/arm64/App-master.swiftdeps"
+  },
+  "/Users/emre/Desktop/Zuni/Zuni/ios/App/App/AppDelegate.swift" : {
+
+  },
+  "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/App.build/Debug-iphonesimulator/App.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+
+  }
+}

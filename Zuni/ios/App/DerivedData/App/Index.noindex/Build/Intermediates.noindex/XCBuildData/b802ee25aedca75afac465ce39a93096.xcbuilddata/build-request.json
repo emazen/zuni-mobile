@@ -1,0 +1,48 @@
+{
+  "buildCommand" : {
+    "command" : "prepareForIndexing",
+    "enableIndexBuildArena" : true,
+    "targets" : null
+  },
+  "configuredTargets" : [
+    {
+      "guid" : "0ca3007d900a678c2b4d53418799ee3d34df47fa015b7e467e67e9235d8a1297"
+    }
+  ],
+  "containerPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/App.xcodeproj",
+  "continueBuildingAfterErrors" : true,
+  "dependencyScope" : "workspace",
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "indexbuild",
+    "arenaInfo" : {
+      "buildIntermediatesPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex",
+      "buildProductsPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Products",
+      "derivedDataPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData",
+      "indexDataStoreFolderPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/DataStore",
+      "indexEnableDataStore" : true,
+      "indexPCHPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/PrecompiledHeaders",
+      "indexRegularBuildIntermediatesPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Build/Intermediates.noindex",
+      "indexRegularBuildProductsPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Build/Products",
+      "pchPath" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/PrecompiledHeaders"
+    },
+    "configurationName" : "Debug",
+    "overrides" : {
+      "synthesized" : {
+        "table" : {
+          "ENABLE_PREVIEWS" : "NO",
+          "ENABLE_XOJIT_PREVIEWS" : "NO",
+          "ONLY_ACTIVE_ARCH" : "YES"
+        }
+      }
+    }
+  },
+  "qos" : "utility",
+  "schemeCommand" : "launch",
+  "showNonLoggedProgress" : true,
+  "useDryRun" : false,
+  "useImplicitDependencies" : true,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : true
+}

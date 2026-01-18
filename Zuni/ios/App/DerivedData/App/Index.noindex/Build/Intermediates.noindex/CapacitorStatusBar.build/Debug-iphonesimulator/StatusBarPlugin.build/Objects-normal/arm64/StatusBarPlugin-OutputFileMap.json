@@ -1,0 +1,24 @@
+{
+  "" : {
+    "dependencies" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/CapacitorStatusBar.build/Debug-iphonesimulator/StatusBarPlugin.build/Objects-normal/arm64/StatusBarPlugin-master.d",
+    "diagnostics" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/CapacitorStatusBar.build/Debug-iphonesimulator/StatusBarPlugin.build/Objects-normal/arm64/StatusBarPlugin-master.dia",
+    "emit-module-dependencies" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/CapacitorStatusBar.build/Debug-iphonesimulator/StatusBarPlugin.build/Objects-normal/arm64/StatusBarPlugin-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/CapacitorStatusBar.build/Debug-iphonesimulator/StatusBarPlugin.build/Objects-normal/arm64/StatusBarPlugin-master-emit-module.dia",
+    "swift-dependencies" : "/Users/emre/Desktop/Zuni/Zuni/ios/App/DerivedData/App/Index.noindex/Build/Intermediates.noindex/CapacitorStatusBar.build/Debug-iphonesimulator/StatusBarPlugin.build/Objects-normal/arm64/StatusBarPlugin-master.swiftdeps"
+  },
+  "/Users/emre/Desktop/Zuni/Zuni/node_modules/@capacitor/status-bar/ios/Sources/StatusBarPlugin/StatusBar.swift" : {
+
+  },
+  "/Users/emre/Desktop/Zuni/Zuni/node_modules/@capacitor/status-bar/ios/Sources/StatusBarPlugin/StatusBarConfig.swift" : {
+
+  },
+  "/Users/emre/Desktop/Zuni/Zuni/node_modules/@capacitor/status-bar/ios/Sources/StatusBarPlugin/StatusBarInfo.swift" : {
+
+  },
+  "/Users/emre/Desktop/Zuni/Zuni/node_modules/@capacitor/status-bar/ios/Sources/StatusBarPlugin/StatusBarPlugin.swift" : {
+
+  },
+  "/Users/emre/Desktop/Zuni/Zuni/node_modules/@capacitor/status-bar/ios/Sources/StatusBarPlugin/UIColor.swift" : {
+
+  }
+}
